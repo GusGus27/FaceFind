@@ -1,0 +1,162 @@
+.user-cases-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.user-cases-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ----- Filtros ----- */
+.filter-select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+}
+
+/* ----- Cards ----- */
+.cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.case-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  background: white;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.case-card:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.case-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.case-card-body {
+  padding: 1rem;
+}
+
+.case-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+  color: #111827;
+}
+
+.case-description {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.case-status {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  color: white;
+  text-transform: capitalize;
+  margin-bottom: 0.3rem;
+}
+
+.case-status.activo {
+  background-color: #3b82f6;
+}
+.case-status.pendiente {
+  background-color: #f59e0b;
+}
+.case-status.resuelto {
+  background-color: #10b981;
+}
+
+.case-update {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.case-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+/* ----- Botones ----- */
+.btn-outline {
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #111827;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.btn-outline:hover {
+  background: #f3f4f6;
+}
+
+.btn-secondary {
+  background: #4b5563;
+  color: white;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+  background: #374151;
+}
+
+/* ----- Paginación ----- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.pagination button {
+  border: 1px solid #d1d5db;
+  background: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.pagination button:hover {
+  background: #f3f4f6;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
