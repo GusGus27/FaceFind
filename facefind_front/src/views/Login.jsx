@@ -1,6 +1,6 @@
 import React from 'react'
-import FormInput from '../../components/FormInput'
-import './Login.css'
+import FormInput from '../components/common/FormInput'
+import '../styles/views/Login.css'
 const Login = () => {
   return (
     <>

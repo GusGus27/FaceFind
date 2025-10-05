@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import LoginModal from './LoginModal';
-import '../styles/Header.css';
+import '../../styles/common/Header.css';
 
 const Header = () => {
   const { user, logout, isAdmin } = useAuth();

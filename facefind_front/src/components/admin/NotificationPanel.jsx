@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/NotificationPanel.css';
+import '../../styles/admin/NotificationPanel.css';
 
 const NotificationPanel = () => {
   const [notifications, setNotifications] = useState([]);
