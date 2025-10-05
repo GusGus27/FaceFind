@@ -1,0 +1,185 @@
+.container-login {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    background-color: #bb9de6;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Poppins', Arial, sans-serif;
+}
+
+.login {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 80vh;
+    width: 60%;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+}
+
+.welcome-login {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    height: 100%;
+    background-color: #894ae2;
+    color: white;
+    padding: 20px;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.welcome-login h1 {
+    color: white;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.welcome-login p {
+    color: white;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(255, 255, 255);
+    padding: 20px;
+    border-bottom-right-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.login-form h2 {
+    color: #333;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.login-form form {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+}
+
+.login-form form input {
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.login-form form button {
+    padding: 10px;
+    font-size: 1rem;
+    background-color: #894ae2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-form form button:hover {
+    background-color: #732cc1;
+}
+
+.form-group-options {
+    display: flex;
+    justify-content: center;
+    gap: 9rem;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.recuerdame {
+    display: flex;
+    flex-direction: row;
+    
+
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.form-group-options label {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.form-group-options a {
+    font-size: 0.9rem;
+    color: #894ae2;
+    text-decoration: none;
+}
+
+.form-group-options a:hover {
+    text-decoration: underline;
+}
+
+.registrate {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+    gap: 20px;
+}
+
+.registrate p {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.text-registrate {
+    opacity: 0.4;
+}
+
+.link-register {
+    color: #fff;
+    font-weight: bold;
+    margin-left: 5px;
+    text-decoration: none;
+    border-radius: 35px;
+    border: 2px solid #ffffff;
+    padding: 1rem 2rem;
+}
+
+.link-register:hover {
+    color: #ccc;
+}
+/* coloca esta regla después de las reglas generales .login-form form input */
+.form-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 10px solid rgba(111,59,224,0.12); /* 4px reservado */
+  background: #fff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+/* placeholder color sutil */
+.form-input::placeholder { color: rgba(111,59,224,0.35); }
+
+/* hover */
+.form-input:hover {
+  border-color: rgba(111,59,224,0.34);
+  box-shadow: 0 8px 22px rgba(111,59,224,0.08);
+}
+
+/* focus (línea gruesa y halo) */
+.form-input:focus,
+.form-input:focus-visible {
+  border-color: #371879;          /* color vivo */
+  box-shadow: 0 10px 36px rgba(111,59,224,0.22), 0 0 0 2px rgba(111,59,224,0.06) inset;
+  outline: none;
+}

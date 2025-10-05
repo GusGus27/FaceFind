@@ -1,0 +1,29 @@
+:root{
+  --purple: #6f3be0;
+  --purple-2: #7f4ae8;
+}
+
+*{box-sizing: border-box}
+body{font-family: Inter, Arial, sans-serif; margin:0}
+
+.login-container{display:flex;align-items:center;justify-content:center;height:100vh;padding:24px;background:linear-gradient(180deg,#f3f4fb,#ffffff)}
+.login-card{width:100%;max-width:1000px;display:flex;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(31,41,55,0.08)}
+
+.left-panel{flex:1;background:linear-gradient(135deg,var(--purple),var(--purple-2));color:#fff;padding:48px;display:flex;align-items:center}
+.left-inner{max-width:360px}
+.left-inner h1{font-size:36px;margin:0 0 12px}
+.left-inner .lead{opacity:0.95;margin-bottom:28px}
+.btn-outline{background:transparent;border:2px solid rgba(255,255,255,0.7);color:#fff;padding:10px 22px;border-radius:999px;cursor:pointer}
+
+.right-panel{width:420px;background:#fff;padding:36px;display:flex;align-items:center}
+.right-inner{width:100%}
+.right-inner h2{margin:0 0 18px;font-size:20px;color:#333}
+.form label{display:block;font-size:13px;color:#666;margin:10px 0 6px}
+.form input{width:100%;padding:12px;border:1px solid #e6e6ee;border-radius:8px;font-size:14px;margin-bottom:12px}
+.btn-primary{width:100%;margin-top:12px;background:var(--purple);color:#fff;padding:12px;border-radius:28px;border:none;cursor:pointer;font-weight:600}
+
+@media (max-width:880px){
+  .login-card{flex-direction:column}
+  .left-panel{display:flex;justify-content:center;padding:28px}
+  .right-panel{width:100%;padding:28px}
+}
