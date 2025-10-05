@@ -1,0 +1,3 @@
+encodings_test.pickle
+dataset_personas/*
+!dataset_personas/
