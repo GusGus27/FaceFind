@@ -48,7 +48,7 @@ const UserManagement = () => {
     <div className="user-management">
       <div className="management-header">
         <h1>Gestión de Usuarios</h1>
-        <button className="btn-primary">+ Agregar Usuario</button>
+        <button className="btn-primary" onClick={() => {/* Lógica para agregar usuario */}}>+ Agregar Usuario</button>
       </div>
 
       <div className="management-filters">
