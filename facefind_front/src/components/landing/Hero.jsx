@@ -1,7 +1,21 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/landing/Hero.css';
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleRegisterCase = () => {
+    navigate('/registrar_caso');
+  };
+
+  const handleLearnMore = () => {
+    const aboutSection = document.getElementById('about');
+    if (aboutSection) {
+      aboutSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="hero">
       <div className="hero-content">
@@ -13,8 +27,12 @@ const Hero = () => {
           ayudar a localizar personas desaparecidas y reunirlas con sus familias.
         </p>
         <div className="hero-buttons">
-          <button className="btn-primary">Comenzar Ahora</button>
-          <button className="btn-secondary">Saber Más</button>
+          <button className="btn-primary" onClick={handleRegisterCase}>
+            Registrar un Caso
+          </button>
+          <button className="btn-secondary" onClick={handleLearnMore}>
+            Saber Más
+          </button>
         </div>
       </div>
       <div className="hero-image">
