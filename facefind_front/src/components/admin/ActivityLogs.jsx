@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/ActivityLogs.css';
+import '../../styles/admin/ActivityLogs.css';
 
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([]);

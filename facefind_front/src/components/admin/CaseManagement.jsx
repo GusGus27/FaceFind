@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/CaseManagement.css';
+import '../../styles/admin/CaseManagement.css';
 
 const CaseManagement = () => {
   const [cases, setCases] = useState([]);

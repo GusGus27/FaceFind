@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/CaseStatusChart.css';
+import '../../styles/admin/CaseStatusChart.css';
 
 const CaseStatusChart = () => {
   const data = [

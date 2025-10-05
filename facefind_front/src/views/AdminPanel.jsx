@@ -6,7 +6,7 @@ import UserManagement from '../components/admin/UserManagement';
 import CaseManagement from '../components/admin/CaseManagement';
 import NotificationPanel from '../components/admin/NotificationPanel';
 import ActivityLogs from '../components/admin/ActivityLogs';
-import '../styles/AdminPanel.css';
+import '../styles/admin/AdminPanel.css';
 
 const AdminPanel = () => {
   const { isAdmin } = useAuth();

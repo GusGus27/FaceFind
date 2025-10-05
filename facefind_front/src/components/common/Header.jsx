@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import LoginModal from './LoginModal';
-import '../styles/Header.css';
+import '../../styles/common/Header.css';
 
 const Header = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -26,7 +26,7 @@ const Header = () => {
             <li><a href="#about">Acerca de</a></li>
             <li><a href="#statistics">Estadísticas</a></li>
             <li><a href="#contact">Contacto</a></li>
-            <li><Link to="/cases" className="nav-link">Ver Casos</Link></li>
+            <li><Link to="/casos" className="nav-link">Ver Casos</Link></li>
             {isAdmin() && (
               <li><Link to="/admin" className="nav-link admin-link">⚙️ Panel Admin</Link></li>
             )}

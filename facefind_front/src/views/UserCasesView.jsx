@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import CaseList from "../components/CaseList";
-import FilterBar from "../components/FilterBar";
-import Pagination from "../components/Pagination";
-import "../styles/UserCasesView.css";
+import CaseList from "../components/cases/CaseList";
+import FilterBar from "../components/cases/FilterBar";
+import Pagination from "../components/cases/Pagination";
+import "../styles/views/UserCasesView.css";
 
 export default function UserCasesView() {
   const [cases, setCases] = useState([]);

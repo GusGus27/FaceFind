@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/Statistics.css';
+import '../../styles/landing/Statistics.css';
 
 const Statistics = () => {
   const [counters, setCounters] = useState({
