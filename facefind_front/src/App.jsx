@@ -30,6 +30,8 @@ function App() {
                 <ContactForm />
               </main>
             } />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/cases" element={<UserCasesView />} />
             <Route path="/admin" element={<AdminPanel />} />
           </Routes>
