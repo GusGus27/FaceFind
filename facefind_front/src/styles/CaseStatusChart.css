@@ -1,0 +1,79 @@
+/* Case Status Chart */
+.case-status-chart h2 {
+  font-size: 1.5rem;
+  color: #1a237e;
+  margin-bottom: 1.5rem;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chart-bar-container {
+  position: relative;
+  background: #f0f0f0;
+  height: 40px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.chart-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 1rem;
+  border-radius: 20px;
+  transition: width 1s ease;
+  position: relative;
+}
+
+.chart-percentage {
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.chart-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.5rem;
+}
+
+.chart-status {
+  font-weight: 600;
+  color: #333;
+}
+
+.chart-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.chart-summary {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e0e0e0;
+  text-align: center;
+}
+
+.chart-summary p {
+  font-size: 1rem;
+  color: #666;
+}
+
+.chart-summary strong {
+  color: #1a237e;
+  font-size: 1.25rem;
+}
