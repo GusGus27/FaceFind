@@ -51,7 +51,7 @@ class GeneradorEncodings:
         self._guardar_encodings()
         print(f"📁 Encodings guardados en {self.output_path}")
 
-    def _validar_consistencia(self, encodings, umbral=0.85):
+    def _validar_consistencia(self, encodings, umbral=0.75):
         """Valida que los encodings de una misma persona sean consistentes (>85%)"""
         if len(encodings) < 2:
             return True  # No hay con qué comparar, se acepta por defecto

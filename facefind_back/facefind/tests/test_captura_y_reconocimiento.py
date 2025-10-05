@@ -1,14 +1,17 @@
-import cv2
 import os
 import sys
+import cv2
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-# ...existing imports...
 from facefind.generador_encodings import GeneradorEncodings
 from facefind.procesador_facefind import ProcesadorFaceFind
-# ...resto del código...
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENCODINGS_PATH = os.path.join(BASE_DIR, "facefind", "encodings_test.pickle")
+DATASET_PATH = os.path.join(BASE_DIR, "facefind", "dataset_personas")
 
 def capturar_fotos(nombre_persona, num_fotos=4):
-    carpeta = f"facefind/dataset_personas/{nombre_persona}"
+    carpeta = os.path.join(DATASET_PATH, nombre_persona)
     os.makedirs(carpeta, exist_ok=True)
     cam = cv2.VideoCapture(0)
     print("Presiona ESPACIO para tomar una foto. ESC para salir.")
@@ -45,14 +48,15 @@ def reconocer_persona(encodings_path):
             print("Cancelado por el usuario.")
             break
         elif key % 256 == 32:  # ESPACIO
-            cv2.imwrite("temp.jpg", frame)
-            procesador = ProcesadorFaceFind(encodings_path)
-            nombre = procesador.reconocer_rostro("temp.jpg")
+            temp_path = os.path.join(BASE_DIR, "facefind", "temp.jpg")
+            cv2.imwrite(temp_path, frame)
+            procesador = ProcesadorFaceFind(encodings_path=encodings_path)
+            nombre = procesador.reconocer_rostro(temp_path)
             if nombre:
                 print(f"¡Reconocido como: {nombre}!")
             else:
                 print("No se reconoció el rostro.")
-            os.remove("temp.jpg")
+            os.remove(temp_path)
             break
     cam.release()
     cv2.destroyAllWindows()
@@ -62,9 +66,13 @@ if __name__ == "__main__":
     capturar_fotos(nombre_persona)
     print("Generando encodings...")
     generador = GeneradorEncodings(
-        dataset_path="facefind/dataset_personas",
-        output_path="facefind/encodings_test.pickle"
+        dataset_path=DATASET_PATH,
+        output_path=ENCODINGS_PATH
     )
     generador.generar_encodings()
-    print("¡Listo! Ahora vamos a reconocer tu rostro.")
-    reconocer_persona("facefind/encodings_test.pickle")
+    if not os.path.exists(ENCODINGS_PATH):
+        print(f"❌ No se encontró el archivo de encodings en {ENCODINGS_PATH}.")
+        print("Verifica que la generación de encodings fue exitosa.")
+    else:
+        print("¡Listo! Ahora vamos a reconocer tu rostro.")
+        reconocer_persona(ENCODINGS_PATH)
