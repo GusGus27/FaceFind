@@ -11,6 +11,10 @@ import UserCasesView from './views/UserCasesView';
 import AdminPanel from './views/AdminPanel';
 import './App.css';
 
+import LandingPage from './views/LandingPage';
+import Login from './views/Login/Login.jsx';
+import Register from './views/Register/Register.jsx';
+
 function App() {
   return (
     <AuthProvider>
@@ -26,6 +30,8 @@ function App() {
                 <ContactForm />
               </main>
             } />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/cases" element={<UserCasesView />} />
             <Route path="/admin" element={<AdminPanel />} />
           </Routes>
