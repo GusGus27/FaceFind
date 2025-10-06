@@ -51,7 +51,7 @@ const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
       <div className="modal-content">
         {/* Header del modal */}
         <div className="modal-header">
-          <h2>Casos de {userName}</h2>
+          <h2>Casoss de {userName}</h2>
           <button 
             className="close-btn" 
             onClick={onClose}
