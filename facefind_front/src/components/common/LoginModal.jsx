@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import '../styles/LoginModal.css';
+import '../../styles/common/LoginModal.css';
 
 const LoginModal = ({ isOpen, onClose }) => {
   const { loginAsAdmin, loginAsUser } = useAuth();

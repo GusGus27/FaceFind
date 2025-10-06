@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/ActivityLogs.css';
+import '../../styles/admin/ActivityLogs.css';
 
 const ActivityLogs = () => {
   const [logs, setLogs] = useState([]);
@@ -122,14 +122,35 @@ const ActivityLogs = () => {
   };
 
   const exportLogs = () => {
-    const dataStr = JSON.stringify(filteredLogs, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    const exportFileDefaultName = `logs_facefind_${new Date().toISOString().split('T')[0]}.json`;
+    // Crear encabezados CSV
+    const headers = ['ID', 'Fecha/Hora', 'Usuario', 'Acción', 'Detalles', 'IP', 'Estado'];
     
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    // Convertir datos a formato CSV
+    const csvContent = [
+      headers.join(','),
+      ...filteredLogs.map(log => [
+        log.id,
+        `"${log.timestamp}"`,
+        `"${log.user}"`,
+        `"${log.action}"`,
+        `"${log.details}"`,
+        `"${log.ip}"`,
+        `"${log.status}"`
+      ].join(','))
+    ].join('\n');
+    
+    // Crear Blob y descargar
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `logs_facefind_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (

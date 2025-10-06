@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/RecentActivity.css';
+import '../../styles/admin/RecentActivity.css';
 
 const RecentActivity = () => {
   const [activities, setActivities] = useState([]);

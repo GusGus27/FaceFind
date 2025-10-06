@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MetricCard from './MetricCard';
 import RecentActivity from './RecentActivity';
 import CaseStatusChart from './CaseStatusChart';
-import '../../styles/AdminDashboard.css';
+import '../../styles/admin/AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [metrics, setMetrics] = useState({

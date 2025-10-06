@@ -1,0 +1,289 @@
+/* UserCasesModal - Estilos encapsulados */
+.user-cases-modal.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.user-cases-modal .modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.user-cases-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #e3e8ef;
+  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  color: white;
+}
+
+.user-cases-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+    color: white;
+}
+
+.user-cases-modal .close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.75rem;
+  color: white;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.user-cases-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+/* Body */
+.user-cases-modal .modal-body {
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Summary */
+.user-cases-modal .cases-summary {
+  background: #f5f7fa;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #1a237e;
+}
+
+.user-cases-modal .cases-summary p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.user-cases-modal .cases-summary strong {
+  color: #1a237e;
+  font-size: 1.1rem;
+}
+
+/* Cases List */
+.user-cases-modal .cases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-cases-modal .case-item {
+  background: white;
+  border: 2px solid #e3e8ef;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.user-cases-modal .case-item:hover {
+  border-color: #1a237e;
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.1);
+  transform: translateY(-2px);
+}
+
+.user-cases-modal .case-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.user-cases-modal .case-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.user-cases-modal .case-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  flex: 1;
+}
+
+.user-cases-modal .case-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.user-cases-modal .case-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.user-cases-modal .case-status-activo {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.user-cases-modal .case-status-pendiente {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.user-cases-modal .case-status-resuelto {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.user-cases-modal .case-status-cerrado {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.user-cases-modal .case-date,
+.user-cases-modal .case-location {
+  font-size: 0.85rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.user-cases-modal .case-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e3e8ef;
+}
+
+/* No Cases */
+.user-cases-modal .no-cases {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.user-cases-modal .no-cases-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.user-cases-modal .no-cases-text {
+  font-size: 1.1rem;
+  color: #888;
+  margin: 0;
+}
+
+/* Footer */
+.user-cases-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  border-top: 2px solid #e3e8ef;
+  background: #f9fafb;
+}
+
+.user-cases-modal .btn-secondary,
+.user-cases-modal .btn-primary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-cases-modal .btn-secondary {
+  background: #e3e8ef;
+  color: #444;
+}
+
+.user-cases-modal .btn-secondary:hover {
+  background: #d1d7e0;
+}
+
+.user-cases-modal .btn-primary {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  color: white;
+}
+
+.user-cases-modal .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-cases-modal .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .user-cases-modal .modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .user-cases-modal .modal-header h2 {
+    font-size: 1.25rem;
+    color: #ffffff;
+  }
+
+  .user-cases-modal .modal-body {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .user-cases-modal .case-item {
+    padding: 1rem;
+  }
+
+  .user-cases-modal .modal-footer {
+    padding: 1rem 1.5rem;
+    flex-direction: column;
+  }
+
+  .user-cases-modal .btn-secondary,
+  .user-cases-modal .btn-primary {
+    width: 100%;
+  }
+}

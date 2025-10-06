@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/MetricCard.css';
+import '../../styles/admin/MetricCard.css';
 
 const MetricCard = ({ title, value, icon, trend, trendPositive }) => {
   return (

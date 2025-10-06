@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import LoginModal from './LoginModal';
-import '../styles/Header.css';
+import { useAuth } from '../../context/AuthContext';
+import '../../styles/common/Header.css';
 
 const Header = () => {
   const { user, logout, isAdmin } = useAuth();
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -26,7 +24,7 @@ const Header = () => {
             <li><a href="#about">Acerca de</a></li>
             <li><a href="#statistics">Estadísticas</a></li>
             <li><a href="#contact">Contacto</a></li>
-            <li><Link to="/cases" className="nav-link">Ver Casos</Link></li>
+            <li><Link to="/casos" className="nav-link">Ver Casos</Link></li>
             {isAdmin() && (
               <li><Link to="/admin" className="nav-link admin-link">⚙️ Panel Admin</Link></li>
             )}
@@ -42,19 +40,16 @@ const Header = () => {
             </>
           ) : (
             <>
-              <button className="btn-login" onClick={() => setShowLoginModal(true)}>
+              <button className="btn-login" onClick={() => navigate('/login')}>
                 Iniciar Sesión
               </button>
-              <button className="btn-register">Registrarse</button>
+              <button className="btn-register" onClick={() => navigate('/register')}>
+                Registrarse
+              </button>
             </>
           )}
         </div>
       </div>
-      
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
-      />
     </header>
   );
 };

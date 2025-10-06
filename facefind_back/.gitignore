@@ -1,0 +1,5 @@
+encodings_test.pickle
+dataset_personas/*
+dataset_personas/
+__pycache__/
+*.pyc
