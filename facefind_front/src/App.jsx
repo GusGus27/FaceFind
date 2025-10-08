@@ -7,6 +7,7 @@ import Register from './views/Register';
 import UserCasesView from './views/UserCasesView';
 import AdminPanel from './views/AdminPanel';
 import CaseRegistration from './views/CaseRegistration';
+import CameraManagement from './views/CameraManagement';
 import './App.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/casos" element={<UserCasesView />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/camera" element={<CameraManagement />} />
         <Route path="/registrar_caso" element={<CaseRegistration />} />
       </Routes>
     </AuthProvider>
