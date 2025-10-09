@@ -25,6 +25,7 @@ const Header = () => {
             <li><a href="#statistics">Estadísticas</a></li>
             <li><a href="#contact">Contacto</a></li>
             <li><Link to="/casos" className="nav-link">Ver Casos</Link></li>
+            <li><Link to="/registrar_caso" className="nav-link register-case-link">Registrar Caso</Link></li>
             {isAdmin() && (
               <li><Link to="/admin" className="nav-link admin-link">⚙️ Panel Admin</Link></li>
             )}

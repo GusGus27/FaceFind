@@ -9,6 +9,12 @@ import ResetPassword from './views/ResetPassword';
 import EmailVerification from './views/EmailVerification';
 import UserCasesView from './views/UserCasesView';
 import AdminPanel from './views/AdminPanel';
+import EditCasePage from './components/CaseEdit/EditCasePage';
+import AdminEditCasePage from './components/CaseEdit/AdminEditCasePage';
+
+
+import CaseRegistration from './views/CaseRegistration';
+import CameraManagement from './views/CameraManagement';
 import './App.css';
 
 function App() {
@@ -23,6 +29,13 @@ function App() {
         <Route path="/verify-email/:token" element={<EmailVerification />} />
         <Route path="/casos" element={<UserCasesView />} />
         <Route path="/admin" element={<AdminPanel />} />
+        {/* Ruta para usuarios */}
+        <Route path="/casos/:caseId/editar" element={<EditCasePage />} />
+        {/* Rutas para administradores */}
+        <Route path="/admin/casos/:caseId/editar" element={<AdminEditCasePage />} />
+
+        <Route path="/admin/camera" element={<CameraManagement />} />
+        <Route path="/registrar_caso" element={<CaseRegistration />} />
       </Routes>
     </AuthProvider>
   );

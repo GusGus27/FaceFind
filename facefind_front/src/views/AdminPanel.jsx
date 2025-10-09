@@ -6,15 +6,26 @@ import UserManagement from '../components/admin/UserManagement';
 import CaseManagement from '../components/admin/CaseManagement';
 import NotificationPanel from '../components/admin/NotificationPanel';
 import ActivityLogs from '../components/admin/ActivityLogs';
+import SearchCases from '../components/admin/SearchCases'; 
+
+import CameraManager from '../components/camera/CameraManager';
 import '../styles/admin/AdminPanel.css';
 
 const AdminPanel = () => {
   const { isAdmin } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
 
+    const [selectedCase, setSelectedCase] = useState(null);
+
+
   if (!isAdmin()) {
     return <Navigate to="/" replace />;
   }
+  
+  const handleOpenCase = (caso) => {
+    setSelectedCase(caso);        
+    setActiveSection('cases');  
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -28,6 +39,10 @@ const AdminPanel = () => {
         return <NotificationPanel />;
       case 'logs':
         return <ActivityLogs />;
+      case 'search': 
+         return <SearchCases />;
+      case 'camera':
+        return <CameraManager />;
       default:
         return <AdminDashboard />;
     }
@@ -56,6 +71,13 @@ const AdminPanel = () => {
             Gestión de Usuarios
           </button>
           <button
+            className={`admin-nav-item ${activeSection === 'camera' ? 'active' : ''}`}
+            onClick={() => setActiveSection('camera')}
+          >
+            <span className="icon">📹</span>
+            Gestión de Cámaras
+          </button>
+          <button
             className={`admin-nav-item ${activeSection === 'cases' ? 'active' : ''}`}
             onClick={() => setActiveSection('cases')}
           >
@@ -69,12 +91,21 @@ const AdminPanel = () => {
             <span className="icon">🔔</span>
             Notificaciones
           </button>
+          
           <button
             className={`admin-nav-item ${activeSection === 'logs' ? 'active' : ''}`}
             onClick={() => setActiveSection('logs')}
           >
             <span className="icon">📝</span>
             Logs de Actividad
+          </button>
+          
+          <button
+            className={`admin-nav-item ${activeSection === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveSection('search')}
+          >
+            <span className="icon">🔎</span>
+            Búsqueda
           </button>
         </nav>
       </aside>
