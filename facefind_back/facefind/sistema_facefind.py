@@ -5,7 +5,7 @@ import cv2
 import base64
 import traceback
 import os
-
+import time
 from facefind.procesador_facefind import ProcesadorFaceFind
 from facefind.generador_encodings import GeneradorEncodings  
 
@@ -15,7 +15,7 @@ class SistemaFaceFind:
         CORS(self.app)
         self.procesador = ProcesadorFaceFind(tolerance=0.6)
         self.DATASET_PATH = "dataset_personas"
-        self.ENCODINGS_PATH = "encodings.pickle"
+        self.ENCODINGS_PATH = "encodings_test.pickle"
         self.register_routes()
 
     def register_routes(self):
@@ -52,7 +52,9 @@ class SistemaFaceFind:
                 if frame is None:
                     return jsonify({"success": False, "error": "No se pudo decodificar la imagen"}), 400
 
+                start = time.time()
                 results = self.procesador.process_frame(frame)
+                print(f"⏱ Tiempo en process_frame: {time.time() - start:.2f}s")
                 clean_results = self.clean_results_for_json(results)
 
                 return jsonify({"success": True, "data": clean_results})
@@ -141,4 +143,5 @@ class SistemaFaceFind:
 
     def run(self):
         print("🚀 Iniciando FaceFind API...")
-        self.app.run(host='0.0.0.0', port=5000, debug=True)
+        self.app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+

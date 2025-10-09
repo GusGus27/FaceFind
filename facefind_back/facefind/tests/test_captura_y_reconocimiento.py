@@ -9,8 +9,9 @@ from facefind.procesador_facefind import ProcesadorFaceFind
 from facefind.camera.camera_manager import CameraManager
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ENCODINGS_PATH = os.path.join(BASE_DIR, "facefind", "encodings_test.pickle")
-DATASET_PATH = os.path.join(BASE_DIR, "facefind", "dataset_personas")
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))  # sube un nivel fuera de 'facefind'
+ENCODINGS_PATH = os.path.join(PROJECT_ROOT, "facefind", "encodings_test.pickle")
+DATASET_PATH = os.path.join(PROJECT_ROOT, "facefind", "dataset_personas")
 
 def select_camera_type():
     while True:
@@ -108,7 +109,7 @@ def reconocer_persona(encodings_path, camera_settings):
             print("Cancelado por el usuario.")
             break
         elif key % 256 == 32:  # ESPACIO
-            temp_path = os.path.join(BASE_DIR, "facefind", "temp.jpg")
+            temp_path = os.path.join(PROJECT_ROOT, "facefind", "temp.jpg")
             cv2.imwrite(temp_path, frame)
             procesador = ProcesadorFaceFind(encodings_path=encodings_path)
             nombre = procesador.reconocer_rostro(temp_path)
