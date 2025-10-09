@@ -13,7 +13,7 @@ class SistemaFaceFind:
     def __init__(self):
         self.app = Flask(__name__)
         CORS(self.app)
-        self.procesador = ProcesadorFaceFind(tolerance=0.6)
+        self.procesador = ProcesadorFaceFind(tolerance=0.5)
         self.DATASET_PATH = "dataset_personas"
         self.ENCODINGS_PATH = "encodings_test.pickle"
         self.register_routes()
@@ -128,9 +128,16 @@ class SistemaFaceFind:
         }
 
         for face in results["faces"]:
+            bbox = face.get("bbox", {})
             clean_face = {
                 "face_id": int(face["face_id"]),
                 "location": [convert(x) for x in face["location"]],
+                "bbox": {
+                    "x": convert(bbox.get("x", 0)),
+                    "y": convert(bbox.get("y", 0)),
+                    "width": convert(bbox.get("width", 0)),
+                    "height": convert(bbox.get("height", 0))
+                },
                 "match_found": bool(face["match_found"]),
                 "best_match_name": str(face["best_match_name"]),
                 "similarity_percentage": float(face["similarity_percentage"]),

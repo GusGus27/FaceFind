@@ -109,16 +109,21 @@ class CameraAPITester:
             w = int(bbox.get("width", 0))
             h = int(bbox.get("height", 0))
             
-            # Color según si hay match
-            color = (0, 255, 0) if face.get("match_found") else (0, 0, 255)
+            # Determinar si hay match y color
+            match = bool(face.get("match_found"))
+            color = (0, 255, 0) if match else (0, 0, 255)
+            
+            # Mostrar "Desconocido" cuando no hay match
+            if match:
+                name = face.get("best_match_name", "Desconocido")
+                similarity = face.get("similarity_percentage", 0)
+                text = f"{name} ({similarity:.1f}%)"
+            else:
+                name = "Desconocido"
+                text = "Desconocido"
             
             # Dibujar rectángulo
             cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-            
-            # Texto con nombre y porcentaje
-            name = face.get("best_match_name", "Desconocido")
-            similarity = face.get("similarity_percentage", 0)
-            text = f"{name} ({similarity:.1f}%)"
             
             # Fondo para el texto
             cv2.rectangle(frame, (x, y - 30), (x + w, y), color, -1)
