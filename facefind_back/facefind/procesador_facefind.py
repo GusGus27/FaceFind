@@ -30,9 +30,20 @@ class ProcesadorFaceFind:
         faces = []
         for i, encoding in enumerate(encodings):
             results = self.compare_with_known_faces(encoding)
+
+            # locations[i] está en formato (top, right, bottom, left)
+            top, right, bottom, left = locations[i]
+            bbox = {
+                "x": int(left),
+                "y": int(top),
+                "width": int(right - left),
+                "height": int(bottom - top)
+            }
             faces.append({
                 "face_id": i,
-                "location": locations[i],
+                # mantenemos location con enteros para consistencia
+                "location": (int(top), int(right), int(bottom), int(left)),
+                "bbox": bbox,
                 **results
             })
 
