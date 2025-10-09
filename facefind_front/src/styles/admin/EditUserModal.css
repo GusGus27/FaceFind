@@ -1,0 +1,193 @@
+/* EditUserModal - Estilos encapsulados */
+.edit-user-modal .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.edit-user-modal .modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.edit-user-modal .modal-header {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  color: white;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+}
+
+.edit-user-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+
+.edit-user-modal .modal-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.edit-user-modal .modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.edit-user-modal form {
+  padding: 1.5rem 1.5rem;
+}
+
+.edit-user-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.edit-user-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.875rem;
+}
+
+.edit-user-modal .form-group input,
+.edit-user-modal .form-group select {
+  width: 100%;
+  padding: 0.625rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.edit-user-modal .form-group input:focus,
+.edit-user-modal .form-group select:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
+.edit-user-modal .form-group input::placeholder {
+  color: #999;
+}
+
+.edit-user-modal .form-info {
+  background: #f5f7fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  border-left: 4px solid #1a237e;
+}
+
+.edit-user-modal .form-info p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.edit-user-modal .modal-actions {
+  display: flex;
+  gap: 1rem;
+
+}
+
+.edit-user-modal .btn-cancel,
+.edit-user-modal .btn-submit {
+  flex: 1;
+  padding: 0.625rem 1.25rem;
+  margin: 0%;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-user-modal .btn-cancel {
+  background: #e3e8ef;
+  color: #444;
+}
+
+.edit-user-modal .btn-cancel:hover {
+  background: #d1d7e0;
+}
+
+.edit-user-modal .btn-submit {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+  color: white;
+}
+
+.edit-user-modal .btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .edit-user-modal .modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .edit-user-modal .modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .edit-user-modal .modal-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .edit-user-modal form {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .edit-user-modal .modal-actions {
+    flex-direction: column;
+  }
+
+  .edit-user-modal .btn-cancel,
+  .edit-user-modal .btn-submit {
+    width: 100%;
+  }
+}

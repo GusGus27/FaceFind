@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AddUserModal from './AddUserModal';
+import EditUserModal from './EditUserModal';
 import UserCasesModal from './UserCasesModal';
 import '../../styles/admin/UserManagement.css';
 
@@ -9,8 +10,10 @@ const UserManagement = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('todos'); // todos, active, inactive, deleted
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showCasesModal, setShowCasesModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [userToEdit, setUserToEdit] = useState(null);
   const [bannedList, setBannedList] = useState([]); // Lista negra de DNI y emails
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 5;
@@ -181,6 +184,42 @@ const UserManagement = () => {
     setSelectedUser(null);
   };
 
+  // Función para abrir modal de edición
+  const handleEditUser = (user) => {
+    setUserToEdit(user);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setUserToEdit(null);
+  };
+
+  // Función para actualizar usuario
+  const handleUpdateUser = (updatedData) => {
+    // Validar que no haya otro usuario con el mismo DNI o email (excepto el que se está editando)
+    const duplicateExists = users.some(
+      user => 
+        user.id !== userToEdit.id && 
+        (user.dni === updatedData.dni || user.email === updatedData.email)
+    );
+
+    if (duplicateExists) {
+      alert('Ya existe otro usuario con este DNI o email');
+      return;
+    }
+
+    // Actualizar usuario
+    setUsers(users.map(user =>
+      user.id === userToEdit.id
+        ? { ...user, ...updatedData }
+        : user
+    ));
+
+    handleCloseEditModal();
+    alert('Usuario actualizado exitosamente');
+  };
+
   const handleSubmitUser = (userData) => {
     // Validar que no esté en lista negra
     const isBlacklisted = bannedList.some(
@@ -296,7 +335,6 @@ const UserManagement = () => {
                     disabled={user.status === 'deleted' || user.status === 'banned'}
                   >
                     <option value="user">Usuario</option>
-                    <option value="moderator">Moderador</option>
                     <option value="admin">Admin</option>
                   </select>
                 </td>
@@ -332,6 +370,13 @@ const UserManagement = () => {
                       <span className="banned-label">🚫</span>
                     ) : (
                       <>
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleEditUser(user)}
+                          title="Editar usuario"
+                        >
+                          ✏️
+                        </button>
                         <button
                           className="btn-toggle"
                           onClick={() => handleStatusToggle(user.id)}
@@ -436,6 +481,14 @@ const UserManagement = () => {
         isOpen={showModal}
         onClose={handleCloseModal}
         onAddUser={handleSubmitUser}
+      />
+
+      {/* Modal para editar usuario */}
+      <EditUserModal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        onUpdateUser={handleUpdateUser}
+        user={userToEdit}
       />
 
       {/* Modal para ver casos del usuario */}

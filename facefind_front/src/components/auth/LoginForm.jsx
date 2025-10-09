@@ -4,7 +4,7 @@ import FormInput from '../common/FormInput';
 
 const LoginForm = ({ onSubmit, error }) => {
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: '',
     rememberMe: false
   });
@@ -30,12 +30,12 @@ const LoginForm = ({ onSubmit, error }) => {
       {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="username">Usuario</label>
+          <label htmlFor="email">Email</label>
           <FormInput
-            id="username"
-            type="text"
-            placeholder="Ingresa tu usuario"
-            value={formData.username}
+            id="email"
+            type="email"
+            placeholder="Ingresa tu email"
+            value={formData.email}
             onChange={handleChange}
             required
           />

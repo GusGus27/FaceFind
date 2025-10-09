@@ -1,0 +1,150 @@
+.email-verification {
+  width: 100%;
+  padding: 48px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Icons */
+.verification-icon {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verification-icon.verifying .spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Title */
+.verification-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.verification-title.verifying {
+  color: #666;
+}
+
+.verification-title.success {
+  color: #4caf50;
+}
+
+.verification-title.error {
+  color: #f44336;
+}
+
+/* Message */
+.verification-message {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 400px;
+}
+
+.verification-message.verifying {
+  color: #666;
+}
+
+.verification-message.success {
+  color: #2e7d32;
+}
+
+.verification-message.error {
+  color: #c62828;
+}
+
+/* Actions */
+.verification-actions {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.verification-actions .btn-submit {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--purple), var(--purple-2));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.verification-actions .btn-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(111, 59, 224, 0.3);
+}
+
+.verification-actions .btn-link {
+  display: inline-block;
+  color: var(--purple);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  padding: 8px 16px;
+}
+
+.verification-actions .btn-link:hover {
+  color: var(--purple-2);
+}
+
+.verification-actions .resend-info {
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Wait message */
+.wait-message {
+  font-size: 0.875rem;
+  color: #999;
+  margin-top: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .email-verification {
+    padding: 32px 24px;
+  }
+
+  .verification-title {
+    font-size: 1.5rem;
+  }
+
+  .verification-message {
+    font-size: 0.9375rem;
+  }
+
+  .verification-icon.verifying .spinner {
+    width: 50px;
+    height: 50px;
+  }
+
+  .verification-icon svg {
+    width: 70px;
+    height: 70px;
+  }
+}

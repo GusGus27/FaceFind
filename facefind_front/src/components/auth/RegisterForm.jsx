@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import FormInput from '../common/FormInput';
+import PasswordStrengthIndicator from '../common/PasswordStrengthIndicator';
+import { usePasswordStrength } from '../../hooks/usePasswordStrength';
 
 const RegisterForm = ({ onSubmit, error, success }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    dni: '',
     password: '',
     confirmPassword: ''
   });
+
+  const { strength, checkPasswordStrength } = usePasswordStrength();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,6 +23,12 @@ const RegisterForm = ({ onSubmit, error, success }) => {
 
   const handleChange = (e) => {
     const { id, value } = e.target;
+    
+    // Si es el campo de contraseña, validar fortaleza
+    if (id === 'password') {
+      checkPasswordStrength(value);
+    }
+    
     setFormData(prev => ({
       ...prev,
       [id]: value
@@ -47,9 +58,22 @@ const RegisterForm = ({ onSubmit, error, success }) => {
           <FormInput
             id="email"
             type="email"
-            placeholder="you@domain.com"
+            placeholder="tu@email.com"
             value={formData.email}
             onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="dni">DNI</label>
+          <FormInput
+            id="dni"
+            type="text"
+            placeholder="12345678 (8 dígitos)"
+            value={formData.dni}
+            onChange={handleChange}
+            maxLength="8"
             required
           />
         </div>
@@ -59,11 +83,18 @@ const RegisterForm = ({ onSubmit, error, success }) => {
           <FormInput
             id="password"
             type="password"
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres"
             value={formData.password}
             onChange={handleChange}
             required
           />
+          <PasswordStrengthIndicator 
+            password={formData.password}
+            strength={strength}
+          />
+          <small className="field-hint">
+            Debe contener: 8+ caracteres, mayúscula, minúscula y número
+          </small>
         </div>
         
         <div className="form-group">
