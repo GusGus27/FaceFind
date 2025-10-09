@@ -10,7 +10,7 @@ class GeneradorEncodings:
     a partir de las imágenes de personas cargadas.
     """
 
-    def __init__(self, dataset_path="dataset_faces", output_path="encodings.pickle"):
+    def __init__(self, dataset_path="dataset_faces", output_path="encodings_test.pickle"):
         self.dataset_path = dataset_path
         self.output_path = output_path
         self.encodings = []
@@ -29,13 +29,14 @@ class GeneradorEncodings:
             for filename in os.listdir(persona_dir):
                 path_imagen = os.path.join(persona_dir, filename)
                 imagen = face_recognition.load_image_file(path_imagen)
-                ubicaciones = face_recognition.face_locations(imagen)
+                rgb= cv2.cvtColor(imagen,cv2.COLOR_BGR2RGB)
+                ubicaciones = face_recognition.face_locations(rgb, model="cnn")
 
                 if not ubicaciones:
                     print(f"⚠️ No se detectó rostro en {filename}")
                     continue
 
-                encoding = face_recognition.face_encodings(imagen, ubicaciones)[0]
+                encoding = face_recognition.face_encodings(rgb, ubicaciones)[0]
                 encodings_persona.append(encoding)
 
             if len(encodings_persona) >= 1:
@@ -51,7 +52,7 @@ class GeneradorEncodings:
         self._guardar_encodings()
         print(f"📁 Encodings guardados en {self.output_path}")
 
-    def _validar_consistencia(self, encodings, umbral=0.75):
+    def _validar_consistencia(self, encodings, umbral=0.35):
         """Valida que los encodings de una misma persona sean consistentes (>85%)"""
         if len(encodings) < 2:
             return True  # No hay con qué comparar, se acepta por defecto

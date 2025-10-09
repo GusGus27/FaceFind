@@ -10,6 +10,8 @@ import EditCasePage from './components/CaseEdit/EditCasePage';
 import AdminEditCasePage from './components/CaseEdit/AdminEditCasePage';
 
 
+import CaseRegistration from './views/CaseRegistration';
+import CameraManagement from './views/CameraManagement';
 import './App.css';
 
 function App() {
@@ -26,6 +28,8 @@ function App() {
         {/* Rutas para administradores */}
         <Route path="/admin/casos/:caseId/editar" element={<AdminEditCasePage />} />
 
+        <Route path="/admin/camera" element={<CameraManagement />} />
+        <Route path="/registrar_caso" element={<CaseRegistration />} />
       </Routes>
     </AuthProvider>
   );

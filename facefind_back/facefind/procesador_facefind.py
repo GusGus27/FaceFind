@@ -6,7 +6,7 @@ import time
 import os
 
 class ProcesadorFaceFind:
-    def __init__(self, tolerance=0.6, encodings_path='encodings.pickle'):
+    def __init__(self, tolerance=0.6, encodings_path='encodings_test.pickle'):
         self.tolerance = tolerance
         self.encodings_path = encodings_path
         self.known_encodings = []
@@ -24,7 +24,7 @@ class ProcesadorFaceFind:
 
     def process_frame(self, frame):
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        locations = face_recognition.face_locations(rgb_frame)
+        locations = face_recognition.face_locations(rgb_frame, model="hog")
         encodings = face_recognition.face_encodings(rgb_frame, locations)
 
         faces = []

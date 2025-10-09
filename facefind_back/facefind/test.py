@@ -81,7 +81,7 @@ class CameraAPITester:
             response = requests.post(
                 f"{self.api_url}/detect-faces",
                 json={"image": img_base64},
-                timeout=10
+                #timeout=10
             )
             
             if response.status_code == 200:
