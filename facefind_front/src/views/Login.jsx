@@ -4,7 +4,6 @@ import AuthLayout from '../components/auth/AuthLayout';
 import WelcomePanel from '../components/auth/WelcomePanel';
 import LoginForm from '../components/auth/LoginForm';
 import { useAuth } from '../context/AuthContext';
-import { isValidEmail } from '../utils/formValidation';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -14,46 +13,24 @@ const Login = () => {
   const handleLogin = (formData) => {
     setError(''); // Limpiar errores previos
 
-    const { email, password } = formData;
+    const { username, password } = formData;
 
-    // Validar formato de email
-    if (!isValidEmail(email)) {
-      setError('Por favor ingresa un email válido');
-      return;
-    }
-
-    // TODO: Verificar que el email esté verificado
-    // Esta validación se hará con el backend
-    // if (!isEmailVerified(email)) {
-    //   setError('Por favor verifica tu email antes de iniciar sesión');
-    //   return;
-    // }
-
-    // TODO: Verificar que el usuario no esté baneado
-    // Esta validación se hará con el backend
-    // if (isUserBanned(email)) {
-    //   setError('Tu cuenta ha sido suspendida. Contacta al administrador');
-    //   return;
-    // }
-
-    // Validar credenciales de administrador (simulado)
-    if (email === 'admin@facefind.com' && password === 'Admin1234') {
-      // TODO: Aquí se validará con JWT token desde el backend
+    // Validar credenciales de administrador
+    if (username === 'admin' && password === 'admin1234') {
       loginAsAdmin();
       navigate('/admin');
       return;
     }
 
-    // Validar credenciales de usuario normal (simulado)
-    if (email === 'usuario@facefind.com' && password === 'User1234') {
-      // TODO: Aquí se validará con JWT token desde el backend
+    // Validar credenciales de usuario normal
+    if (username === 'usuario' && password === 'user1234') {
       loginAsUser();
-      navigate('/cases');
+      navigate('/casos');
       return;
     }
 
     // Credenciales inválidas
-    setError('Email o contraseña incorrectos');
+    setError('Usuario o contraseña incorrectos');
   };
 
   return (
