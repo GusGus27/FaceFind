@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import '../../styles/admin/CaseManagement.css';
 
+
+
 const CaseManagement = () => {
+  const navigate = useNavigate();
+
   const [cases, setCases] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -152,6 +158,12 @@ const CaseManagement = () => {
     setShowDetailsModal(false);
     setSelectedCase(null);
   };
+  
+  const handleEdit = () => {
+  closeDetailsModal();
+  navigate('/admin/casos/1/editar');
+  };
+  
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -414,7 +426,7 @@ const CaseManagement = () => {
 
             <div className="modal-footer">
               <button className="btn-secondary" onClick={closeDetailsModal}>Cerrar</button>
-              <button className="btn-primary">✏️ Editar Caso</button>
+              <button className="btn-primary" onClick={handleEdit}>✏️ Editar Caso</button>
             </div>
           </div>
         </div>

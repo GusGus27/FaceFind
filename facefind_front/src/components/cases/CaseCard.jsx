@@ -13,7 +13,12 @@ export default function CaseCard({ caseData }) {
         <p className="case-update">Última actualización: {lastUpdate}</p>
         <div className="case-footer">
           <button className="btn-outline">Ver Detalle</button>
-          <button className="btn-secondary">Editar</button>
+         <button
+          className="btn-secondary"
+          onClick={() => window.location.href = "http://localhost:5173/casos/1/editar"}
+        >
+        Editar
+        </button>
         </div>
       </div>
     </div>
