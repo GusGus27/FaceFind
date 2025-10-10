@@ -2,3 +2,4 @@
 /facefind_back/test.py
 /facefind_back/encodings.pickle
 node_modules
+facefind_back/.env
