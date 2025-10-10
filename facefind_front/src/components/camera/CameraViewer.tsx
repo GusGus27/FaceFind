@@ -60,7 +60,7 @@ const CameraViewer: React.FC = () => {
             const imageData = canvasRef.current.toDataURL('image/jpeg');
 
             // Send to backend for recognition
-            const response = await fetch('http://localhost:5000/recognize', {
+            const response = await fetch('http://localhost:5000/detect-faces', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
