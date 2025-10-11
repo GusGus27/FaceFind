@@ -333,29 +333,58 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
   box-shadow: 0 0 0 3px rgba(111, 59, 224, 0.1) !important;
 }
 
-/* 🔧 Botón toggle de contraseña */
-.password-input-container {
+/* 🔧 MODIFICACIONES AGREGADAS AL CSS PARA TOGGLE DE CONTRASEÑA */
+
+/* 🔧 Wrapper para campos de contraseña con toggle */
+.password-field-wrapper {
   position: relative !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.password-field-wrapper .form-input {
+  flex: 1 !important;
+  padding-right: 50px !important; /* Espacio para el botón toggle */
   width: 100% !important;
 }
 
+/* 🔧 Botón toggle de contraseña - MÁS VISIBLE */
 .password-toggle-btn {
   position: absolute !important;
   right: 12px !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  background: none !important;
-  border: none !important;
-  color: #6f3be0 !important;
+  background: #ffffff !important; /* Fondo blanco */
+  border: 1px solid #e2e8f0 !important; /* Borde gris */
+  color: #6f3be0 !important; /* Morado del proyecto */
   cursor: pointer !important;
-  padding: 4px !important;
-  border-radius: 4px !important;
-  transition: color 0.2s ease !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  z-index: 10 !important; /* Asegurar que esté encima */
 }
 
 .password-toggle-btn:hover {
-  color: #7f4ae8 !important;
-  background-color: rgba(111, 59, 224, 0.1) !important;
+  color: #7f4ae8 !important; /* Morado más claro */
+  background-color: #f8fafc !important; /* Gris muy claro */
+  border-color: #6f3be0 !important;
+}
+
+.password-toggle-btn:focus {
+  outline: 2px solid #6f3be0 !important;
+  outline-offset: 2px !important;
+}
+
+.password-toggle-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2 !important;
 }
 
 /* 🔧 Indicador de coincidencia de contraseñas */
@@ -366,6 +395,7 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
+  transition: all 0.3s ease !important;
 }
 
 .password-match-indicator.match {
@@ -374,31 +404,6 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
 
 .password-match-indicator.no-match {
   color: #ef4444 !important; /* Rojo para no coinciden */
-}
-
-/* Submit Button */
-.btn-submit {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  font-weight: 100;
-  background: var(--purple);
-  color: #fff;
-  border: none;
-  border-radius: 28px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 12px;
-}
-
-.btn-submit:hover {
-  background-color: #732cc1;
-}
-
-.btn-submit:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 /* 🔧 Enlace "¿Olvidaste tu contraseña?" en color morado */
@@ -416,6 +421,11 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
 .forgot-password-link:hover {
   color: var(--purple-2) !important; /* Morado más claro al hacer hover */
   text-decoration: underline !important;
+}
+
+/* Asegurar que el input tenga el espacio correcto */
+.form-group input[type="password"] {
+  padding-right: 50px !important;
 }
 
 /* Responsive Design */

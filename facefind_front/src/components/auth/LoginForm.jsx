@@ -11,19 +11,17 @@ const LoginForm = ({ onSubmit, error }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (onSubmit) {
-      onSubmit(formData);
-    }
-  };
-
   const handleChange = (e) => {
-    const { id, value, type, checked } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [id]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
 
   const togglePasswordVisibility = () => {
@@ -39,6 +37,7 @@ const LoginForm = ({ onSubmit, error }) => {
           <label htmlFor="username">Usuario</label>
           <FormInput
             id="username"
+            name="username"
             type="text"
             placeholder="Ingresa tu usuario"
             value={formData.username}
@@ -52,6 +51,7 @@ const LoginForm = ({ onSubmit, error }) => {
           <div className="password-field-wrapper">
             <FormInput
               id="password"
+              name="password"
               type={showPassword ? 'text' : 'password'}
               placeholder="Ingresa tu contraseña"
               value={formData.password}
@@ -74,6 +74,7 @@ const LoginForm = ({ onSubmit, error }) => {
             <input
               type="checkbox"
               id="rememberMe"
+              name="rememberMe"
               checked={formData.rememberMe}
               onChange={handleChange}
             />
