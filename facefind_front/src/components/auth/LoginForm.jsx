@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import FormInput from '../common/FormInput';
 
 const LoginForm = ({ onSubmit, error }) => {
@@ -8,6 +9,7 @@ const LoginForm = ({ onSubmit, error }) => {
     password: '',
     rememberMe: false
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -22,6 +24,10 @@ const LoginForm = ({ onSubmit, error }) => {
       ...prev,
       [id]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -43,14 +49,24 @@ const LoginForm = ({ onSubmit, error }) => {
         
         <div className="form-group">
           <label htmlFor="password">Contraseña</label>
-          <FormInput
-            id="password"
-            type="password"
-            placeholder="Ingresa tu contraseña"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+          <div className="password-field-wrapper">
+            <FormInput
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Ingresa tu contraseña"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="password-toggle-btn"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
         
         <div className="form-options">
