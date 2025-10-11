@@ -27,9 +27,9 @@ const Header = () => {
         </Link>
         <nav className="nav">
           <ul className="nav-list">
-            <li><a href="#about">Acerca de</a></li>
-            <li><a href="#statistics">Estadísticas</a></li>
-            <li><a href="#contact">Contacto</a></li>
+            <li><Link to="/acerca-de" className="nav-link">Acerca de</Link></li>
+            <li><Link to="/estadisticas" className="nav-link">Estadísticas</Link></li>
+            <li><Link to="/contacto" className="nav-link">Contacto</Link></li>
             
             {/* Mostrar "Ver Casos" solo si está autenticado */}
             {isAuthenticated() && (
