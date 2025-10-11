@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
+import { createUser, checkBlacklist } from '../../services/userService';
 import '../../styles/admin/AddUserModal.css';
 
-const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
+const AddUserModal = ({ isOpen, onClose, onAddUser, onReload }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    nombre: '',
     email: '',
     dni: '',
     role: 'user',
     password: ''
   });
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -20,11 +22,11 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validaciones básicas
-    if (!formData.name || !formData.email || !formData.dni || !formData.password) {
+    if (!formData.nombre || !formData.email || !formData.dni || !formData.password) {
       alert('Por favor completa todos los campos');
       return;
     }
@@ -41,22 +43,56 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
       return;
     }
 
-    // Llamar a la función de agregar usuario
-    onAddUser(formData);
+    setLoading(true);
 
-    // Limpiar formulario
-    setFormData({
-      name: '',
-      email: '',
-      dni: '',
-      role: 'user',
-      password: ''
-    });
+    try {
+      // Verificar blacklist en el backend
+      const blacklistCheck = await checkBlacklist({
+        email: formData.email,
+        dni: formData.dni
+      });
+
+      if (blacklistCheck.is_blacklisted) {
+        alert(`No se puede registrar: ${blacklistCheck.reason}`);
+        setLoading(false);
+        return;
+      }
+
+      // Crear usuario
+      await createUser(formData);
+
+      alert('Usuario agregado exitosamente');
+
+      // Limpiar formulario
+      setFormData({
+        nombre: '',
+        email: '',
+        dni: '',
+        role: 'user',
+        password: ''
+      });
+
+      // Recargar lista de usuarios
+      if (onReload) {
+        await onReload();
+      }
+
+      if (onAddUser) {
+        onAddUser();
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Error creating user:', err);
+      alert(err.message || 'Error al agregar usuario');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
     setFormData({
-      name: '',
+      nombre: '',
       email: '',
       dni: '',
       role: 'user',
@@ -76,15 +112,16 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
         
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label htmlFor="name">Nombre Completo</label>
+            <label htmlFor="nombre">Nombre Completo</label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="nombre"
+              name="nombre"
+              value={formData.nombre}
               onChange={handleInputChange}
               placeholder="Ingresa el nombre completo"
               required
+              disabled={loading}
             />
           </div>
 
@@ -98,6 +135,7 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
               onChange={handleInputChange}
               placeholder="usuario@ejemplo.com"
               required
+              disabled={loading}
             />
           </div>
 
@@ -113,6 +151,7 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
               maxLength="8"
               pattern="\d{8}"
               required
+              disabled={loading}
             />
           </div>
 
@@ -126,6 +165,7 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
               onChange={handleInputChange}
               placeholder="Contraseña temporal"
               required
+              disabled={loading}
             />
           </div>
 
@@ -136,6 +176,7 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
               name="role"
               value={formData.role}
               onChange={handleInputChange}
+              disabled={loading}
             >
               <option value="user">Usuario</option>
               <option value="admin">Administrador</option>
@@ -143,11 +184,11 @@ const AddUserModal = ({ isOpen, onClose, onAddUser }) => {
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn-cancel" onClick={handleClose}>
+            <button type="button" className="btn-cancel" onClick={handleClose} disabled={loading}>
               Cancelar
             </button>
-            <button type="submit" className="btn-submit">
-              Agregar Usuario
+            <button type="submit" className="btn-submit" disabled={loading}>
+              {loading ? 'Agregando...' : 'Agregar Usuario'}
             </button>
           </div>
         </form>

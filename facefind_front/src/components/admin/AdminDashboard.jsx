@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { getAllUsers } from '../../services/userService';
+import { getAllCasos } from '../../services/casoService';
 import MetricCard from './MetricCard';
 import RecentActivity from './RecentActivity';
 import CaseStatusChart from './CaseStatusChart';
@@ -11,16 +13,50 @@ const AdminDashboard = () => {
     resolvedCases: 0,
     pendingCases: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulación de carga de métricas
-    setMetrics({
-      totalUsers: 1245,
-      activeCases: 89,
-      resolvedCases: 156,
-      pendingCases: 34
-    });
+    loadMetrics();
   }, []);
+
+  const loadMetrics = async () => {
+    try {
+      setLoading(true);
+      
+      // Cargar usuarios y casos en paralelo
+      const [usersData, casosData] = await Promise.all([
+        getAllUsers(),
+        getAllCasos()
+      ]);
+
+      // Contar casos por estado
+      const activeCases = casosData.filter(c => c.status === 'activo').length;
+      const resolvedCases = casosData.filter(c => c.status === 'resuelto').length;
+      const pendingCases = casosData.filter(c => c.status === 'pendiente').length;
+
+      setMetrics({
+        totalUsers: usersData.length,
+        activeCases,
+        resolvedCases,
+        pendingCases
+      });
+    } catch (err) {
+      console.error('Error loading metrics:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="admin-dashboard">
+        <div className="dashboard-header">
+          <h1>Dashboard Administrativo</h1>
+          <p>Cargando métricas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-dashboard">

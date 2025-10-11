@@ -66,7 +66,7 @@ export default function UserCaseCards({ cases }) {
             <div className="case-photo-wrapper">
               <img 
                 src={caso.img || caso.foto || "https://via.placeholder.com/120"} 
-                alt={caso.nombre_completo || caso.title}
+                alt={caso.PersonaDesaparecida?.nombre_completo || caso.title}
                 className="case-photo-main"
               />
             </div>
@@ -75,7 +75,7 @@ export default function UserCaseCards({ cases }) {
             <div className="case-content">
               <div className="case-header-row">
                 <h3 className="case-name-large">
-                  {caso.nombre_completo || caso.title || "Sin nombre"}
+                  {caso.PersonaDesaparecida?.nombre_completo || caso.title || "Sin nombre"}
                 </h3>
                 <span className={`case-status-badge ${caso.status || 'pendiente'}`}>
                   {caso.status === 'activo' ? 'En búsqueda' : 

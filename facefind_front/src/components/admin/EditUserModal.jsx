@@ -10,17 +10,18 @@ import '../../styles/admin/EditUserModal.css';
  */
 const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    nombre: '',
     email: '',
     dni: '',
     role: 'user'
   });
+  const [loading, setLoading] = useState(false);
 
   // Cargar datos del usuario cuando cambia
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        nombre: user.nombre || '',
         email: user.email || '',
         dni: user.dni || '',
         role: user.role || 'user'
@@ -38,11 +39,11 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validaciones básicas
-    if (!formData.name || !formData.email || !formData.dni) {
+    if (!formData.nombre || !formData.email || !formData.dni) {
       alert('Por favor completa todos los campos');
       return;
     }
@@ -60,12 +61,19 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
     }
 
     // Validar longitud del nombre
-    if (formData.name.length < 3) {
+    if (formData.nombre.length < 3) {
       alert('El nombre debe tener al menos 3 caracteres');
       return;
     }
 
-    onUpdateUser(formData);
+    setLoading(true);
+    try {
+      await onUpdateUser(formData);
+    } catch (err) {
+      console.error('Error in handleSubmit:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -96,15 +104,16 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="edit-name">Nombre completo *</label>
+            <label htmlFor="edit-nombre">Nombre completo *</label>
             <input
               type="text"
-              id="edit-name"
-              name="name"
-              value={formData.name}
+              id="edit-nombre"
+              name="nombre"
+              value={formData.nombre}
               onChange={handleInputChange}
               placeholder="Ej: Juan Pérez"
               required
+              disabled={loading}
             />
           </div>
 
@@ -118,6 +127,7 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
               onChange={handleInputChange}
               placeholder="usuario@example.com"
               required
+              disabled={loading}
             />
           </div>
 
@@ -132,6 +142,7 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
               placeholder="12345678"
               maxLength="8"
               required
+              disabled={loading}
             />
           </div>
 
@@ -142,24 +153,24 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
               name="role"
               value={formData.role}
               onChange={handleInputChange}
+              disabled={loading}
             >
               <option value="user">Usuario</option>
-              <option value="moderator">Moderador</option>
               <option value="admin">Administrador</option>
             </select>
           </div>
 
           <div className="form-info">
-            <p>📅 Registrado: {user.registeredDate}</p>
+            <p>📅 Registrado: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</p>
             <p>🔑 ID: {user.id}</p>
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn-cancel" onClick={handleClose}>
+            <button type="button" className="btn-cancel" onClick={handleClose} disabled={loading}>
               Cancelar
             </button>
-            <button type="submit" className="btn-submit">
-              Guardar Cambios
+            <button type="submit" className="btn-submit" disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>

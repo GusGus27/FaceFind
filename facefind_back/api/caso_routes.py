@@ -117,7 +117,11 @@ def create_caso():
 @caso_bp.route("/", methods=["GET"])
 def get_all_casos():
     try:
-        response = supabase.table("Caso").select("*").order("created_at", desc=True).execute()
+        # Hacer JOIN con PersonaDesaparecida para obtener datos del desaparecido
+        response = supabase.table("Caso").select(
+            "*, PersonaDesaparecida(*)"
+        ).order("created_at", desc=True).execute()
+        
         if hasattr(response, "error") and response.error:
             return jsonify({"error": str(response.error)}), 500
 
@@ -130,7 +134,11 @@ def get_all_casos():
 @caso_bp.route("/<int:caso_id>", methods=["GET"])
 def get_caso(caso_id):
     try:
-        response = supabase.table("Caso").select("*").eq("id", caso_id).single().execute()
+        # Hacer JOIN con PersonaDesaparecida
+        response = supabase.table("Caso").select(
+            "*, PersonaDesaparecida(*)"
+        ).eq("id", caso_id).single().execute()
+        
         if hasattr(response, "error") and response.error:
             return jsonify({"error": str(response.error)}), 404
 
@@ -216,3 +224,21 @@ def get_caso_stats():
         return jsonify({"success": True, "data": stats})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ✅ Obtener casos de un usuario específico
+@caso_bp.route("/user/<int:user_id>", methods=["GET"])
+def get_casos_by_user(user_id):
+    try:
+        # Hacer JOIN con PersonaDesaparecida
+        response = supabase.table("Caso").select(
+            "*, PersonaDesaparecida(*)"
+        ).eq("usuario_id", user_id).order("created_at", desc=True).execute()
+        
+        if hasattr(response, "error") and response.error:
+            return jsonify({"error": str(response.error)}), 500
+
+        return jsonify({"success": True, "data": response.data, "count": len(response.data)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
