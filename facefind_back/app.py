@@ -7,8 +7,14 @@ import json
 import traceback  # Agregar para mejor debugging
 from face_detection_service import FaceDetectionService
 
+# 🔹 Importar blueprints de autenticación
+from api.auth_routes import auth_bp
+
 app = Flask(__name__)
 CORS(app)  # Permitir requests desde el frontend
+
+# 🔹 Registrar blueprints
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 # Inicializar el servicio de detección
 try:
@@ -167,10 +173,20 @@ def clean_results_for_json(results):
     return clean_results
 
 if __name__ == '__main__':
-    print("Iniciando Face Detection API...")
-    print("Endpoints disponibles:")
-    print("   GET  /health - Estado del servicio")
-    print("   POST /detect-faces - Detectar rostros en imagen")
+    print("=" * 50)
+    print("🚀 Iniciando FaceFind API Server")
+    print("=" * 50)
+    print("\n📍 Endpoints disponibles:")
+    print("\n🔐 Autenticación:")
+    print("   POST /auth/signup    - Registrar nuevo usuario")
+    print("   POST /auth/signin    - Iniciar sesión")
+    print("   POST /auth/signout   - Cerrar sesión")
+    print("\n🎯 Detección de rostros:")
+    print("   GET  /health         - Estado del servicio")
+    print("   POST /detect-faces   - Detectar rostros en imagen")
     print("   GET  /get-known-faces - Lista de caras conocidas")
+    print("\n" + "=" * 50)
+    print(f"✅ Servidor corriendo en http://localhost:5000")
+    print("=" * 50 + "\n")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
