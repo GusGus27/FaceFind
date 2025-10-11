@@ -4,12 +4,18 @@ import { useAuth } from '../../context/AuthContext';
 import '../../styles/common/Header.css';
 
 const Header = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  // Obtener nombre del usuario (puede venir de diferentes propiedades)
+  const getUserName = () => {
+    if (!user) return '';
+    return user.nombre || user.name || user.email?.split('@')[0] || 'Usuario';
   };
 
   return (
@@ -24,18 +30,26 @@ const Header = () => {
             <li><a href="#about">Acerca de</a></li>
             <li><a href="#statistics">Estadísticas</a></li>
             <li><a href="#contact">Contacto</a></li>
-            <li><Link to="/casos" className="nav-link">Ver Casos</Link></li>
+            
+            {/* Mostrar "Ver Casos" solo si está autenticado */}
+            {isAuthenticated() && (
+              <li><Link to="/casos" className="nav-link">Ver Casos</Link></li>
+            )}
+            
+            {/* Mostrar "Registrar Caso" siempre, pero redirigirá a login si no está autenticado */}
             <li><Link to="/registrar_caso" className="nav-link register-case-link">Registrar Caso</Link></li>
+            
+            {/* Panel admin solo para administradores */}
             {isAdmin() && (
               <li><Link to="/admin" className="nav-link admin-link">⚙️ Panel Admin</Link></li>
             )}
           </ul>
         </nav>
         <div className="auth-buttons">
-          {user ? (
+          {isAuthenticated() ? (
             <>
               <span className="user-info">
-                👤 {user.name} {isAdmin() && <span className="admin-badge">Admin</span>}
+                👤 {getUserName()} {isAdmin() && <span className="admin-badge">Admin</span>}
               </span>
               <button className="btn-logout" onClick={handleLogout}>Cerrar Sesión</button>
             </>

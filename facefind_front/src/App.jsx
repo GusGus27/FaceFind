@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import LandingPage from './views/LandingPage';
 import Login from './views/Login';
 import Register from './views/Register';
@@ -26,12 +27,38 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/verify-email/:token" element={<EmailVerification />} />
-      <Route path="/casos" element={<UserCasesView />} />
-      <Route path="/admin" element={<AdminPanel />} />
-      <Route path="/casos/:caseId/editar" element={<EditCasePage />} />
-      <Route path="/admin/casos/:caseId/editar" element={<AdminEditCasePage />} />
-      <Route path="/admin/camera" element={<CameraManagement />} />
-      <Route path="/registrar_caso" element={<CaseRegistration />} />
+      
+      {/* Rutas protegidas - requieren autenticación */}
+      <Route path="/registrar_caso" element={
+        <ProtectedRoute>
+          <CaseRegistration />
+        </ProtectedRoute>
+      } />
+      <Route path="/casos" element={
+        <ProtectedRoute>
+          <UserCasesView />
+        </ProtectedRoute>
+      } />
+      <Route path="/casos/:caseId/editar" element={
+        <ProtectedRoute>
+          <EditCasePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <AdminPanel />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/casos/:caseId/editar" element={
+        <ProtectedRoute>
+          <AdminEditCasePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/camera" element={
+        <ProtectedRoute>
+          <CameraManagement />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
