@@ -9,8 +9,8 @@ import ResetPassword from './views/ResetPassword';
 import EmailVerification from './views/EmailVerification';
 import UserCasesView from './views/UserCasesView';
 import AdminPanel from './views/AdminPanel';
-import EditCasePage from './components/CaseEdit/EditCasePage';
-import AdminEditCasePage from './components/CaseEdit/AdminEditCasePage';
+import EditCasePage from './components/cases/EditCasePage';
+import AdminEditCasePage from './components/admin/AdminEditCasePage';
 
 
 import CaseRegistration from './views/CaseRegistration';

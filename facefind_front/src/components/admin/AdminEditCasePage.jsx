@@ -6,7 +6,7 @@ import {
   FileText, AlertTriangle, ArrowLeft, Shield,
   Archive, RefreshCw
 } from 'lucide-react';
-import './EditCasePage.css';
+import '../../styles/cases/EditCasePage.css';
 
 /**
  * Componente de edición de casos para ADMINISTRADORES

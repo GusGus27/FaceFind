@@ -5,7 +5,7 @@ import {
   Clock, Image as ImageIcon, User, MapPin, Calendar,
   FileText, AlertTriangle, ArrowLeft
 } from 'lucide-react';
-import './EditCasePage.css';
+import '../../styles/cases/EditCasePage.css';
 
 /**
  * Componente de edición de casos para USUARIOS REGISTRADOS
