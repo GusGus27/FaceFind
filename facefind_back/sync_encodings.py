@@ -30,7 +30,7 @@ def main():
         result = upload_encodings_to_cloud()
         
         if result["success"]:
-            print(f"✅ {result['message']}")
+            #print(f"✅ {result['message']}")
             print(f"📁 Archivo: {result['file_name']}")
             print(f"📦 Tamaño: {result['size']} bytes ({result['size']/1024:.2f} KB)")
         else:
