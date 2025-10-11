@@ -1,5 +1,59 @@
-/facefind_back/__pycache__/
-/facefind_back/test.py
-/facefind_back/encodings.pickle
-node_modules
+# ============================================
+# BACKEND (Python/Flask)
+# ============================================
+
+# Python
+facefind_back/__pycache__/
+facefind_back/facefind/camera/__pycache__/
+facefind_back/*.pyc
+facefind_back/api/__pycache__
+facefind_back/facefind/__pycache__
+facefind_back/test.py
+facefind_back/encodings.pickle
+facefind_back/encodings_test.pickle
 facefind_back/.env
+facefind_back/facefind/dataset_personas/
+facefind_back/facefind/dataset_personas/*
+
+# ============================================
+# FRONTEND (React/Vite)
+# ============================================
+
+# Dependencies
+facefind_front/node_modules/
+node_modules/
+
+# Build outputs
+facefind_front/dist/
+facefind_front/dist-ssr/
+
+# Logs
+facefind_front/logs/
+facefind_front/*.log
+facefind_front/npm-debug.log*
+facefind_front/yarn-debug.log*
+facefind_front/yarn-error.log*
+facefind_front/pnpm-debug.log*
+facefind_front/lerna-debug.log*
+
+# Local files
+facefind_front/*.local
+
+# ============================================
+# EDITOR & OS
+# ============================================
+
+# VSCode
+.vscode/*
+!.vscode/extensions.json
+
+# IDEs
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store

@@ -12,10 +12,11 @@ import UserCasesView from './views/UserCasesView';
 import AdminPanel from './views/AdminPanel';
 import EditCasePage from './components/cases/EditCasePage';
 import AdminEditCasePage from './components/admin/AdminEditCasePage';
-
-
 import CaseRegistration from './views/CaseRegistration';
 import CameraManagement from './views/CameraManagement';
+import AboutPage from './views/AboutPage';
+import StatisticsPage from './views/StatisticsPage';
+import ContactPage from './views/ContactPage';
 import './App.css';
 
 function App() {
@@ -27,6 +28,11 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/verify-email/:token" element={<EmailVerification />} />
+      
+      {/* Rutas públicas informativas */}
+      <Route path="/acerca-de" element={<AboutPage />} />
+      <Route path="/estadisticas" element={<StatisticsPage />} />
+      <Route path="/contacto" element={<ContactPage />} />
       
       {/* Rutas protegidas - requieren autenticación */}
       <Route path="/registrar_caso" element={

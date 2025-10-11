@@ -1,14 +1,17 @@
+import sys
+from pathlib import Path
+
+# Agregar el directorio padre al path para importar módulos
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from flask import Flask, jsonify
-from supabase import create_client, Client
-import os
+from config import Config
+from services.supabase_client import get_supabase_client
 
 app = Flask(__name__)
 
-# Configuración
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+# Obtener cliente Supabase con Service Role Key
+supabase = get_supabase_client()
 
 @app.route("/make_admin/<user_id>", methods=["POST"])
 def make_admin(user_id):

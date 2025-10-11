@@ -3,6 +3,10 @@ Script de diagnóstico para problemas de Supabase Storage
 """
 import os
 import sys
+from pathlib import Path
+
+# Agregar el directorio padre al path para importar módulos
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Cargar variables de entorno
 try:
