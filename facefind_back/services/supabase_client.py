@@ -1,23 +1,15 @@
+"""
+Cliente de Supabase centralizado
+"""
 from supabase import create_client
-from dotenv import load_dotenv
-import os
+from config import Config
 
-# 🔹 Cargar las variables desde el archivo .env
-load_dotenv()
+# Crear cliente Supabase usando configuración centralizada
+supabase = create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)
 
-# 🔹 Leer las variables de entorno
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-# 🔹 Validar que existan
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("⚠️ Las variables SUPABASE_URL o SUPABASE_KEY no están configuradas correctamente en el archivo .env")
-
-# 🔹 Crear cliente Supabase
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_supabase_client():
     """
     Retorna una instancia del cliente Supabase.
-    Útil para scripts independientes.
+    Útil para scripts independientes y módulos que necesiten su propia instancia.
     """
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    return create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)

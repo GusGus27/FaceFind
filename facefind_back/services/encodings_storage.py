@@ -2,7 +2,11 @@
 Servicio para gestionar encodings en Supabase Storage
 """
 import os
-from services.supabase_client import supabase
+from supabase import create_client
+from config import Config
+
+# Crear cliente con Service Role Key para operaciones de Storage
+supabase_storage = create_client(Config.SUPABASE_URL, Config.SUPABASE_SERVICE_ROLE_KEY)
 
 BUCKET_NAME = "face-encodings"
 FILE_NAME = "encodings.pickle"
@@ -21,14 +25,14 @@ def upload_encodings_to_cloud(local_path: str = "encodings.pickle") -> dict:
         
         # Verificar si existe y eliminarlo
         try:
-            files = supabase.storage.from_(BUCKET_NAME).list()
+            files = supabase_storage.storage.from_(BUCKET_NAME).list()
             if any(f['name'] == FILE_NAME for f in files):
-                supabase.storage.from_(BUCKET_NAME).remove([FILE_NAME])
+                supabase_storage.storage.from_(BUCKET_NAME).remove([FILE_NAME])
         except:
             pass
         
         # Subir archivo
-        supabase.storage.from_(BUCKET_NAME).upload(
+        supabase_storage.storage.from_(BUCKET_NAME).upload(
             FILE_NAME,
             file_data,
             file_options={"content-type": "application/octet-stream"}
@@ -45,7 +49,7 @@ def download_encodings_from_cloud(local_path: str = "encodings.pickle") -> dict:
     """
     try:
         # Descargar archivo
-        data = supabase.storage.from_(BUCKET_NAME).download(FILE_NAME)
+        data = supabase_storage.storage.from_(BUCKET_NAME).download(FILE_NAME)
         
         if not data:
             return {"success": False, "error": "Archivo no encontrado"}
@@ -119,7 +123,7 @@ def get_encodings_status() -> dict:
     }
     
     try:
-        files = supabase.storage.from_(BUCKET_NAME).list()
+        files = supabase_storage.storage.from_(BUCKET_NAME).list()
         
         for file in files:
             if file['name'] == FILE_NAME:

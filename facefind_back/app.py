@@ -1,57 +1,115 @@
+"""
+FaceFind API - Servidor Principal
+Sistema de reconocimiento facial para localización de personas desaparecidas
+"""
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import cv2
 import numpy as np
 import base64
-import json
-import traceback  # Agregar para mejor debugging
-from face_detection_service import FaceDetectionService
+import traceback
 
-# 🔹 Importar blueprints de autenticación
+# Configuración
+from config import Config
+
+# Servicios
+from services.face_detection_service import FaceDetectionService
+
+# Blueprints (Rutas API)
 from api.auth_routes import auth_bp
+from api.user_routes import user_bp
+from api.caso_routes import caso_bp
+from api.encodings_routes import encodings_bp
 
+# Inicializar aplicación Flask
 app = Flask(__name__)
-CORS(app)  # Permitir requests desde el frontend
+app.config.from_object(Config)
 
-# 🔹 Registrar blueprints
-app.register_blueprint(auth_bp, url_prefix='/auth')
+# Configurar CORS
+CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
 
-# Inicializar el servicio de detección
+# Registrar blueprints
+app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(user_bp, url_prefix="/users")
+app.register_blueprint(caso_bp, url_prefix="/casos")
+app.register_blueprint(encodings_bp, url_prefix="/encodings")
+
+# Inicializar servicio de detección facial
+detection_service = None
 try:
-    detection_service = FaceDetectionService(tolerance=0.6)
-    print(f"Servicio inicializado con {len(detection_service.known_encodings)} encodings")
+    detection_service = FaceDetectionService(
+        encodings_path=Config.ENCODINGS_FILE,
+        tolerance=Config.FACE_TOLERANCE
+    )
+    print(f"✅ Servicio de detección inicializado con {len(detection_service.known_encodings)} encodings")
 except Exception as e:
-    print(f"Error inicializando servicio: {e}")
-    detection_service = None
+    print(f"⚠️  Error inicializando servicio de detección: {e}")
+    print("   El servidor continuará sin el servicio de detección facial")
+
+# ============================================================================
+# ENDPOINTS PRINCIPALES
+# ============================================================================
+
+@app.route('/')
+def index():
+    """Endpoint raíz - Información del API"""
+    return jsonify({
+        "message": "🔍 FaceFind API - Sistema de Reconocimiento Facial",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "auth": "/auth",
+            "users": "/users",
+            "casos": "/casos",
+            "encodings": "/encodings",
+            "detection": "/detect-faces"
+        }
+    })
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Verificar que el servicio está funcionando"""
-    if detection_service is None:
-        return jsonify({
-            "status": "ERROR",
-            "error": "Servicio no inicializado"
-        }), 500
-    
-    return jsonify({
+    """Verificar estado del servicio"""
+    status = {
         "status": "OK",
-        "known_faces": len(detection_service.known_encodings),
-        "service": "Face Detection API"
-    })
+        "service": "FaceFind API",
+        "detection_service": "available" if detection_service else "unavailable"
+    }
+    
+    if detection_service:
+        status["known_faces"] = len(detection_service.known_encodings)
+    
+    return jsonify(status), 200 if detection_service else 503
+
+# ============================================================================
+# ENDPOINTS DE DETECCIÓN FACIAL
+# ============================================================================
 
 @app.route('/detect-faces', methods=['POST'])
 def detect_faces():
     """
     Endpoint principal para detectar rostros
-    Recibe: imagen en base64
-    Retorna: resultados de detección
+    
+    Request:
+        {
+            "image": "base64_encoded_image"
+        }
+    
+    Response:
+        {
+            "success": true,
+            "data": {
+                "timestamp": 1234567890.123,
+                "faces_detected": 2,
+                "faces": [...]
+            }
+        }
     """
     try:
         if detection_service is None:
             return jsonify({
                 "success": False,
                 "error": "Servicio de detección no disponible"
-            }), 500
+            }), 503
 
         # Obtener datos del request
         data = request.get_json()
@@ -82,7 +140,7 @@ def detect_faces():
                 "error": "No se pudo decodificar la imagen"
             }), 400
         
-        print(f"Imagen decodificada: {frame.shape}")
+        print(f"✅ Imagen decodificada: {frame.shape}")
         
         # Procesar frame
         results = detection_service.process_frame(frame)
@@ -90,7 +148,7 @@ def detect_faces():
         # Limpiar resultados para JSON
         clean_results = clean_results_for_json(results)
         
-        print(f"Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados")
+        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados")
         
         return jsonify({
             "success": True,
@@ -99,7 +157,7 @@ def detect_faces():
         
     except Exception as e:
         error_trace = traceback.format_exc()
-        print(f"Error en detect_faces: {str(e)}")
+        print(f"❌ Error en detect_faces: {str(e)}")
         print(f"Traceback: {error_trace}")
         
         return jsonify({
@@ -110,15 +168,26 @@ def detect_faces():
 
 @app.route('/get-known-faces', methods=['GET'])
 def get_known_faces():
-    """Obtener lista de caras conocidas"""
+    """Obtener lista de caras conocidas registradas en el sistema"""
     if detection_service is None:
-        return jsonify({"error": "Servicio no disponible"}), 500
+        return jsonify({
+            "success": False,
+            "error": "Servicio no disponible"
+        }), 503
         
     unique_names = list(set(detection_service.known_names))
+    
     return jsonify({
-        "known_faces": unique_names,
-        "total_encodings": len(detection_service.known_encodings)
+        "success": True,
+        "data": {
+            "known_faces": unique_names,
+            "total_encodings": len(detection_service.known_encodings)
+        }
     })
+
+# ============================================================================
+# FUNCIONES AUXILIARES
+# ============================================================================
 
 def clean_results_for_json(results):
     """Limpia los resultados para que sean serializables en JSON"""
@@ -172,21 +241,35 @@ def clean_results_for_json(results):
     
     return clean_results
 
+# ============================================================================
+# INICIO DE LA APLICACIÓN
+# ============================================================================
+
 if __name__ == '__main__':
-    print("=" * 50)
-    print("🚀 Iniciando FaceFind API Server")
-    print("=" * 50)
-    print("\n📍 Endpoints disponibles:")
-    print("\n🔐 Autenticación:")
+    print("=" * 70)
+    print("🚀 INICIANDO FACEFIND API SERVER")
+    print("=" * 70)
+    print("\n📍 ENDPOINTS DISPONIBLES:")
+    print("\n🔐 Autenticación (/auth):")
     print("   POST /auth/signup    - Registrar nuevo usuario")
     print("   POST /auth/signin    - Iniciar sesión")
     print("   POST /auth/signout   - Cerrar sesión")
-    print("\n🎯 Detección de rostros:")
+    print("\n👥 Usuarios (/users):")
+    print("   GET  /users          - Listar usuarios")
+    print("   GET  /users/<id>     - Obtener usuario")
+    print("\n📁 Casos (/casos):")
+    print("   GET  /casos          - Listar casos")
+    print("   POST /casos          - Crear caso")
+    print("   GET  /casos/<id>     - Obtener caso")
+    print("\n🎯 Encodings (/encodings):")
+    print("   POST /encodings      - Generar encodings")
+    print("\n🔍 Detección Facial:")
     print("   GET  /health         - Estado del servicio")
     print("   POST /detect-faces   - Detectar rostros en imagen")
     print("   GET  /get-known-faces - Lista de caras conocidas")
-    print("\n" + "=" * 50)
-    print(f"✅ Servidor corriendo en http://localhost:5000")
-    print("=" * 50 + "\n")
+    print("\n" + "=" * 70)
+    print(f"✅ Servidor corriendo en http://{Config.HOST}:{Config.PORT}")
+    print(f"📊 Debug Mode: {'ON' if Config.DEBUG else 'OFF'}")
+    print("=" * 70 + "\n")
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)

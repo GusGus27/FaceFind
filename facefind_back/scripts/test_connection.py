@@ -1,8 +1,13 @@
 """
 Test rápido de conexión a Supabase
 """
-from services.supabase_client import supabase
 import sys
+from pathlib import Path
+
+# Agregar el directorio padre al path para importar módulos
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from services.supabase_client import supabase
 
 print("🔍 Test de conexión a Supabase\n")
 
