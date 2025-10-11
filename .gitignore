@@ -11,6 +11,7 @@ facefind_back/facefind/__pycache__
 facefind_back/services/__pycache__
 facefind_back/test.py
 facefind_back/encodings.pickle
+*.pickle
 facefind_back/encodings_test.pickle
 facefind_back/.env
 facefind_back/facefind/dataset_personas/
