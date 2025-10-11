@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { uploadFotos } from "../services/fotoService";
 import FormStep1 from '../components/registration/FormStep1';
 import FormStep2 from '../components/registration/FormStep2';
 import FormStep3 from '../components/registration/FormStep3';
@@ -323,9 +324,27 @@ const CaseRegistration = () => {
       
       console.log('✅ Caso registrado exitosamente:', data);
       
-      // TODO: Si hay fotos, subirlas después de crear el caso
-      // await uploadPhotos(data.data[0].id);
-      
+      // ✅ Subir fotos después de crear el caso
+      const casoId = data.caso_id || data.data?.[0]?.id;
+
+      if (casoId) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("caso_id", casoId);
+
+        // Adjuntar las fotos si existen
+        const { photos } = formData;
+        for (const [type, file] of Object.entries(photos)) {
+          if (file) formDataUpload.append(type, file);
+        }
+
+        try {
+          const uploadResponse = await uploadFotos(formDataUpload);
+          console.log("📸 Fotos subidas correctamente:", uploadResponse);
+        } catch (uploadError) {
+          console.error("❌ Error subiendo fotos:", uploadError);
+        }
+      }
+
     } catch (error) {
       console.error('❌ Error al registrar el caso:', error);
       alert(`Ocurrió un error al registrar el caso: ${error.message}`);
