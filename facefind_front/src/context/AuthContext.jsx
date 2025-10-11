@@ -38,9 +38,12 @@ const login = async (email, password) => {
   setLoading(true);
   try {
     const response = await authService.signIn(email, password);
+
     if (response?.user) {
+      // Asegúrate de guardar el user con sus metadatos
       setUser(response.user);
     }
+
     return response;
   } catch (error) {
     console.error("❌ Error al iniciar sesión:", error);
@@ -63,7 +66,14 @@ const login = async (email, password) => {
 
   // 🔹 Helpers
   //const isAdmin = () => user?.role === "admin";
-  const isAdmin = () => user?.email === "admin@facefind.com";
+  //const isAdmin = () => user?.email === "admin@facefind.com";
+  //const isAdmin = () => user?.app_metadata?.role === "admin";
+  const isAdmin = () => {
+  if (!user) return false;
+  return user.app_metadata?.role === "admin" || user.email === "admin@facefind.com";
+};
+
+
   const isAuthenticated = () => user !== null;
 
   return (

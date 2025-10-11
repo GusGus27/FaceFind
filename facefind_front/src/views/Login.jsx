@@ -19,16 +19,14 @@ const Login = () => {
       // Llamar al método login del contexto
       const response = await login(username, password);
 
-      if (response?.user) {
-        // Redirigir según rol o tipo de usuario
-        if (response.user.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/casos");
+        if (response?.user) {
+          if (response.user.email === "admin@facefind.com") {
+            navigate("/admin");
+          } else {
+            navigate("/casos");
+          }
         }
-      } else {
-        setError("Credenciales inválidas");
-      }
+
     } catch (err) {
       console.error("❌ Error de login:", err);
       setError(err.message || "Error al iniciar sesión");

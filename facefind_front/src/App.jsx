@@ -19,26 +19,23 @@ import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/verify-email/:token" element={<EmailVerification />} />
-        <Route path="/casos" element={<UserCasesView />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        {/* Ruta para usuarios */}
-        <Route path="/casos/:caseId/editar" element={<EditCasePage />} />
-        {/* Rutas para administradores */}
-        <Route path="/admin/casos/:caseId/editar" element={<AdminEditCasePage />} />
-
-        <Route path="/admin/camera" element={<CameraManagement />} />
-        <Route path="/registrar_caso" element={<CaseRegistration />} />
-      </Routes>
-    </AuthProvider>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/verify-email/:token" element={<EmailVerification />} />
+      <Route path="/casos" element={<UserCasesView />} />
+      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/casos/:caseId/editar" element={<EditCasePage />} />
+      <Route path="/admin/casos/:caseId/editar" element={<AdminEditCasePage />} />
+      <Route path="/admin/camera" element={<CameraManagement />} />
+      <Route path="/registrar_caso" element={<CaseRegistration />} />
+    </Routes>
   );
 }
-
 export default App;
+
+// Nota: El AuthProvider se ha movido a main.jsx para envolver toda la aplicación
+// y proporcionar el contexto de autenticación a todos los componentes y vistas.
