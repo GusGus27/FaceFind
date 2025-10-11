@@ -79,7 +79,7 @@ const LoginForm = ({ onSubmit, error }) => {
             />
             <label htmlFor="rememberMe">Recuérdame</label>
           </div>
-          <Link to="/forgot-password" className="forgot-password">
+          <Link to="/forgot-password" className="forgot-password-link">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
