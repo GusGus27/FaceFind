@@ -4,13 +4,14 @@
 
 # Python
 facefind_back/__pycache__/
+facefind_back/facefind/camera/__pycache__/
 facefind_back/*.pyc
 facefind_back/test.py
 facefind_back/encodings.pickle
 facefind_back/encodings_test.pickle
 facefind_back/.env
-facefind_back/dataset_personas/
-facefind_back/dataset_personas/*
+facefind_back/facefind/dataset_personas/
+facefind_back/facefind/dataset_personas/*
 
 # ============================================
 # FRONTEND (React/Vite)
