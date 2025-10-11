@@ -1,137 +1,233 @@
 .user-cases-container {
-  padding: 1.5rem;
-  max-width: 1200px;
+  padding: 2.5rem 2rem;
+  max-width: 1600px; /* 🔧 AUMENTADO de 1400px a 1600px */
   margin: 0 auto;
+  min-height: calc(100vh - 80px);
+  background: linear-gradient(135deg, #f8f9ff 0%, #f3f4ff 100%);
 }
 
 .user-cases-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7f0;
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #111827;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  background: linear-gradient(135deg, #6f3be0 0%, #7f4ae8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* ----- Filtros ----- */
 .filter-select {
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.5rem;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e5e7f0;
+  font-size: 1rem;
   background: white;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(111, 59, 224, 0.08);
+  color: #475569;
+  font-weight: 500;
 }
 
-/* ----- Cards ----- */
+.filter-select:hover {
+  border-color: #7f4ae8;
+  box-shadow: 0 4px 8px rgba(111, 59, 224, 0.15);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #6f3be0;
+  box-shadow: 0 0 0 3px rgba(111, 59, 224, 0.1);
+}
+
+/* ----- Cards - MUCHO MÁS ANCHAS Y ESPACIOSAS ----- */
 .cases-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); /* 🔧 Optimizado para mejor distribución */
+  gap: 2.5rem; /* 🔧 AUMENTADO: Más espacio entre cards */
+  margin-bottom: 2rem;
+  max-width: 100%;
+  padding: 0.5rem; /* 🔧 Padding para evitar sobreposición */
 }
 
 .case-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 2px solid #e5e7f0;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 12px rgba(111, 59, 224, 0.08);
   overflow: hidden;
   background: white;
-  transition: box-shadow 0.2s ease-in-out;
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 350px; /* 🔧 Ancho mínimo garantizado */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 🔧 Altura completa para mejor proporción */
+  margin: 0.5rem; /* 🔧 AGREGADO: Margen extra para separación */
 }
 
 .case-card:hover {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(111, 59, 224, 0.15);
+  border-color: #7f4ae8;
+  z-index: 10; /* 🔧 AGREGADO: Eleva la card al hacer hover */
+}
+
+.case-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #6f3be0 0%, #7f4ae8 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.case-card:hover::before {
+  opacity: 1;
 }
 
 .case-card img {
   width: 100%;
-  height: 160px;
+  height: 220px; /* 🔧 Altura optimizada */
   object-fit: cover;
+  border-bottom: 2px solid #f1f2f6;
+  flex-shrink: 0; /* 🔧 Evita que la imagen se comprima */
 }
 
 .case-card-body {
-  padding: 1rem;
+  padding: 2rem 1.75rem; /* 🔧 Padding horizontal más compacto */
+  flex-grow: 1; /* 🔧 Crece para ocupar espacio disponible */
+  display: flex;
+  flex-direction: column;
 }
 
 .case-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 0.25rem;
-  color: #111827;
+  font-weight: 700;
+  font-size: 1.35rem; /* 🔧 Tamaño balanceado */
+  margin-bottom: 0.875rem;
+  color: #1e293b;
+  line-height: 1.3;
 }
 
 .case-description {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
+  font-size: 0.95rem; /* 🔧 Tamaño optimizado */
+  color: #64748b;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+  flex-grow: 1; /* 🔧 Ocupa espacio disponible */
+  min-height: auto; /* 🔧 Altura flexible */
 }
 
 .case-status {
   display: inline-block;
-  font-size: 0.8rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   color: white;
-  text-transform: capitalize;
-  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.875rem; /* 🔧 Margen optimizado */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: fit-content; /* 🔧 Ancho ajustado al contenido */
 }
 
 .case-status.activo {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 .case-status.pendiente {
-  background-color: #f59e0b;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 .case-status.resuelto {
-  background-color: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .case-update {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 0;
+  margin-top: auto; /* 🔧 Empuja hacia abajo */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.case-update::before {
+  content: '🕒';
+  font-size: 0.9rem;
 }
 
 .case-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.75rem;
+  gap: 0.875rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7f0;
+  flex-shrink: 0; /* 🔧 No se comprime */
 }
 
 /* ----- Botones ----- */
 .btn-outline {
-  border: 1px solid #d1d5db;
+  flex: 1;
+  border: 2px solid #e5e7f0;
   background: white;
-  color: #111827;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.5rem;
+  color: #475569;
+  font-size: 0.9rem; /* 🔧 Tamaño optimizado */
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap; /* 🔧 Evita saltos de línea */
 }
 
 .btn-outline:hover {
-  background: #f3f4f6;
+  background: #f8f9ff;
+  border-color: #7f4ae8;
+  color: #6f3be0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(111, 59, 224, 0.15);
 }
 
 .btn-secondary {
-  background: #4b5563;
+  flex: 1;
+  background: linear-gradient(135deg, #6f3be0 0%, #7f4ae8 100%);
   color: white;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.5rem;
+  font-size: 0.9rem; /* 🔧 Tamaño optimizado */
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
   border: none;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 8px rgba(111, 59, 224, 0.2);
+  white-space: nowrap; /* 🔧 Evita saltos de línea */
 }
 
 .btn-secondary:hover {
-  background: #374151;
+  background: linear-gradient(135deg, #5f2bc0 0%, #6f3be0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(111, 59, 224, 0.3);
 }
 
 /* ----- Paginación ----- */
@@ -139,24 +235,44 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: 1.25rem;
+  margin-top: 3rem;
+  padding: 2rem 0;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(111, 59, 224, 0.08);
 }
 
 .pagination button {
-  border: 1px solid #d1d5db;
+  border: 2px solid #e5e7f0;
   background: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 0.5rem;
+  padding: 0.875rem 1.5rem; /* 🔧 AUMENTADO de 0.75rem 1.25rem a 0.875rem 1.5rem */
+  border-radius: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  transition: all 0.3s ease;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  font-size: 1rem; /* 🔧 AUMENTADO de 0.95rem a 1rem */
+  min-width: 120px; /* 🔧 AUMENTADO de 100px a 120px */
 }
 
-.pagination button:hover {
-  background: #f3f4f6;
+.pagination button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f8f9ff 0%, #f3f4ff 100%);
+  border-color: #7f4ae8;
+  color: #6f3be0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(111, 59, 224, 0.15);
 }
 
 .pagination button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.pagination span {
+  color: #475569;
+  font-weight: 600;
+  font-size: 1rem; /* 🔧 AUMENTADO de 0.95rem a 1rem */
+  padding: 0 0.5rem;
 }

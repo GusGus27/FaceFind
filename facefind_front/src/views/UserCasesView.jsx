@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import Header from "../components/common/Header";
 import CaseList from "../components/cases/CaseList";
 import FilterBar from "../components/cases/FilterBar";
 import Pagination from "../components/cases/Pagination";
-import "../styles/views/UserCasesView.css";
+import '../styles/views/UserCasesView.css';
 
 export default function UserCasesView() {
   const [cases, setCases] = useState([]);
@@ -37,19 +38,22 @@ export default function UserCasesView() {
   const totalPages = Math.ceil(filteredCases.length / perPage);
 
   return (
-    <div className="user-cases-container">
-      <div className="user-cases-header">
-        <h1 className="title">Casos Activos del Usuario</h1>
-        <FilterBar filter={filter} setFilter={setFilter} />
+    <>
+      <Header />
+      <div className="user-cases-container">
+        <div className="user-cases-header">
+          <h1 className="title">Casos Activos del Usuario</h1>
+          <FilterBar filter={filter} setFilter={setFilter} />
+        </div>
+
+        <CaseList cases={paginatedCases} />
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          setPage={setPage}
+        />
       </div>
-
-      <CaseList cases={paginatedCases} />
-
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        setPage={setPage}
-      />
-    </div>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import "../../styles/views/UserCasesView.css";
 
 export default function CaseCard({ caseData }) {
   const { title, img, status, description, lastUpdate } = caseData;
