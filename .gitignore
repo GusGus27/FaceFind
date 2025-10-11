@@ -8,6 +8,7 @@ facefind_back/facefind/camera/__pycache__/
 facefind_back/*.pyc
 facefind_back/api/__pycache__
 facefind_back/facefind/__pycache__
+facefind_back/services/__pycache__
 facefind_back/test.py
 facefind_back/encodings.pickle
 facefind_back/encodings_test.pickle
