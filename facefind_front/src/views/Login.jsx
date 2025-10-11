@@ -1,36 +1,38 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AuthLayout from '../components/auth/AuthLayout';
-import WelcomePanel from '../components/auth/WelcomePanel';
-import LoginForm from '../components/auth/LoginForm';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import AuthLayout from "../components/auth/AuthLayout";
+import WelcomePanel from "../components/auth/WelcomePanel";
+import LoginForm from "../components/auth/LoginForm";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loginAsAdmin, loginAsUser } = useAuth();
-  const [error, setError] = useState('');
+  const { login } = useAuth();
+  const [error, setError] = useState("");
 
-  const handleLogin = (formData) => {
-    setError(''); // Limpiar errores previos
+  const handleLogin = async (formData) => {
+    setError("");
+    try {
+      // Extraer datos del formulario
+      const { username, password } = formData;
 
-    const { username, password } = formData;
+      // Llamar al método login del contexto
+      const response = await login(username, password);
 
-    // Validar credenciales de administrador
-    if (username === 'admin' && password === 'admin1234') {
-      loginAsAdmin();
-      navigate('/admin');
-      return;
+      if (response?.user) {
+        // Redirigir según rol o tipo de usuario
+        if (response.user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/casos");
+        }
+      } else {
+        setError("Credenciales inválidas");
+      }
+    } catch (err) {
+      console.error("❌ Error de login:", err);
+      setError(err.message || "Error al iniciar sesión");
     }
-
-    // Validar credenciales de usuario normal
-    if (username === 'usuario' && password === 'user1234') {
-      loginAsUser();
-      navigate('/casos');
-      return;
-    }
-
-    // Credenciales inválidas
-    setError('Usuario o contraseña incorrectos');
   };
 
   return (

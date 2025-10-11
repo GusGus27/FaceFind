@@ -44,19 +44,29 @@ def sign_in():
     password = data.get("password")
 
     try:
-        res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        res = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+
         if not res.user:
             return jsonify({"error": "Credenciales inválidas"}), 401
 
-        return jsonify({"user": res.user, "session": res.session})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # 🔹 Extraer solo lo serializable
+        user_data = {
+            "id": res.user.id,
+            "email": res.user.email,
+            "role": res.user.role,
+        }
 
+        session_data = {
+            "access_token": res.session.access_token,
+            "refresh_token": res.session.refresh_token,
+            "expires_in": res.session.expires_in,
+        }
 
-@auth_bp.route("/signout", methods=["POST"])
-def sign_out():
-    try:
-        supabase.auth.sign_out()
-        return jsonify({"message": "Sesión cerrada correctamente"})
+        return jsonify({"user": user_data, "session": session_data}), 200
+
     except Exception as e:
+        print(f"Error en /auth/signin: {e}")
         return jsonify({"error": str(e)}), 500

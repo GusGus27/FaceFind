@@ -33,23 +33,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🔹 Inicio de sesión
-  const login = async (email, password) => {
-    setLoading(true);
-    try {
-      const response = await authService.signIn(email, password);
-      // Respuesta esperada: { user, session }
-      if (response?.user) {
-        setUser(response.user);
-      }
-      return response;
-    } catch (error) {
-      console.error("❌ Error al iniciar sesión:", error);
-      throw error;
-    } finally {
-      setLoading(false);
+  // context/AuthContext.jsx
+const login = async (email, password) => {
+  setLoading(true);
+  try {
+    const response = await authService.signIn(email, password);
+    if (response?.user) {
+      setUser(response.user);
     }
-  };
+    return response;
+  } catch (error) {
+    console.error("❌ Error al iniciar sesión:", error);
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // 🔹 Cerrar sesión
   const logout = async () => {
@@ -62,7 +62,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 🔹 Helpers
-  const isAdmin = () => user?.role === "admin";
+  //const isAdmin = () => user?.role === "admin";
+  const isAdmin = () => user?.email === "admin@facefind.com";
   const isAuthenticated = () => user !== null;
 
   return (
