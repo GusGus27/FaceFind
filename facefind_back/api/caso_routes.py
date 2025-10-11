@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from services.supabase_client import supabase
+from services.encodings_generator import encodings_generator
+from datetime import datetime
 
 caso_bp = Blueprint("casos", __name__)
 
@@ -12,14 +14,37 @@ def create_caso():
             return jsonify({"error": "No se recibieron datos"}), 400
 
         # Validar campos obligatorios
-        required_fields = ["usuario_id", "fecha_desaparicion", "lugar_desaparicion"]
+        required_fields = ["usuario_id", "fecha_desaparicion", "lugar_desaparicion", "nombre_completo"]
         for field in required_fields:
             if field not in data or not data[field]:
                 return jsonify({"error": f"El campo '{field}' es obligatorio."}), 400
 
-        # Insertar en Supabase
-        response = supabase.table("Caso").insert({
+        # Paso 1: Crear PersonaDesaparecida primero
+        persona_data = {
+            "nombre_completo": data.get("nombre_completo"),
+            "fecha_nacimiento": data.get("fecha_nacimiento"),
+            "gender": data.get("gender"),
+            "altura": data.get("altura"),
+            "peso": data.get("peso"),
+            "skinColor": data.get("skinColor"),
+            "hairColor": data.get("hairColor"),
+            "eyeColor": data.get("eyeColor"),
+            "senas_particulares": data.get("senas_particulares"),
+            "age": data.get("age"),
+            "clothing": data.get("clothing")
+        }
+        
+        persona_response = supabase.table("PersonaDesaparecida").insert(persona_data).execute()
+        
+        if hasattr(persona_response, "error") and persona_response.error:
+            return jsonify({"error": f"Error al crear persona: {str(persona_response.error)}"}), 500
+        
+        persona_id = persona_response.data[0]["id"]
+        
+        # Paso 2: Crear el Caso con el persona_id
+        caso_data = {
             "usuario_id": data["usuario_id"],
+            "persona_id": persona_id,
             "fecha_desaparicion": data["fecha_desaparicion"],
             "disappearanceTime": data.get("disappearanceTime"),
             "lugar_desaparicion": data["lugar_desaparicion"],
@@ -37,18 +62,52 @@ def create_caso():
             "additionalContact": data.get("additionalContact"),
             "resolutionDate": data.get("resolutionDate"),
             "resolutionNote": data.get("resolutionNote"),
-            "observaciones": data.get("observaciones"),
-            "persona_id": data.get("persona_id"),
-        }).execute()
+            "observaciones": data.get("observaciones")
+        }
+        
+        caso_response = supabase.table("Caso").insert(caso_data).execute()
 
-        if hasattr(response, "error") and response.error:
-            return jsonify({"error": str(response.error)}), 500
+        if hasattr(caso_response, "error") and caso_response.error:
+            # Si falla el caso, intentar borrar la persona creada
+            supabase.table("PersonaDesaparecida").delete().eq("id", persona_id).execute()
+            return jsonify({"error": f"Error al crear caso: {str(caso_response.error)}"}), 500
 
-        return jsonify({
+        caso_id = caso_response.data[0]["id"]
+        
+        # Paso 3: Procesar fotos y generar encodings (si se proporcionaron)
+        encodings_result = None
+        if "photos" in data and data["photos"]:
+            print(f"📸 Procesando fotos para {data['nombre_completo']}...")
+            try:
+                encodings_result = encodings_generator.process_case_photos(
+                    person_name=data["nombre_completo"],
+                    photos=data["photos"]
+                )
+                
+                if encodings_result["success"]:
+                    print(f"✅ Encodings generados: {encodings_result['encodings_generated']}")
+                else:
+                    print(f"⚠️ Error generando encodings: {encodings_result.get('error')}")
+            except Exception as e:
+                print(f"⚠️ Error procesando fotos: {e}")
+                encodings_result = {
+                    "success": False,
+                    "error": str(e)
+                }
+
+        response_data = {
             "success": True,
             "message": "Caso creado correctamente",
-            "data": response.data
-        }), 201
+            "data": caso_response.data,
+            "caso_id": caso_id,
+            "persona_id": persona_id
+        }
+        
+        # Agregar información de encodings si se procesaron fotos
+        if encodings_result:
+            response_data["encodings"] = encodings_result
+
+        return jsonify(response_data), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

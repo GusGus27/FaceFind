@@ -52,11 +52,20 @@ def sign_in():
         if not res.user:
             return jsonify({"error": "Credenciales inválidas"}), 401
 
+        # 🔹 Buscar el usuario en la tabla Usuario para obtener el ID numérico
+        usuario_query = supabase.table("Usuario").select("*").eq("email", email).execute()
+        
+        usuario_db = None
+        if usuario_query.data and len(usuario_query.data) > 0:
+            usuario_db = usuario_query.data[0]
+
         # 🔹 Extraer solo lo serializable
         user_data = {
-            "id": res.user.id,
+            "id": usuario_db["id"] if usuario_db else None,  # ID numérico de la tabla Usuario
+            "auth_id": res.user.id,  # UUID de Supabase Auth
             "email": res.user.email,
-            "role": res.user.role,
+            "nombre": usuario_db["nombre"] if usuario_db else None,
+            "role": usuario_db.get("role", "user") if usuario_db else "user",
         }
 
         session_data = {
@@ -70,3 +79,30 @@ def sign_in():
     except Exception as e:
         print(f"Error en /auth/signin: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/signout", methods=["POST"])
+def sign_out():
+    """
+    Cierra la sesión del usuario actual
+    """
+    try:
+        # Obtener el token del header si existe
+        auth_header = request.headers.get('Authorization')
+        
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            # Cerrar sesión en Supabase
+            supabase.auth.sign_out()
+        
+        return jsonify({
+            "success": True,
+            "message": "Sesión cerrada correctamente"
+        }), 200
+
+    except Exception as e:
+        print(f"Error en /auth/signout: {e}")
+        return jsonify({
+            "success": True,  # Aún así retornar success para limpiar el frontend
+            "message": "Sesión cerrada localmente"
+        }), 200

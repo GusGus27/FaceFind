@@ -14,9 +14,13 @@ class SistemaFaceFind:
         #self.app = Flask(__name__)
         self.app = Blueprint("facefind", __name__)
         CORS(self.app)
-        self.procesador = ProcesadorFaceFind(tolerance=0.5)
+        
+        # Ruta absoluta al encodings.pickle en la raíz del backend
+        backend_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.ENCODINGS_PATH = os.path.join(backend_root, "encodings.pickle")
+        
+        self.procesador = ProcesadorFaceFind(tolerance=0.5, encodings_path=self.ENCODINGS_PATH)
         self.DATASET_PATH = "dataset_personas"
-        self.ENCODINGS_PATH = "encodings_test.pickle"
         self.register_routes()
 
     def register_routes(self):

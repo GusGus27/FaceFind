@@ -15,18 +15,9 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 # 🔹 Crear cliente Supabase
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-#PROBAR CONEXIÓN
-"""
-if __name__ == "__main__":
-    print("✅ Probando conexión con Supabase...")
-    print(f"URL: {SUPABASE_URL}")
-    print("Intentando listar tablas...")
-
-    try:
-        data = supabase.table("Caso").select("*").limit(1).execute()
-        print("Conexión exitosa:", data)
-    except Exception as e:
-        print("❌ Error al conectar:", e)
-
-"""
+def get_supabase_client():
+    """
+    Retorna una instancia del cliente Supabase.
+    Útil para scripts independientes.
+    """
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
