@@ -16,10 +16,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
 
   // 🔹 Registro
-  const register = async ({ nombre, email, password }) => {
+  const register = async ({ nombre, email, password, dni }) => {
     setLoading(true);
     try {
-      const response = await authService.signUp({ nombre, email, password });
+      const response = await authService.signUp({ nombre, email, password, dni });
       // Supabase devuelve algo como { message, data }
       if (response?.data) {
         setUser(response.data);
