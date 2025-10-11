@@ -304,7 +304,16 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
 /* 🔧 CORRECCIÓN: Inputs con fondo blanco y texto oscuro */
 .auth-form input[type="text"],
 .auth-form input[type="email"],
-.auth-form input[type="password"] {
+.auth-form input[type="password"],
+.auth-form input[type="tel"],
+.auth-form input[type="number"],
+/* 🔧 AGREGADO: Input de recuperar contraseña */
+input[type="email"].forgot-password-input,
+input[type="text"].forgot-password-input,
+input[type="password"].forgot-password-input,
+.forgot-password-form input[type="email"],
+.forgot-password-form input[type="text"],
+.forgot-password-form input[type="password"] {
   background-color: #ffffff !important; /* Fondo blanco */
   color: #1e293b !important; /* Texto oscuro para legibilidad */
   border: 2px solid #e2e8f0 !important; /* Borde gris claro */
@@ -316,18 +325,30 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
   box-sizing: border-box !important;
 }
 
-/* Placeholder con color gris */
+/* 🔧 PLACEHOLDERS UNIFICADOS */
 .auth-form input[type="text"]::placeholder,
 .auth-form input[type="email"]::placeholder,
-.auth-form input[type="password"]::placeholder {
+.auth-form input[type="password"]::placeholder,
+.auth-form input[type="tel"]::placeholder,
+.auth-form input[type="number"]::placeholder,
+input[type="email"].forgot-password-input::placeholder,
+input[type="text"].forgot-password-input::placeholder,
+input[type="password"].forgot-password-input::placeholder,
+.forgot-password-form input::placeholder {
   color: #94a3b8 !important; /* Gris medio para placeholders */
   opacity: 1 !important;
 }
 
-/* Estado focus */
+/* 🔧 ESTADO FOCUS UNIFICADO */
 .auth-form input[type="text"]:focus,
 .auth-form input[type="email"]:focus,
-.auth-form input[type="password"]:focus {
+.auth-form input[type="password"]:focus,
+.auth-form input[type="tel"]:focus,
+.auth-form input[type="number"]:focus,
+input[type="email"].forgot-password-input:focus,
+input[type="text"].forgot-password-input:focus,
+input[type="password"].forgot-password-input:focus,
+.forgot-password-form input:focus {
   outline: none !important;
   border-color: #6f3be0 !important; /* Color púrpura del proyecto */
   box-shadow: 0 0 0 3px rgba(111, 59, 224, 0.1) !important;
