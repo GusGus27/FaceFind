@@ -65,7 +65,7 @@ export default function UserCaseCards({ cases }) {
             {/* Foto */}
             <div className="case-photo-wrapper">
               <img 
-                src={caso.img || caso.foto || "https://via.placeholder.com/120"} 
+                src={caso.img || caso.foto || "https://static.vecteezy.com/system/resources/previews/011/269/772/non_2x/missing-person-icon-design-free-vector.jpg"} 
                 alt={caso.PersonaDesaparecida?.nombre_completo || caso.title}
                 className="case-photo-main"
               />

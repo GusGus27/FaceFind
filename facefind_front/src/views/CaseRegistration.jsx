@@ -134,8 +134,8 @@ const CaseRegistration = () => {
     
     if (!formData.contactPhone.trim()) {
       newErrors.contactPhone = 'El teléfono de contacto es obligatorio';
-    } else if (!/^\d{10}$/.test(formData.contactPhone.replace(/\D/g, ''))) {
-      newErrors.contactPhone = 'El teléfono debe tener 10 dígitos';
+    } else if (!/^\d{9}$/.test(formData.contactPhone.replace(/\D/g, ''))) {
+      newErrors.contactPhone = 'El teléfono debe tener 9 dígitos';
     }
     
     if (!formData.contactEmail.trim()) {
