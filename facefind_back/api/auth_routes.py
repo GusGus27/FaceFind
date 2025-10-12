@@ -1,5 +1,8 @@
 from flask import Blueprint, request, jsonify
 from services.supabase_client import supabase
+from services.user_service import UserService
+from models.usuario import UsuarioBase, UsuarioRegistrado, UsuarioAdministrador
+from models.enums import Rol
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -7,7 +10,7 @@ auth_bp = Blueprint("auth", __name__)
 def signup():
     """
     Registra un nuevo usuario usando Supabase Auth
-    La contraseña es hasheada automáticamente por Supabase
+    Refactorizado para usar clases OOP (UsuarioRegistrado, UsuarioAdministrador)
     """
     try:
         data = request.get_json()
@@ -15,17 +18,19 @@ def signup():
         password = data.get('password')
         nombre = data.get('nombre')
         dni = data.get('dni')
+        celular = data.get('celular')
+        role = data.get('role', 'user')  # Por defecto: user
 
         # 🔹 Validaciones básicas
         if not email or not password:
             return jsonify({"error": "Email y contraseña son requeridos"}), 400
-        
+
         if not nombre or len(nombre.strip()) < 2:
             return jsonify({"error": "El nombre debe tener al menos 2 caracteres"}), 400
-        
+
         if dni and len(dni.strip()) != 8:
             return jsonify({"error": "El DNI debe tener exactamente 8 dígitos"}), 400
-        
+
         if len(password) < 6:
             return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
 
@@ -48,29 +53,40 @@ def signup():
         user_id = str(result.user.id)
         user_email = str(result.user.email)
 
-        # 🔹 Insertar en tabla Usuario (SIN guardar password - ya está en auth.users hasheada)
-        # NOTA: No incluimos 'id' porque la tabla lo genera automáticamente
-        # NOTA: Incluimos "password" con valor dummy porque la columna es NOT NULL (legacy)
-        insert_data = {
-            # "id" se genera automáticamente (autoincremental)
-            "nombre": nombre,
-            "email": user_email,
-            "password": "NO_SE_USA",  # Dummy - la real está en auth.users hasheada
-            "role": "user",  # Rol por defecto
-            "status": "active"
-        }
-        
-        # Agregar DNI solo si fue proporcionado
-        if dni:
-            insert_data["dni"] = dni.strip()
-        
+        # 🔹 Crear instancia OOP según el rol
+        rol_enum = Rol.from_string(role)
+
+        if rol_enum == Rol.ADMINISTRADOR:
+            usuario = UsuarioAdministrador(
+                nombre=nombre,
+                email=user_email,
+                password="NO_SE_USA",  # Dummy - la real está en auth.users
+                rol=rol_enum,
+                dni=dni.strip() if dni else None,
+                status="active"
+            )
+        else:
+            usuario = UsuarioRegistrado(
+                nombre=nombre,
+                email=user_email,
+                password="NO_SE_USA",
+                rol=rol_enum,
+                celular=celular,
+                dni=dni.strip() if dni else None,
+                status="active"
+            )
+
+        # 🔹 Usar método registrar() de la clase Usuario (según UML)
+        insert_data = usuario.registrar()
+
+        # 🔹 Insertar en tabla Usuario
         insert_result = supabase.table("Usuario").insert(insert_data).execute()
 
         # Obtener el ID generado
         inserted_user = insert_result.data[0] if insert_result.data else None
         db_user_id = inserted_user["id"] if inserted_user else None
 
-        print(f"✅ Usuario registrado: {user_email} con Auth ID: {user_id}, DB ID: {db_user_id}")
+        print(f"✅ Usuario registrado: {user_email} con Auth ID: {user_id}, DB ID: {db_user_id}, Tipo: {usuario.__class__.__name__}")
 
         return jsonify({
             "message": "Usuario registrado con éxito",
@@ -78,7 +94,9 @@ def signup():
                 "id": user_id,  # UUID de Auth
                 "db_id": db_user_id,  # ID numérico de la tabla Usuario
                 "email": user_email,
-                "nombre": nombre
+                "nombre": nombre,
+                "role": role,
+                "tipo_usuario": usuario.__class__.__name__  # UsuarioRegistrado o UsuarioAdministrador
             }
         }), 201
 
@@ -91,7 +109,7 @@ def signup():
 def sign_in():
     """
     Inicia sesión usando Supabase Auth
-    La verificación de contraseña es manejada por Supabase (compara con hash)
+    Refactorizado para usar clases OOP y método login()
     """
     data = request.get_json()
     email = data.get("email")
@@ -117,7 +135,7 @@ def sign_in():
 
         # 🔹 Buscar el usuario en la tabla Usuario POR EMAIL
         usuario_query = supabase.table("Usuario").select("*").eq("email", user_email).execute()
-        
+
         usuario_db = None
         if usuario_query.data and len(usuario_query.data) > 0:
             usuario_db = usuario_query.data[0]
@@ -131,7 +149,7 @@ def sign_in():
                 "role": "user",
                 "status": "active"
             }).execute()
-            
+
             usuario_db = insert_result.data[0] if insert_result.data else {
                 "id": None,
                 "nombre": nombre,
@@ -140,17 +158,23 @@ def sign_in():
             }
             print(f"✅ Usuario creado en tabla Usuario: {user_email}")
 
-        # 🔹 Construir respuesta con datos serializables
-        user_data = {
-            "id": str(usuario_db.get("id")),  # ID numérico de la tabla Usuario
-            "auth_id": auth_id,  # UUID de Supabase Auth
-            "email": user_email,
-            "nombre": str(usuario_db.get("nombre", "Usuario")),
-            "role": str(usuario_db.get("role", "user")),
-            "app_metadata": {
-                "role": str(usuario_db.get("role", "user"))
-            }
-        }
+        # 🔹 Crear instancia OOP del usuario (Factory Pattern)
+        usuario = UsuarioBase.from_dict(usuario_db)
+
+        # 🔹 Llamar método login() de la clase (según UML)
+        login_exitoso = usuario.login(password)
+
+        if not login_exitoso:
+            return jsonify({"error": "Error en el proceso de login"}), 401
+
+        # 🔹 Construir respuesta con datos serializables usando to_dict()
+        user_data = usuario.to_dict()
+        user_data["auth_id"] = auth_id  # Agregar UUID de Auth
+        user_data["tipo_usuario"] = usuario.__class__.__name__  # UsuarioRegistrado o UsuarioAdministrador
+
+        # Agregar celular si es UsuarioRegistrado
+        if isinstance(usuario, UsuarioRegistrado) and usuario.celular:
+            user_data["celular"] = usuario.celular
 
         session_data = {
             "access_token": res.session.access_token,
@@ -158,6 +182,8 @@ def sign_in():
             "expires_in": res.session.expires_in,
             "expires_at": res.session.expires_at if hasattr(res.session, 'expires_at') else None
         }
+
+        print(f"✅ Login exitoso: {user_email}, Tipo: {usuario.__class__.__name__}")
 
         return jsonify({
             "user": user_data,
@@ -178,16 +204,39 @@ def sign_in():
 def sign_out():
     """
     Cierra la sesión del usuario actual
+    Usa el método logout() de la clase Usuario (según UML)
     """
     try:
         # Obtener el token del header si existe
         auth_header = request.headers.get('Authorization')
-        
+
+        # Obtener usuario del token (si existe) para llamar a su método logout()
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]
+
+            # Intentar obtener el usuario actual desde el token
+            try:
+                current_user = supabase.auth.get_user(token)
+                if current_user and current_user.user:
+                    email = current_user.user.email
+
+                    # Obtener datos del usuario desde BD
+                    usuario_db = UserService.get_user_by_email(email)
+                    if usuario_db:
+                        # Crear instancia OOP
+                        usuario = UsuarioBase.from_dict(usuario_db)
+
+                        # Llamar método logout() de la clase (según UML)
+                        logout_exitoso = usuario.logout()
+
+                        if logout_exitoso:
+                            print(f"✅ Logout exitoso para: {email}, Tipo: {usuario.__class__.__name__}")
+            except:
+                pass  # Si falla, continuar con el logout de Supabase
+
             # Cerrar sesión en Supabase
             supabase.auth.sign_out()
-        
+
         return jsonify({
             "success": True,
             "message": "Sesión cerrada correctamente"
