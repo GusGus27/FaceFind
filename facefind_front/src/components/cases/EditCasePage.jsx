@@ -5,6 +5,8 @@ import {
   Clock, Image as ImageIcon, User, MapPin, Calendar,
   FileText, AlertTriangle, ArrowLeft
 } from 'lucide-react';
+import { getCasoById, updateCaso } from '../../services/casoService';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/cases/EditCasePage.css';
 
 /**
@@ -14,18 +16,39 @@ import '../../styles/cases/EditCasePage.css';
 const EditCasePage = () => {
   const { caseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Estados del formulario
   const [formData, setFormData] = useState({
-    nombre: '',
-    edad: '',
-    fechaNacimiento: '',
-    fechaDesaparicion: '',
-    caracteristicasFisicas: '',
-    ultimaUbicacion: '',
-    descripcionCircunstancias: '',
-    contacto: '',
-    telefonoContacto: ''
+    // Información de la persona
+    nombre_completo: '',
+    age: '',
+    fecha_nacimiento: '',
+    gender: '',
+    altura: '',
+    peso: '',
+    skinColor: '',
+    hairColor: '',
+    eyeColor: '',
+    senas_particulares: '',
+    clothing: '',
+    
+    // Información del caso
+    fecha_desaparicion: '',
+    lugar_desaparicion: '',
+    disappearanceTime: '',
+    lastSeenLocation: '',
+    lastSeen: '',
+    circumstances: '',
+    description: '',
+    
+    // Contacto
+    reporterName: '',
+    relationship: '',
+    contactPhone: '',
+    contactEmail: '',
+    additionalContact: '',
+    observaciones: ''
   });
 
   // Estados de las fotografías
@@ -63,48 +86,63 @@ const EditCasePage = () => {
   const loadCaseData = async () => {
     setIsLoading(true);
     try {
-      // Simulación de carga de datos (reemplazar con API)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Cargar caso desde la API
+      const caso = await getCasoById(caseId);
+      
+      if (!caso) {
+        setErrors({ general: 'Caso no encontrado' });
+        setTimeout(() => navigate('/casos'), 2000);
+        return;
+      }
 
-      const mockData = {
-        nombre: 'María González Pérez',
-        edad: 25,
-        fechaNacimiento: '1999-03-15',
-        fechaDesaparicion: '2025-09-10',
-        caracteristicasFisicas: 'Estatura media (1.65m), cabello castaño largo, ojos marrones, lunar en mejilla izquierda',
-        ultimaUbicacion: 'Lima, Perú - Av. Arequipa 1234',
-        descripcionCircunstancias: 'Salió de su casa el día 10 de septiembre a las 8:00 AM hacia su trabajo y no regresó.',
-        contacto: 'Juan Pérez',
-        telefonoContacto: '+51 999 888 777'
+      // Verificar que el usuario tenga permisos (solo puede editar sus propios casos)
+      // TODO: Agregar validación de usuario_id cuando esté disponible
+      
+      const persona = caso.PersonaDesaparecida || {};
+      
+      // Mapear datos del caso al formulario
+      const mappedData = {
+        // Información de la persona
+        nombre_completo: persona.nombre_completo || '',
+        age: persona.age || '',
+        fecha_nacimiento: persona.fecha_nacimiento || '',
+        gender: persona.gender || '',
+        altura: persona.altura || '',
+        peso: persona.peso || '',
+        skinColor: persona.skinColor || '',
+        hairColor: persona.hairColor || '',
+        eyeColor: persona.eyeColor || '',
+        senas_particulares: persona.senas_particulares || '',
+        clothing: persona.clothing || '',
+        
+        // Información del caso
+        fecha_desaparicion: caso.fecha_desaparicion || '',
+        lugar_desaparicion: caso.lugar_desaparicion || '',
+        disappearanceTime: caso.disappearanceTime || '',
+        lastSeenLocation: caso.lastSeenLocation || '',
+        lastSeen: caso.lastSeen || '',
+        circumstances: caso.circumstances || '',
+        description: caso.description || '',
+        
+        // Contacto
+        reporterName: caso.reporterName || '',
+        relationship: caso.relationship || '',
+        contactPhone: caso.contactPhone || '',
+        contactEmail: caso.contactEmail || '',
+        additionalContact: caso.additionalContact || '',
+        observaciones: caso.observaciones || ''
       };
 
-      const mockPhotos = [
-        { id: 1, url: 'https://via.placeholder.com/300', tipo: 'Frontal', fecha: '2025-09-15' },
-        { id: 2, url: 'https://via.placeholder.com/300', tipo: 'Perfil_Der', fecha: '2025-09-15' },
-        { id: 3, url: 'https://via.placeholder.com/300', tipo: 'Perfil_Izq', fecha: '2025-09-15' }
-      ];
-
-      const mockHistory = [
-        {
-          fecha: '2025-09-15T10:00:00',
-          usuario: 'Juan Pérez',
-          accion: 'Creación del caso',
-          cambios: ['Caso creado inicialmente']
-        },
-        {
-          fecha: '2025-09-20T14:30:00',
-          usuario: 'Juan Pérez',
-          accion: 'Actualización de información',
-          cambios: ['Modificó última ubicación', 'Actualizó circunstancias']
-        }
-      ];
-
-      setFormData(mockData);
-      setOriginalData(mockData);
-      setPhotos(mockPhotos);
-      setChangeHistory(mockHistory);
+      setFormData(mappedData);
+      setOriginalData(mappedData);
+      
+      // TODO: Cargar fotos del caso cuando esté disponible el endpoint
+      // setPhotos(caso.fotos || []);
+      
+      console.log('✅ Caso cargado:', caso);
     } catch (error) {
-      console.error('Error cargando caso:', error);
+      console.error('❌ Error cargando caso:', error);
+      setErrors({ general: 'Error al cargar el caso. Intenta nuevamente.' });
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +164,12 @@ const EditCasePage = () => {
     }
   };
 
+  /* ============================================
+     FUNCIONES DE FOTOS (DESHABILITADAS)
+     TODO: Implementar cuando el backend soporte actualización de fotos
+     ============================================ */
+
+  /*
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
     const totalPhotos = photos.length + newPhotos.length - photosToDelete.length + files.length;
@@ -191,34 +235,32 @@ const EditCasePage = () => {
       ));
     }
   };
+  */
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
+    if (!formData.nombre_completo?.trim()) {
+      newErrors.nombre_completo = 'El nombre es requerido';
     }
 
-    if (!formData.edad || formData.edad < 0 || formData.edad > 120) {
-      newErrors.edad = 'La edad debe estar entre 0 y 120 años';
+    if (!formData.age || formData.age < 0 || formData.age > 120) {
+      newErrors.age = 'La edad debe estar entre 0 y 120 años';
     }
 
-    if (!formData.fechaDesaparicion) {
-      newErrors.fechaDesaparicion = 'La fecha de desaparición es requerida';
+    if (!formData.fecha_desaparicion) {
+      newErrors.fecha_desaparicion = 'La fecha de desaparición es requerida';
     }
 
-    if (!formData.caracteristicasFisicas.trim() || formData.caracteristicasFisicas.length < 20) {
-      newErrors.caracteristicasFisicas = 'Las características físicas deben tener al menos 20 caracteres';
+    if (!formData.lugar_desaparicion?.trim()) {
+      newErrors.lugar_desaparicion = 'El lugar de desaparición es requerido';
     }
 
-    if (!formData.ultimaUbicacion.trim()) {
-      newErrors.ultimaUbicacion = 'La última ubicación es requerida';
-    }
-
-    const totalPhotos = photos.length + newPhotos.length - photosToDelete.length;
-    if (totalPhotos < 3) {
-      newErrors.photos = 'Debe tener al menos 3 fotografías';
-    }
+    // Validación de fotos (comentado por ahora hasta tener manejo de fotos)
+    // const totalPhotos = photos.length + newPhotos.length - photosToDelete.length;
+    // if (totalPhotos < 3) {
+    //   newErrors.photos = 'Debe tener al menos 3 fotografías';
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -237,76 +279,62 @@ const EditCasePage = () => {
     }
 
     setIsSaving(true);
+    setErrors({});
 
     try {
-      // Simulación de guardado (reemplazar con API)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Aquí iría la lógica de:
-      // 1. Subir nuevas fotos
-      // 2. Eliminar fotos marcadas
-      // 3. Actualizar datos del caso
-      // 4. Re-procesar embeddings
-
-      console.log('Datos a guardar:', {
-        formData,
-        newPhotos: newPhotos.map(p => ({ file: p.file, tipo: p.tipo })),
-        photosToDelete
+      // Preparar datos para actualizar
+      const updates = {};
+      
+      // Solo enviar campos que cambiaron
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== originalData[key]) {
+          updates[key] = formData[key];
+        }
       });
 
+      console.log('📤 Enviando actualizaciones:', updates);
+
+      // Actualizar caso en la API
+      const updatedCaso = await updateCaso(caseId, updates);
+
+      console.log('✅ Caso actualizado:', updatedCaso);
+
+      // Mostrar mensaje de éxito
       setShowSuccess(true);
       setHasChanges(false);
       setOriginalData(formData);
-      setNewPhotos([]);
-      setPhotosToDelete([]);
+      
+      // TODO: Manejar nuevas fotos cuando esté implementado
+      // setNewPhotos([]);
+      // setPhotosToDelete([]);
 
-      // Agregar al historial
-      setChangeHistory(prev => [{
-        fecha: new Date().toISOString(),
-        usuario: 'Juan Pérez',
-        accion: 'Actualización de información',
-        cambios: getChangeSummary()
-      }, ...prev]);
-
+      // Ocultar mensaje después de 5 segundos
       setTimeout(() => {
         setShowSuccess(false);
       }, 5000);
 
+      // Opcional: Redirigir después de guardar
+      // setTimeout(() => {
+      //   navigate('/casos');
+      // }, 2000);
+
     } catch (error) {
-      setErrors({ general: 'Error al guardar los cambios. Intenta nuevamente.' });
-      console.error('Error:', error);
+      console.error('❌ Error al guardar:', error);
+      setErrors({ 
+        general: error.message || 'Error al guardar los cambios. Intenta nuevamente.' 
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const getChangeSummary = () => {
-    const changes = [];
-    
-    Object.keys(formData).forEach(key => {
-      if (originalData[key] !== formData[key]) {
-        changes.push(`Modificó ${key}`);
-      }
-    });
-
-    if (newPhotos.length > 0) {
-      changes.push(`Agregó ${newPhotos.length} fotografía(s)`);
-    }
-
-    if (photosToDelete.length > 0) {
-      changes.push(`Eliminó ${photosToDelete.length} fotografía(s)`);
-    }
-
-    return changes;
-  };
-
   const handleCancel = () => {
     if (hasChanges) {
       if (window.confirm('Tienes cambios sin guardar. ¿Deseas salir?')) {
-        navigate(-1);
+        navigate('/casos');
       }
     } else {
-      navigate(-1);
+      navigate('/casos');
     }
   };
 
@@ -319,8 +347,8 @@ const EditCasePage = () => {
     );
   }
 
-  const currentPhotos = photos.filter(p => !photosToDelete.includes(p.id));
-  const allPhotos = [...currentPhotos, ...newPhotos];
+  // const currentPhotos = photos.filter(p => !photosToDelete.includes(p.id));
+  // const allPhotos = [...currentPhotos, ...newPhotos];
 
   return (
     <div className="edit-case-page">
@@ -338,13 +366,13 @@ const EditCasePage = () => {
           </div>
 
           <div className="header-actions">
-            <button
+            {/* <button
               onClick={() => setShowHistory(!showHistory)}
               className="history-button"
             >
               <Clock size={18} />
               Historial
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -388,102 +416,189 @@ const EditCasePage = () => {
 
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="nombre">
+                  <label htmlFor="nombre_completo">
                     Nombre Completo <span className="required">*</span>
                   </label>
                   <input
                     type="text"
-                    id="nombre"
-                    name="nombre"
-                    value={formData.nombre}
+                    id="nombre_completo"
+                    name="nombre_completo"
+                    value={formData.nombre_completo || ''}
                     onChange={handleInputChange}
-                    className={errors.nombre ? 'error' : ''}
+                    className={errors.nombre_completo ? 'error' : ''}
                   />
-                  {errors.nombre && (
-                    <span className="error-message">{errors.nombre}</span>
+                  {errors.nombre_completo && (
+                    <span className="error-message">{errors.nombre_completo}</span>
                   )}
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="edad">
+                  <label htmlFor="age">
                     Edad <span className="required">*</span>
                   </label>
                   <input
                     type="number"
-                    id="edad"
-                    name="edad"
-                    value={formData.edad}
+                    id="age"
+                    name="age"
+                    value={formData.age || ''}
                     onChange={handleInputChange}
                     min="0"
                     max="120"
-                    className={errors.edad ? 'error' : ''}
+                    className={errors.age ? 'error' : ''}
                   />
-                  {errors.edad && (
-                    <span className="error-message">{errors.edad}</span>
+                  {errors.age && (
+                    <span className="error-message">{errors.age}</span>
                   )}
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="fechaNacimiento">
+                  <label htmlFor="fecha_nacimiento">
                     Fecha de Nacimiento
                   </label>
                   <input
                     type="date"
-                    id="fechaNacimiento"
-                    name="fechaNacimiento"
-                    value={formData.fechaNacimiento}
+                    id="fecha_nacimiento"
+                    name="fecha_nacimiento"
+                    value={formData.fecha_nacimiento || ''}
                     onChange={handleInputChange}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="fechaDesaparicion">
+                  <label htmlFor="fecha_desaparicion">
                     Fecha de Desaparición <span className="required">*</span>
                   </label>
                   <input
                     type="date"
-                    id="fechaDesaparicion"
-                    name="fechaDesaparicion"
-                    value={formData.fechaDesaparicion}
+                    id="fecha_desaparicion"
+                    name="fecha_desaparicion"
+                    value={formData.fecha_desaparicion || ''}
                     onChange={handleInputChange}
                     max={new Date().toISOString().split('T')[0]}
-                    className={errors.fechaDesaparicion ? 'error' : ''}
+                    className={errors.fecha_desaparicion ? 'error' : ''}
                   />
-                  {errors.fechaDesaparicion && (
-                    <span className="error-message">{errors.fechaDesaparicion}</span>
+                  {errors.fecha_desaparicion && (
+                    <span className="error-message">{errors.fecha_desaparicion}</span>
                   )}
+                </div>
+
+                {/* Campos adicionales */}
+                <div className="form-group">
+                  <label htmlFor="gender">Género</label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender || ''}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Seleccionar...</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="altura">Altura (m)</label>
+                  <input
+                    type="number"
+                    id="altura"
+                    name="altura"
+                    value={formData.altura || ''}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    max="3"
+                    placeholder="1.65"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="peso">Peso (kg)</label>
+                  <input
+                    type="number"
+                    id="peso"
+                    name="peso"
+                    value={formData.peso || ''}
+                    onChange={handleInputChange}
+                    step="0.1"
+                    min="0"
+                    max="300"
+                    placeholder="70"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="skinColor">Color de Piel</label>
+                  <input
+                    type="text"
+                    id="skinColor"
+                    name="skinColor"
+                    value={formData.skinColor || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Morena, Clara, Trigueña"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="hairColor">Color de Cabello</label>
+                  <input
+                    type="text"
+                    id="hairColor"
+                    name="hairColor"
+                    value={formData.hairColor || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Castaño, Negro, Rubio"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="eyeColor">Color de Ojos</label>
+                  <input
+                    type="text"
+                    id="eyeColor"
+                    name="eyeColor"
+                    value={formData.eyeColor || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Marrones, Verdes, Azules"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Sección: Características Físicas */}
+            {/* Sección: Características Físicas y Señas Particulares */}
             <div className="form-section">
               <div className="section-header">
                 <FileText size={20} />
-                <h2>Características Físicas</h2>
+                <h2>Señas Particulares</h2>
               </div>
 
               <div className="form-group">
-                <label htmlFor="caracteristicasFisicas">
-                  Descripción Detallada <span className="required">*</span>
+                <label htmlFor="senas_particulares">
+                  Descripción Detallada
                 </label>
                 <textarea
-                  id="caracteristicasFisicas"
-                  name="caracteristicasFisicas"
-                  value={formData.caracteristicasFisicas}
+                  id="senas_particulares"
+                  name="senas_particulares"
+                  value={formData.senas_particulares || ''}
                   onChange={handleInputChange}
-                  rows="4"
-                  placeholder="Estatura, complexión, color de cabello, ojos, señas particulares, etc."
-                  className={errors.caracteristicasFisicas ? 'error' : ''}
+                  rows="3"
+                  placeholder="Cicatrices, tatuajes, lunares, etc."
                 />
-                <div className="textarea-footer">
-                  <span className={`char-count ${formData.caracteristicasFisicas.length < 20 ? 'warning' : ''}`}>
-                    {formData.caracteristicasFisicas.length} caracteres (mínimo 20)
-                  </span>
-                </div>
-                {errors.caracteristicasFisicas && (
-                  <span className="error-message">{errors.caracteristicasFisicas}</span>
-                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="clothing">
+                  Vestimenta (última vez visto)
+                </label>
+                <textarea
+                  id="clothing"
+                  name="clothing"
+                  value={formData.clothing || ''}
+                  onChange={handleInputChange}
+                  rows="2"
+                  placeholder="Descripción de la ropa que llevaba puesta"
+                />
               </div>
             </div>
 
@@ -495,34 +610,87 @@ const EditCasePage = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="ultimaUbicacion">
-                  Última Ubicación Conocida <span className="required">*</span>
+                <label htmlFor="lugar_desaparicion">
+                  Lugar de Desaparición <span className="required">*</span>
                 </label>
                 <input
                   type="text"
-                  id="ultimaUbicacion"
-                  name="ultimaUbicacion"
-                  value={formData.ultimaUbicacion}
+                  id="lugar_desaparicion"
+                  name="lugar_desaparicion"
+                  value={formData.lugar_desaparicion || ''}
                   onChange={handleInputChange}
                   placeholder="Dirección, distrito, ciudad"
-                  className={errors.ultimaUbicacion ? 'error' : ''}
+                  className={errors.lugar_desaparicion ? 'error' : ''}
                 />
-                {errors.ultimaUbicacion && (
-                  <span className="error-message">{errors.ultimaUbicacion}</span>
+                {errors.lugar_desaparicion && (
+                  <span className="error-message">{errors.lugar_desaparicion}</span>
                 )}
               </div>
 
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="disappearanceTime">Hora de Desaparición</label>
+                  <input
+                    type="time"
+                    id="disappearanceTime"
+                    name="disappearanceTime"
+                    value={formData.disappearanceTime || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="lastSeenLocation">Último Lugar Visto</label>
+                  <input
+                    type="text"
+                    id="lastSeenLocation"
+                    name="lastSeenLocation"
+                    value={formData.lastSeenLocation || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ubicación específica"
+                  />
+                </div>
+              </div>
+
               <div className="form-group">
-                <label htmlFor="descripcionCircunstancias">
-                  Descripción de las Circunstancias
+                <label htmlFor="lastSeen">
+                  Última vez visto/a
                 </label>
                 <textarea
-                  id="descripcionCircunstancias"
-                  name="descripcionCircunstancias"
-                  value={formData.descripcionCircunstancias}
+                  id="lastSeen"
+                  name="lastSeen"
+                  value={formData.lastSeen || ''}
+                  onChange={handleInputChange}
+                  rows="2"
+                  placeholder="Descripción de la última vez que se le vio"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="circumstances">
+                  Circunstancias de la Desaparición
+                </label>
+                <textarea
+                  id="circumstances"
+                  name="circumstances"
+                  value={formData.circumstances || ''}
                   onChange={handleInputChange}
                   rows="4"
                   placeholder="Describa las circunstancias de la desaparición"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">
+                  Descripción Adicional
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description || ''}
+                  onChange={handleInputChange}
+                  rows="3"
+                  placeholder="Cualquier información adicional relevante"
                 />
               </div>
             </div>
@@ -536,32 +704,90 @@ const EditCasePage = () => {
 
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="contacto">Nombre del Contacto</label>
+                  <label htmlFor="reporterName">Nombre del Reportante</label>
                   <input
                     type="text"
-                    id="contacto"
-                    name="contacto"
-                    value={formData.contacto}
+                    id="reporterName"
+                    name="reporterName"
+                    value={formData.reporterName || ''}
                     onChange={handleInputChange}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="telefonoContacto">Teléfono de Contacto</label>
+                  <label htmlFor="relationship">Parentesco</label>
+                  <input
+                    type="text"
+                    id="relationship"
+                    name="relationship"
+                    value={formData.relationship || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Madre, Hermano, Amigo"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contactPhone">Teléfono de Contacto</label>
                   <input
                     type="tel"
-                    id="telefonoContacto"
-                    name="telefonoContacto"
-                    value={formData.telefonoContacto}
+                    id="contactPhone"
+                    name="contactPhone"
+                    value={formData.contactPhone || ''}
                     onChange={handleInputChange}
                     placeholder="+51 999 888 777"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contactEmail">Email de Contacto</label>
+                  <input
+                    type="email"
+                    id="contactEmail"
+                    name="contactEmail"
+                    value={formData.contactEmail || ''}
+                    onChange={handleInputChange}
+                    placeholder="email@ejemplo.com"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="additionalContact">Contacto Adicional</label>
+                  <textarea
+                    id="additionalContact"
+                    name="additionalContact"
+                    value={formData.additionalContact || ''}
+                    onChange={handleInputChange}
+                    rows="2"
+                    placeholder="Otros números telefónicos o formas de contacto"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Sección: Fotografías */}
+            {/* Sección: Observaciones */}
             <div className="form-section">
+              <div className="section-header">
+                <FileText size={20} />
+                <h2>Observaciones</h2>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="observaciones">
+                  Notas u Observaciones Adicionales
+                </label>
+                <textarea
+                  id="observaciones"
+                  name="observaciones"
+                  value={formData.observaciones || ''}
+                  onChange={handleInputChange}
+                  rows="4"
+                  placeholder="Cualquier información adicional que considere relevante"
+                />
+              </div>
+            </div>
+
+            {/* Sección: Fotografías (Comentado por ahora) */}
+            {/* <div className="form-section">
               <div className="section-header">
                 <ImageIcon size={20} />
                 <h2>Fotografías</h2>
@@ -572,65 +798,9 @@ const EditCasePage = () => {
 
               <div className="photos-info">
                 <AlertCircle size={16} />
-                <span>Mínimo 3 fotografías requeridas. Las nuevas fotos serán procesadas automáticamente.</span>
+                <span>Funcionalidad de fotos próximamente disponible</span>
               </div>
-
-              <div className="photos-grid">
-                {allPhotos.map((photo) => (
-                  <div key={photo.id} className={`photo-card ${photo.isNew ? 'new' : ''}`}>
-                    <img src={photo.url} alt="Foto" />
-                    
-                    {photo.isNew && (
-                      <div className="photo-badge new-badge">Nueva</div>
-                    )}
-
-                    <div className="photo-overlay">
-                      <select
-                        value={photo.tipo}
-                        onChange={(e) => handlePhotoTypeChange(photo.id, e.target.value)}
-                        className="photo-type-select"
-                        disabled={!photo.isNew}
-                      >
-                        <option value="Frontal">Frontal</option>
-                        <option value="Perfil_Der">Perfil Derecho</option>
-                        <option value="Perfil_Izq">Perfil Izquierdo</option>
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePhoto(photo)}
-                        className="delete-photo-btn"
-                        title="Eliminar foto"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {allPhotos.length < 10 && (
-                  <label className="photo-upload-card">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <Upload size={32} />
-                    <span>Agregar Fotos</span>
-                    <span className="upload-hint">Máx. 5MB por foto</span>
-                  </label>
-                )}
-              </div>
-
-              {errors.photos && (
-                <div className="error-message-box">
-                  <AlertCircle size={16} />
-                  {errors.photos}
-                </div>
-              )}
-            </div>
+            </div> */}
 
             {/* Botones de acción */}
             <div className="form-actions">
@@ -664,8 +834,8 @@ const EditCasePage = () => {
             </div>
           </form>
 
-          {/* Panel de Historial */}
-          {showHistory && (
+          {/* Panel de Historial - Deshabilitado temporalmente */}
+          {/* {showHistory && (
             <div className="history-panel">
               <div className="history-header">
                 <h3>Historial de Cambios</h3>
@@ -695,7 +865,7 @@ const EditCasePage = () => {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
