@@ -1,14 +1,50 @@
 """
 User Service
 Handles all user-related business logic
+Refactorizado para usar clases OOP según diagrama UML
 """
 from services.supabase_client import supabase
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from datetime import datetime
+from models.usuario import UsuarioBase, UsuarioRegistrado, UsuarioAdministrador
+from models.enums import Rol
 
 
 class UserService:
-    """Service for managing users"""
+    """
+    Service for managing users
+    Actualizado para usar jerarquía de clases Usuario según UML
+    """
+
+    @staticmethod
+    def crear_usuario_oop(user_data: Dict) -> UsuarioBase:
+        """
+        Crea una instancia OOP de Usuario según el rol
+        Factory method que implementa el patrón según UML
+
+        Args:
+            user_data: Diccionario con datos del usuario
+
+        Returns:
+            Instancia de UsuarioRegistrado o UsuarioAdministrador
+        """
+        return UsuarioBase.from_dict(user_data)
+
+    @staticmethod
+    def obtener_usuario_oop(user_id: int) -> Optional[UsuarioBase]:
+        """
+        Obtiene un usuario como objeto OOP
+
+        Args:
+            user_id: ID del usuario
+
+        Returns:
+            Instancia de Usuario o None
+        """
+        user_data = UserService.get_user_by_id(user_id)
+        if not user_data:
+            return None
+        return UsuarioBase.from_dict(user_data)
     
     @staticmethod
     def get_all_users(filters: Optional[Dict] = None) -> List[Dict]:
