@@ -76,9 +76,14 @@ const EditCasePage = () => {
   // Detectar cambios
   useEffect(() => {
     if (originalData) {
-      const changed = JSON.stringify(formData) !== JSON.stringify(originalData) ||
-                      newPhotos.length > 0 ||
-                      photosToDelete.length > 0;
+      // Comparar campo por campo
+      const hasDataChanges = Object.keys(formData).some(key => {
+        const currentValue = formData[key] || '';
+        const originalValue = originalData[key] || '';
+        return currentValue !== originalValue;
+      });
+      
+      const changed = hasDataChanges || newPhotos.length > 0 || photosToDelete.length > 0;
       setHasChanges(changed);
     }
   }, [formData, newPhotos, photosToDelete, originalData]);
@@ -491,25 +496,25 @@ const EditCasePage = () => {
                     value={formData.gender || ''}
                     onChange={handleInputChange}
                   >
-                    <option value="">Seleccionar...</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Femenino">Femenino</option>
-                    <option value="Otro">Otro</option>
+                    <option value="">Selecciona una opción</option>
+                    <option value="masculino">Masculino</option>
+                    <option value="femenino">Femenino</option>
+                    <option value="otro">Otro</option>
+                    <option value="prefiero-no-decir">Prefiero no decir</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="altura">Altura (m)</label>
+                  <label htmlFor="altura">Altura (cm)</label>
                   <input
                     type="number"
                     id="altura"
                     name="altura"
                     value={formData.altura || ''}
                     onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    max="3"
-                    placeholder="1.65"
+                    min="50"
+                    max="250"
+                    placeholder="Ej: 170"
                   />
                 </div>
 
@@ -521,34 +526,85 @@ const EditCasePage = () => {
                     name="peso"
                     value={formData.peso || ''}
                     onChange={handleInputChange}
-                    step="0.1"
-                    min="0"
+                    min="10"
                     max="300"
-                    placeholder="70"
+                    placeholder="Ej: 70"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="skinColor">Color de Piel</label>
-                  <input
-                    type="text"
+                  <label htmlFor="skinColor">Tono de Piel</label>
+                  <select
                     id="skinColor"
                     name="skinColor"
                     value={formData.skinColor || ''}
                     onChange={handleInputChange}
-                    placeholder="Ej: Morena, Clara, Trigueña"
-                  />
+                  >
+                    <option value="">Selecciona</option>
+                    <option value="clara">Clara</option>
+                    <option value="morena">Morena</option>
+                    <option value="trigueña">Trigueña</option>
+                    <option value="oscura">Oscura</option>
+                  </select>
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="hairColor">Color de Cabello</label>
-                  <input
-                    type="text"
+                  <select
                     id="hairColor"
                     name="hairColor"
                     value={formData.hairColor || ''}
                     onChange={handleInputChange}
-                    placeholder="Ej: Castaño, Negro, Rubio"
+                  >
+                    <option value="">Selecciona</option>
+                    <option value="negro">Negro</option>
+                    <option value="castaño">Castaño</option>
+                    <option value="rubio">Rubio</option>
+                    <option value="rojo">Rojo</option>
+                    <option value="canoso">Canoso</option>
+                    <option value="teñido">Teñido</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="eyeColor">Color de Ojos</label>
+                  <select
+                    id="eyeColor"
+                    name="eyeColor"
+                    value={formData.eyeColor || ''}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Selecciona</option>
+                    <option value="marrones">Marrones</option>
+                    <option value="negros">Negros</option>
+                    <option value="verdes">Verdes</option>
+                    <option value="azules">Azules</option>
+                    <option value="grises">Grises</option>
+                    <option value="avellana">Avellana</option>
+                  </select>
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="senas_particulares">Señas Particulares</label>
+                  <textarea
+                    id="senas_particulares"
+                    name="senas_particulares"
+                    value={formData.senas_particulares || ''}
+                    onChange={handleInputChange}
+                    rows="3"
+                    placeholder="Cicatrices, tatuajes, lunares, etc."
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="clothing">Ropa que Vestía</label>
+                  <textarea
+                    id="clothing"
+                    name="clothing"
+                    value={formData.clothing || ''}
+                    onChange={handleInputChange}
+                    rows="2"
+                    placeholder="Descripción de la ropa"
                   />
                 </div>
 

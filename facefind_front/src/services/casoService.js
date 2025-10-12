@@ -196,3 +196,24 @@ export const getCasoStats = async () => {
     throw error;
   }
 };
+
+/**
+ * Search cases by name
+ * @param {string} searchTerm - Search term
+ * @returns {Promise<Array>} List of matching cases
+ */
+export const searchCasos = async (searchTerm) => {
+  try {
+    const response = await fetch(`${API_URL}/casos/search?q=${encodeURIComponent(searchTerm)}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to search cases');
+    }
+    
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    console.error('Error searching cases:', error);
+    throw error;
+  }
+};

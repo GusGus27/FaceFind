@@ -1,9 +1,10 @@
 // src/components/admin/SearchCases.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Clock, Filter, Loader2, AlertCircle } from 'lucide-react';
+import { searchCasos } from '../../services/casoService';
 import '../../styles/admin/SearchCases.css';
 
-export default function SearchCases({ onOpenCase = () => {} }) { // 
+export default function SearchCases({ onOpenCase = () => {} }) { 
 
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState('general');
@@ -51,53 +52,80 @@ export default function SearchCases({ onOpenCase = () => {} }) { //
   }, []);
 
   const fetchAutocomplete = async (searchQuery) => {
-    const mockSuggestions = [
-      'María González Pérez','María Rodríguez López','María Carmen Silva','Mario Alberto Sánchez','Mariana Torres González'
-    ].filter(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
-    setSuggestions(mockSuggestions.slice(0, 5));
-    setShowSuggestions(true);
+    try {
+      const casosData = await searchCasos(searchQuery);
+      const names = casosData
+        .map(c => c.PersonaDesaparecida?.nombre_completo)
+        .filter(Boolean)
+        .slice(0, 5);
+      setSuggestions(names);
+      setShowSuggestions(names.length > 0);
+    } catch (error) {
+      console.error('Error en autocompletar:', error);
+    }
   };
 
   const handleSearch = async (searchQuery = query) => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      setError('Por favor ingresa un término de búsqueda');
+      return;
+    }
+    
     setIsLoading(true); setError(null); setShowSuggestions(false);
     const start = Date.now();
     try {
-      await new Promise(r => setTimeout(r, 500)); // sim
-      const mockResults = generateMockResults(searchQuery).filter(c => (estado ? c.estado === estado : true));
-      setResults(mockResults);
-      setTotalResults(mockResults.length);
-      setQueryTime(Date.now() - start);
-      saveRecentSearch(searchQuery, searchType);
-    } catch (err) {
-      setError('Error al realizar la búsqueda. Por favor, intenta nuevamente.');
-      console.error(err);
-    } finally { setIsLoading(false); }
-  };
+      console.log('🔍 Buscando:', searchQuery);
+      const casosData = await searchCasos(searchQuery);
+      console.log('📦 Datos recibidos:', casosData);
+      
+      if (!casosData || !Array.isArray(casosData)) {
+        console.warn('⚠️ Respuesta inválida del servidor');
+        setResults([]);
+        setTotalResults(0);
+        setQueryTime(Date.now() - start);
+        return;
+      }
+      
+      // Filtrar por estado si está seleccionado
+      const filtered = estado 
+        ? casosData.filter(c => c.estado === estado) 
+        : casosData;
+      
+      console.log('🔎 Casos filtrados:', filtered.length);
+      
+      // Mapear datos para la UI
+      const mappedResults = filtered.map(caso => ({
+        num_caso: `CASO-2025-${caso.id}`,
+        dni: caso.PersonaDesaparecida?.dni || 'N/A',
+        nombre: caso.PersonaDesaparecida?.nombre_completo || 'Sin nombre',
+        edad: caso.PersonaDesaparecida?.age || 'N/A',
+        estado: caso.status || 'Activo',
+        fecha_registro: caso.created_at,
+        fecha_desaparicion: caso.fecha_desaparicion,
+        ultima_ubicacion: caso.lugar_desaparicion || 'No especificado',
+        caracteristicas_fisicas: caso.PersonaDesaparecida?.senas_particulares || 'No especificado',
+        usuario_nombre: caso.Usuario?.nombre || 'N/A',
+        usuario_email: caso.Usuario?.email || 'N/A',
+        id: caso.id,
+        score: 9.0 // Placeholder - implementar scoring real después
+      }));
 
-  const generateMockResults = (searchQuery) => {
-    const mockData = [
-      { num_caso:'CASO-2025-001', dni:'12345678', nombre:'María González Pérez', edad:25, estado:'Activo',
-        fecha_registro:'2025-09-15T10:00:00', fecha_desaparicion:'2025-09-10T08:00:00',
-        ultima_ubicacion:'Lima, Perú - Av. Arequipa 1234',
-        caracteristicas_fisicas:'Estatura media (1.65m), cabello castaño largo, ojos marrones',
-        usuario_nombre:'Juan Pérez', usuario_email:'juan.perez@facefind.com', score:9.5 },
-      { num_caso:'CASO-2025-002', dni:'87654321', nombre:'María Rodríguez López', edad:32, estado:'Pendiente',
-        fecha_registro:'2025-09-10T14:30:00', fecha_desaparicion:'2025-09-05T20:00:00',
-        ultima_ubicacion:'Callao, Perú - Jr. Lima 567',
-        caracteristicas_fisicas:'Estatura baja (1.58m), cabello negro corto, ojos negros',
-        usuario_nombre:'Ana Torres', usuario_email:'ana.torres@facefind.com', score:8.2 },
-      { num_caso:'CASO-2025-003', dni:'45678912', nombre:'Carmen Silva Vásquez', edad:19, estado:'Activo',
-        fecha_registro:'2025-09-20T09:00:00', fecha_desaparicion:'2025-09-18T15:30:00',
-        ultima_ubicacion:'San Juan de Lurigancho - Av. Próceres 890',
-        caracteristicas_fisicas:'Estatura alta (1.70m), cabello rubio teñido, ojos verdes',
-        usuario_nombre:'Roberto Díaz', usuario_email:'roberto.diaz@facefind.com', score:7.8 },
-    ];
-    return mockData.filter(c =>
-      c.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.dni.includes(searchQuery) ||
-      c.num_caso.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+      console.log('✅ Resultados mapeados:', mappedResults);
+      setResults(mappedResults);
+      setTotalResults(mappedResults.length);
+      setQueryTime(Date.now() - start);
+      
+      if (mappedResults.length === 0) {
+        setError('No se encontraron resultados para tu búsqueda');
+      } else {
+        saveRecentSearch(searchQuery, searchType);
+      }
+    } catch (err) {
+      setError(`Error al realizar la búsqueda: ${err.message || 'Intenta nuevamente'}`);
+      console.error('❌ Error en búsqueda:', err);
+      setResults([]);
+      setTotalResults(0);
+    } finally { setIsLoading(false); }
   };
 
   const saveRecentSearch = (searchQuery, type) => {

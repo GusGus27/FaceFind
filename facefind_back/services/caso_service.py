@@ -197,7 +197,7 @@ class CasoService:
     @staticmethod
     def update_caso(caso_id: int, updates: Dict) -> Optional[Dict]:
         """
-        Actualiza un caso existente
+        Actualiza un caso existente y su persona desaparecida asociada
         
         Args:
             caso_id: ID del caso
@@ -207,23 +207,76 @@ class CasoService:
             Dict: Caso actualizado en formato JSON
         """
         try:
-            # 1. Agregar timestamp de actualización
-            updates["updated_at"] = datetime.now().isoformat()
+            # 1. Obtener el caso actual para tener el persona_id
+            caso_actual = CasoService.get_caso_by_id(caso_id)
+            if not caso_actual:
+                raise Exception(f"Caso {caso_id} no encontrado")
             
-            # 2. Guardar cambios DIRECTO a Supabase
-            response = supabase.table("Caso")\
-                .update(updates)\
-                .eq("id", caso_id)\
-                .execute()
+            persona_id = caso_actual.get("persona_id")
             
-            if hasattr(response, "error") and response.error:
-                raise Exception(f"Error al actualizar caso: {str(response.error)}")
+            # 2. Mapear campos en español a inglés (frontend usa español, DB usa inglés)
+            field_mapping = {
+                'edad': 'age',
+                'estado': 'status',
+                'prioridad': 'priority'
+            }
             
-            # 3. Retornar caso actualizado
+            # Aplicar mapeo
+            mapped_updates = {}
+            for key, value in updates.items():
+                mapped_key = field_mapping.get(key, key)
+                mapped_updates[mapped_key] = value
+            
+            # 3. Separar campos de Caso vs PersonaDesaparecida
+            # Campos que van en la tabla PersonaDesaparecida
+            persona_fields = {
+                'nombre_completo', 'fecha_nacimiento', 'gender', 'age', 
+                'altura', 'peso', 'skinColor', 'hairColor', 'eyeColor',
+                'senas_particulares', 'clothing'
+            }
+            
+            # Campos que van en la tabla Caso
+            caso_updates = {}
+            persona_updates = {}
+            
+            for key, value in mapped_updates.items():
+                if key in persona_fields:
+                    persona_updates[key] = value
+                else:
+                    caso_updates[key] = value
+            
+            # 4. Actualizar PersonaDesaparecida si hay cambios
+            if persona_updates and persona_id:
+                print(f"📝 Actualizando PersonaDesaparecida {persona_id}: {persona_updates}")
+                persona_response = supabase.table("PersonaDesaparecida")\
+                    .update(persona_updates)\
+                    .eq("id", persona_id)\
+                    .execute()
+                
+                if hasattr(persona_response, "error") and persona_response.error:
+                    raise Exception(f"Error al actualizar persona: {str(persona_response.error)}")
+            
+            # 5. Actualizar Caso si hay cambios
+            if caso_updates:
+                caso_updates["updated_at"] = datetime.now().isoformat()
+                print(f"📝 Actualizando Caso {caso_id}: {caso_updates}")
+                
+                caso_response = supabase.table("Caso")\
+                    .update(caso_updates)\
+                    .eq("id", caso_id)\
+                    .execute()
+                
+                if hasattr(caso_response, "error") and caso_response.error:
+                    raise Exception(f"Error al actualizar caso: {str(caso_response.error)}")
+            
+            # 6. Retornar caso actualizado completo
+            print(f"✅ Caso {caso_id} actualizado correctamente")
             return CasoService.get_caso_by_id(caso_id)
             
         except Exception as e:
-            print(f"Error en CasoService.update_caso: {str(e)}")
+            print(f"❌ Error en CasoService.update_caso: {str(e)}")
+            import traceback
+            traceback.print_exc()
             raise
     
     @staticmethod
@@ -308,7 +361,7 @@ class CasoService:
     @staticmethod
     def search_casos(search_term: str) -> List[Dict]:
         """
-        Busca casos por nombre completo
+        Busca casos por nombre completo en PersonaDesaparecida
         
         Args:
             search_term: Término de búsqueda
@@ -317,16 +370,33 @@ class CasoService:
             List[Dict]: Lista de casos que coinciden en formato JSON
         """
         try:
-            response = supabase.table("Caso").select(
-                "*, PersonaDesaparecida(*)"
-            ).ilike("nombre_completo", f"%{search_term}%").order("created_at", desc=True).execute()
+            # Buscar personas desaparecidas que coincidan con el término
+            personas_response = supabase.table("PersonaDesaparecida").select(
+                "id, nombre_completo"
+            ).ilike("nombre_completo", f"%{search_term}%").execute()
             
-            if hasattr(response, 'error') and response.error:
-                print(f"Error en CasoService.search_casos: {response.error}")
+            if not personas_response.data:
+                print(f"⚠️ No se encontraron personas con el término: {search_term}")
                 return []
             
-            return response.data if response.data else []
+            # Obtener IDs de las personas encontradas
+            persona_ids = [p['id'] for p in personas_response.data]
+            print(f"🔍 Personas encontradas: {len(persona_ids)}")
+            
+            # Buscar casos de esas personas
+            casos_response = supabase.table("Caso").select(
+                "*, PersonaDesaparecida(*), Usuario(id, nombre, email)"
+            ).in_("persona_id", persona_ids).order("created_at", desc=True).execute()
+            
+            if hasattr(casos_response, 'error') and casos_response.error:
+                print(f"Error en CasoService.search_casos: {casos_response.error}")
+                return []
+            
+            print(f"✅ Casos encontrados: {len(casos_response.data) if casos_response.data else 0}")
+            return casos_response.data if casos_response.data else []
             
         except Exception as e:
-            print(f"Error en CasoService.search_casos: {str(e)}")
+            print(f"❌ Error en CasoService.search_casos: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return []
