@@ -216,35 +216,65 @@ class UserService:
         return UserService.obtener_usuario(user_id)
 
     # ============================================================================
-    # MÉTODOS DE COMPATIBILIDAD - Retornan Dict para la API REST
+    # MÉTODOS DE COMPATIBILIDAD CON API REST
+    # Estos métodos retornan Dict para mantener compatibilidad con el frontend
+    # Internamente usan los métodos OOP y convierten el resultado a Dict
     # ============================================================================
 
     @staticmethod
     def get_all_users(filters: Optional[Dict] = None) -> List[Dict]:
-        """Obtiene todos los usuarios (retorna dict para API)"""
-        return UserRepository.find_all(filters)
+        """
+        Obtiene todos los usuarios (retorna dict para API)
+        Usa OOP internamente pero retorna Dict para compatibilidad
+        """
+        # Obtener datos del Repository
+        users_data = UserRepository.find_all(filters)
+        
+        # Convertir cada Dict a objeto OOP y luego de vuelta a Dict
+        # Esto asegura que se apliquen las reglas de negocio de la clase
+        usuarios_oop = [UsuarioBase.from_dict(user) for user in users_data]
+        
+        # Retornar como lista de diccionarios para la API
+        return [usuario.to_dict() for usuario in usuarios_oop]
 
     @staticmethod
     def get_user_by_id(user_id: int) -> Optional[Dict]:
-        """Obtiene usuario por ID (retorna dict para API)"""
-        return UserRepository.find_by_id(user_id)
+        """
+        Obtiene usuario por ID (retorna dict para API)
+        Usa OOP internamente pero retorna Dict para compatibilidad
+        """
+        usuario_oop = UserService.obtener_usuario(user_id)
+        return usuario_oop.to_dict() if usuario_oop else None
 
     @staticmethod
     def get_user_by_email(email: str) -> Optional[Dict]:
-        """Obtiene usuario por email (retorna dict para API)"""
-        return UserRepository.find_by_email(email)
+        """
+        Obtiene usuario por email (retorna dict para API)
+        Usa OOP internamente pero retorna Dict para compatibilidad
+        """
+        usuario_oop = UserService.obtener_usuario_por_email(email)
+        return usuario_oop.to_dict() if usuario_oop else None
 
     @staticmethod
     def get_user_by_dni(dni: str) -> Optional[Dict]:
-        """Obtiene usuario por DNI (retorna dict para API)"""
-        return UserRepository.find_by_dni(dni)
+        """
+        Obtiene usuario por DNI (retorna dict para API)
+        """
+        user_data = UserRepository.find_by_dni(dni)
+        if not user_data:
+            return None
+        usuario_oop = UsuarioBase.from_dict(user_data)
+        return usuario_oop.to_dict()
 
     @staticmethod
     def create_user(user_data: Dict) -> Dict:
         """
         Crea un nuevo usuario (wrapper para compatibilidad con API)
-        Internamente usa crear_usuario() que es OOP
+        Internamente usa crear_usuario() que es OOP puro
         
+        Args:
+            user_data: Datos del usuario
+            
         Returns:
             Diccionario del usuario creado
         """
@@ -258,8 +288,12 @@ class UserService:
     def update_user(user_id: int, updates: Dict) -> Dict:
         """
         Actualiza un usuario (wrapper para compatibilidad con API)
-        Internamente usa actualizar_usuario() que es OOP
+        Internamente usa actualizar_usuario() que es OOP puro
         
+        Args:
+            user_id: ID del usuario
+            updates: Datos a actualizar
+            
         Returns:
             Diccionario del usuario actualizado
         """
@@ -271,26 +305,26 @@ class UserService:
 
     @staticmethod
     def activate_user(user_id: int) -> Dict:
-        """Activa un usuario (wrapper para compatibilidad)"""
+        """
+        Activa un usuario (wrapper para compatibilidad)
+        Usa el método OOP actualizar_usuario internamente
+        """
         try:
-            update_data = {
-                "status": "active",
-                "updated_at": datetime.now().isoformat()
-            }
-            return UserRepository.update(user_id, update_data)
+            usuario_oop = UserService.actualizar_usuario(user_id, {"status": "active"})
+            return usuario_oop.to_dict()
         except Exception as e:
             print(f"Error in activate_user: {str(e)}")
             raise Exception(f"Failed to activate user: {str(e)}")
 
     @staticmethod
     def deactivate_user(user_id: int) -> Dict:
-        """Desactiva un usuario (wrapper para compatibilidad)"""
+        """
+        Desactiva un usuario (wrapper para compatibilidad)
+        Usa el método OOP actualizar_usuario internamente
+        """
         try:
-            update_data = {
-                "status": "inactive",
-                "updated_at": datetime.now().isoformat()
-            }
-            return UserRepository.update(user_id, update_data)
+            usuario_oop = UserService.actualizar_usuario(user_id, {"status": "inactive"})
+            return usuario_oop.to_dict()
         except Exception as e:
             print(f"Error in deactivate_user: {str(e)}")
             raise Exception(f"Failed to deactivate user: {str(e)}")
@@ -310,20 +344,25 @@ class UserService:
 
     @staticmethod
     def get_user_stats() -> Dict:
-        """Obtiene estadísticas de usuarios"""
+        """
+        Obtiene estadísticas de usuarios
+        Usa OOP internamente para aplicar reglas de negocio
+        """
         try:
-            all_users = UserRepository.find_all()
+            # Obtener usuarios como objetos OOP
+            users_data = UserRepository.find_all()
+            usuarios_oop = [UsuarioBase.from_dict(user) for user in users_data]
             
             stats = {
-                "total": len(all_users),
-                "active": len([u for u in all_users if u.get("status") == "active"]),
-                "inactive": len([u for u in all_users if u.get("status") == "inactive"]),
+                "total": len(usuarios_oop),
+                "active": len([u for u in usuarios_oop if u.status == "active"]),
+                "inactive": len([u for u in usuarios_oop if u.status == "inactive"]),
                 "by_role": {}
             }
             
-            # Contar por rol
-            for user in all_users:
-                role = user.get("role", "user")
+            # Contar por rol usando los objetos OOP
+            for usuario in usuarios_oop:
+                role = usuario.rol.value if hasattr(usuario.rol, 'value') else str(usuario.rol)
                 stats["by_role"][role] = stats["by_role"].get(role, 0) + 1
             
             return stats
@@ -333,23 +372,28 @@ class UserService:
 
     @staticmethod
     def check_blacklist(email: str = None, dni: str = None) -> Dict:
-        """Verifica si email o DNI están en blacklist (usuarios inactivos)"""
+        """
+        Verifica si email o DNI están en blacklist (usuarios inactivos)
+        Usa OOP internamente
+        """
         try:
             if email:
-                user = UserRepository.find_by_email(email)
-                if user and user.get("status") == "inactive":
+                usuario = UserService.obtener_usuario_por_email(email)
+                if usuario and usuario.status == "inactive":
                     return {
                         "is_blacklisted": True,
-                        "reason": f"Email is associated with inactive user: {user.get('nombre')}"
+                        "reason": f"Email is associated with inactive user: {usuario.nombre}"
                     }
             
             if dni:
-                user = UserRepository.find_by_dni(dni)
-                if user and user.get("status") == "inactive":
-                    return {
-                        "is_blacklisted": True,
-                        "reason": f"DNI is associated with inactive user: {user.get('nombre')}"
-                    }
+                user_data = UserRepository.find_by_dni(dni)
+                if user_data:
+                    usuario = UsuarioBase.from_dict(user_data)
+                    if usuario.status == "inactive":
+                        return {
+                            "is_blacklisted": True,
+                            "reason": f"DNI is associated with inactive user: {usuario.nombre}"
+                        }
             
             return {"is_blacklisted": False, "reason": None}
         except Exception as e:
@@ -358,9 +402,14 @@ class UserService:
 
     @staticmethod
     def get_inactive_users() -> List[Dict]:
-        """Obtiene todos los usuarios inactivos (blacklist)"""
+        """
+        Obtiene todos los usuarios inactivos (blacklist)
+        Usa OOP internamente pero retorna Dict para compatibilidad
+        """
         try:
-            return UserRepository.find_all({"status": "inactive"})
+            users_data = UserRepository.find_all({"status": "inactive"})
+            usuarios_oop = [UsuarioBase.from_dict(user) for user in users_data]
+            return [usuario.to_dict() for usuario in usuarios_oop]
         except Exception as e:
             print(f"Error in get_inactive_users: {str(e)}")
             return []
@@ -372,14 +421,23 @@ class UserService:
 
     @staticmethod
     def get_users_with_cases_count() -> List[Dict]:
-        """Obtiene todos los usuarios con su conteo de casos"""
+        """
+        Obtiene todos los usuarios con su conteo de casos
+        Usa OOP internamente pero retorna Dict para compatibilidad
+        """
         try:
-            users = UserRepository.find_all()
+            # Obtener usuarios como objetos OOP
+            users_data = UserRepository.find_all()
+            usuarios_oop = [UsuarioBase.from_dict(user) for user in users_data]
             
-            for user in users:
-                user["cases_count"] = UserRepository.count_cases_by_user(user["id"])
+            # Convertir a Dict y agregar conteo de casos
+            result = []
+            for usuario in usuarios_oop:
+                user_dict = usuario.to_dict()
+                user_dict["cases_count"] = UserRepository.count_cases_by_user(usuario.id)
+                result.append(user_dict)
             
-            return users
+            return result
         except Exception as e:
             print(f"Error in get_users_with_cases_count: {str(e)}")
             raise
