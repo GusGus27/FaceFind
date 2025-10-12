@@ -44,8 +44,8 @@ app.register_blueprint(foto_bp, url_prefix="/fotos")
 detection_service =  ProcesadorFaceFind()
 try:
     detection_service = ProcesadorFaceFind(
-        encodings_path=Config.ENCODINGS_FILE,
-        tolerance=Config.FACE_TOLERANCE
+        #encodings_path=Config.ENCODINGS_FILE,
+       # tolerance=Config.FACE_TOLERANCE
     )
     print(f"✅ Servicio de detección inicializado con {len(detection_service.known_encodings)} encodings")
 except Exception as e:

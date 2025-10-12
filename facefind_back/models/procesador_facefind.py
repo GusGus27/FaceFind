@@ -1,23 +1,25 @@
 import face_recognition
 import numpy as np
-import pickle
 import cv2
+import base64
 import time
+import binascii
 from supabase import create_client, Client
+
 
 class ProcesadorFaceFind:
     """
     Versión extendida de ProcesadorFaceFind.
-    Carga encodings desde una tabla Supabase donde el vector está guardado como BYTEA.
+    Carga encodings desde una tabla Supabase donde el vector está guardado como BYTEA o Base64.
     """
 
-    def __init__(self, tolerance=0.6):
+    def __init__(self, tolerance=0.55):
         self.tolerance = tolerance
         self.supabase: Client = self._init_supabase()
         self.known_encodings = []
         self.known_names = []
 
-        # Cargar encodings desde Supabase (tabla, no bucket)
+        # Cargar encodings desde Supabase
         self.load_known_faces_from_db()
 
     # ======================================================
@@ -30,47 +32,64 @@ class ProcesadorFaceFind:
         return create_client(url, key)
 
     # ======================================================
-    # 📥 Cargar encodings desde la tabla
+    # 🧩 Función auxiliar: decodificar base64 con padding
     # ======================================================
-    def load_known_faces_from_db(self):
-        """Carga los encodings desde la tabla 'encodings' donde el campo 'vector' es bytea."""
+    def _decode_base64_vector(self, b64_string, id=None):
         try:
-            response = self.supabase.table("encodings").select("*").execute()
-            rows = response.data or []
+            if not isinstance(b64_string, str):
+                print(f"⚠️ Vector id={id}: tipo inesperado {type(b64_string)}")
+                return None
 
-            encodings = []
-            names = []
+            s = b64_string.strip()
+            # 🔧 Corrige padding faltante
+            missing_padding = len(s) % 4
+            if missing_padding:
+                s += "=" * (4 - missing_padding)
 
-            for row in rows:
-                vector_bytes = row.get("vector")
-                name = row.get("nombre") or row.get("name") or "Desconocido"
-
-                try:
-                    # ⚙️ Decodificar bytes -> numpy.ndarray
-                    if isinstance(vector_bytes, (bytes, bytearray)):
-                        encoding_array = pickle.loads(vector_bytes)
-                    elif isinstance(vector_bytes, memoryview):
-                        encoding_array = pickle.loads(vector_bytes.tobytes())
-                    else:
-                        print(f"⚠️ Tipo inesperado en vector: {type(vector_bytes)}")
-                        continue
-
-                    if isinstance(encoding_array, np.ndarray):
-                        encodings.append(encoding_array)
-                        names.append(name)
-                    else:
-                        print(f"⚠️ El vector de {name} no es ndarray")
-                except Exception as e:
-                    print(f"⚠️ Error decodificando encoding de {name}: {e}")
-
-            self.known_encodings = encodings
-            self.known_names = names
-            print(f"✅ {len(self.known_encodings)} encodings cargados desde Supabase DB")
+            decoded = base64.b64decode(s)
+            return np.frombuffer(decoded, dtype=np.float64)
 
         except Exception as e:
-            print(f"❌ Error cargando encodings desde Supabase: {e}")
-            self.known_encodings = []
-            self.known_names = []
+            print(f"⚠️ No se pudo decodificar vector id={id}: {e}")
+            return None
+
+    # ======================================================
+    # 📥 Cargar encodings desde la tabla Supabase
+    # ======================================================
+    
+
+    def load_known_faces_from_db(self):
+        response = self.supabase.table("Embedding").select("*").execute()
+        if not response.data:
+            print("    No se encontraron encodings en BD")
+            return
+
+        for row in response.data:
+            vector_data = row.get("vector")
+            nombre = str(row.get("foto_referencia_id") or f"id_{row.get('id')}")
+
+            vector = None
+            try:
+                # Detectar formato del vector
+                if isinstance(vector_data, str):
+                    if vector_data.startswith("\\x"):
+                        # Es formato bytea (hex)
+                        vector = np.frombuffer(binascii.unhexlify(vector_data[2:]), dtype=np.float64)
+                    else:
+                        # Es formato base64 (raro en tu caso, pero posible)
+                        vector = self._decode_base64_vector(vector_data, id=row.get("id"))
+                elif isinstance(vector_data, (bytes, bytearray)):
+                    vector = np.frombuffer(vector_data, dtype=np.float64)
+                elif isinstance(vector_data, list):
+                    vector = np.array(vector_data, dtype=np.float64)
+
+                if vector is not None and len(vector) > 0:
+                    self.known_encodings.append(vector)
+                    self.known_names.append(nombre)
+            except Exception as e:
+                print(f"⚠️ No se pudo procesar vector id={row.get('id')}: {e}")
+
+        print(f"✅ {len(self.known_encodings)} encodings cargados desde Supabase DB")
 
     # ======================================================
     # 🧠 Procesamiento facial
@@ -81,15 +100,31 @@ class ProcesadorFaceFind:
         encodings = face_recognition.face_encodings(rgb_frame, locations)
 
         faces = []
+        print(f"\n🧠 Detectadas {len(encodings)} caras en el frame")
+
         for i, encoding in enumerate(encodings):
             results = self.compare_with_known_faces(encoding)
             top, right, bottom, left = locations[i]
+
             bbox = {
                 "x": int(left),
                 "y": int(top),
                 "width": int(right - left),
                 "height": int(bottom - top)
             }
+
+            # 💬 Mostrar resumen en consola
+            if results["match_found"]:
+                print(f"✅ Rostro {i}: Coincide con {results['best_match_name']} "
+                    f"(Similitud: {results['similarity_percentage']}%, "
+                    f"Distancia: {results['distance']})")
+            else:
+                print(f"❌ Rostro {i}: No hay coincidencia (Distancia mínima: {results['distance']})")
+
+            # 💬 Mostrar los 3 más similares
+            print("   🔎 Top 3 coincidencias:")
+            for sim in results["all_similarities"]:
+                print(f"      - {sim['name']}: {sim['similarity_percentage']}% (dist {sim['distance']})")
 
             faces.append({
                 "face_id": i,
@@ -108,7 +143,9 @@ class ProcesadorFaceFind:
     # 🔍 Comparación facial
     # ======================================================
     def compare_with_known_faces(self, encoding):
+        """Compara un encoding con todos los conocidos"""
         if not self.known_encodings:
+            print("⚠️ No hay encodings cargados para comparar.")
             return {
                 "match_found": False,
                 "best_match_name": "Desconocido",
@@ -140,10 +177,9 @@ class ProcesadorFaceFind:
         }
 
     # ======================================================
-    # 🧩 Agregar nuevos rostros
+    # 🧩 Agregar nuevos rostros en memoria
     # ======================================================
     def add_new_face(self, encoding, name):
-        """Agrega un nuevo rostro en memoria (no guarda en Supabase todavía)."""
         self.known_encodings.append(encoding)
         self.known_names.append(name)
         print(f"🆕 Agregado nuevo rostro: {name}")
