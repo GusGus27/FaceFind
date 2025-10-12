@@ -75,6 +75,27 @@ export const getUserById = async (userId) => {
 };
 
 /**
+ * Get user profile with contact information
+ * @param {number} userId - User ID
+ * @returns {Promise<Object>} User profile data
+ */
+export const getUserProfile = async (userId) => {
+  try {
+    const response = await fetch(`${API_URL}/users/profile/${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+    
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+};
+
+/**
  * Create a new user
  * @param {Object} userData - User data {nombre, email, password, role, dni}
  * @returns {Promise<Object>} Created user

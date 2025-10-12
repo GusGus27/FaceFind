@@ -80,6 +80,41 @@ def get_user(user_id):
         }), 500
 
 
+@user_bp.route("/profile/<int:user_id>", methods=["GET"])
+def get_user_profile(user_id):
+    """
+    Get user profile with contact information
+    Used for auto-filling contact forms
+    """
+    try:
+        user = UserService.get_user_by_id(user_id)
+        
+        if not user:
+            return jsonify({
+                "success": False,
+                "error": "User not found"
+            }), 404
+        
+        # Return only safe profile information
+        # Note: phone is not stored in Usuario table, so we don't include it
+        profile_data = {
+            "id": user.get("id"),
+            "nombre": user.get("nombre"),
+            "email": user.get("email"),
+            "dni": user.get("dni"),
+        }
+        
+        return jsonify({
+            "success": True,
+            "data": profile_data
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 @user_bp.route("/", methods=["POST"])
 def create_user():
     """Create a new user"""
