@@ -61,4 +61,3 @@ facefind_front/*.local
 # OS
 .DS_Store
 *.pyc
-/facefind_back
