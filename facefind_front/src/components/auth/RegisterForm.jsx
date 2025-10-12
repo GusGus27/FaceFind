@@ -9,6 +9,7 @@ const RegisterForm = ({ onSubmit, error, success }) => {
     name: '',
     email: '',
     dni: '',
+    num_telefono: '',
     password: '',
     confirmPassword: ''
   });
@@ -95,6 +96,19 @@ const RegisterForm = ({ onSubmit, error, success }) => {
             value={formData.dni}
             onChange={handleChange}
             maxLength="8"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="num_telefono">Número de Teléfono</label>
+          <FormInput
+            id="num_telefono"
+            type="tel"
+            placeholder="987654321 (9 dígitos)"
+            value={formData.num_telefono}
+            onChange={handleChange}
+            maxLength="9"
             required
           />
         </div>

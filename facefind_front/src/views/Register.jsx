@@ -5,7 +5,7 @@ import WelcomePanel from '../components/auth/WelcomePanel';
 import RegisterForm from '../components/auth/RegisterForm';
 import { useAuth } from '../context/AuthContext';
 import { getPasswordValidationError } from '../utils/passwordValidation';
-import { isValidEmail, isValidDNI, isValidName } from '../utils/formValidation';
+import { isValidEmail, isValidDNI, isValidName, isValidPhone } from '../utils/formValidation';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const Register = () => {
     setError('');
     setSuccess('');
 
-    const { name, email, dni, password, confirmPassword } = formData;
+    const { name, email, dni, num_telefono, password, confirmPassword } = formData;
 
     // ✅ Validaciones de formulario (como ya tenías)
     if (!isValidName(name)) {
@@ -35,6 +35,11 @@ const Register = () => {
       return;
     }
 
+    if (!isValidPhone(num_telefono)) {
+      setError('El número de teléfono debe tener exactamente 9 dígitos');
+      return;
+    }
+
     const validationError = getPasswordValidationError(password, confirmPassword);
     if (validationError) {
       setError(validationError);
@@ -47,7 +52,8 @@ const Register = () => {
         nombre: name,
         email,
         password,
-        dni, // si tu backend lo usa
+        dni,
+        num_telefono,
       });
 
       if (response?.error) {

@@ -1,12 +1,12 @@
 const API_BASE_URL = "http://localhost:5000";
 
-export const signUp = async ({ email, password, nombre, dni }) => {
+export const signUp = async ({ email, password, nombre, dni, num_telefono }) => {
   try {
-    console.log("📦 Enviando datos de registro:", { nombre, email, dni, password });
+    console.log("📦 Enviando datos de registro:", { nombre, email, dni, num_telefono, password });
     const res = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, nombre, dni }),
+      body: JSON.stringify({ email, password, nombre, dni, num_telefono }),
     });
 
     const data = await res.json();

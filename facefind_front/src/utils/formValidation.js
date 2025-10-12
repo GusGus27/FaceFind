@@ -31,3 +31,13 @@ export const isValidDNI = (dni) => {
 export const isValidName = (name, minLength = 3) => {
   return name.trim().length >= minLength;
 };
+
+/**
+ * Valida formato de número de teléfono peruano (9 dígitos)
+ * @param {string} phone - Número de teléfono a validar
+ * @returns {boolean}
+ */
+export const isValidPhone = (phone) => {
+  const phoneRegex = /^\d{9}$/;
+  return phoneRegex.test(phone);
+};

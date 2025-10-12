@@ -26,7 +26,7 @@ class UserService:
         Crea un nuevo usuario en el sistema (OOP)
         
         Args:
-            user_data: Dict con nombre, email, password, role, dni
+            user_data: Dict con nombre, email, password, role, dni, num_telefono
             
         Returns:
             Instancia OOP del usuario creado
@@ -69,6 +69,10 @@ class UserService:
             
             # Usar el método registrar() de la clase OOP
             user_dict = usuario.registrar()
+            
+            # Agregar num_telefono si está presente
+            if "num_telefono" in user_data and user_data["num_telefono"]:
+                user_dict["num_telefono"] = user_data["num_telefono"]
             
             # Guardar en BD usando Repository
             saved_user = UserRepository.save(user_dict)
@@ -153,6 +157,10 @@ class UserService:
             # Guardar cambios en BD
             update_data = usuario.to_dict()
             update_data["updated_at"] = datetime.now().isoformat()
+            
+            # Agregar num_telefono si está presente en updates
+            if "num_telefono" in updates:
+                update_data["num_telefono"] = updates["num_telefono"]
             
             UserRepository.update(user_id, update_data)
             

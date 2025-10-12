@@ -12,6 +12,7 @@ CREATE TABLE public.Usuario (
   created_at timestamp without time zone DEFAULT now(),
   updated_at timestamp without time zone DEFAULT now(),
   dni character varying UNIQUE,
+  num_telefono character varying,
   CONSTRAINT Usuario_pkey PRIMARY KEY (id)
 );
 

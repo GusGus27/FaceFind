@@ -19,6 +19,7 @@ def signup():
         nombre = data.get('nombre')
         dni = data.get('dni')
         celular = data.get('celular')
+        num_telefono = data.get('num_telefono')
         role = data.get('role', 'user')  # Por defecto: user
 
         # 🔹 Validaciones básicas
@@ -30,6 +31,9 @@ def signup():
 
         if dni and len(dni.strip()) != 8:
             return jsonify({"error": "El DNI debe tener exactamente 8 dígitos"}), 400
+        
+        if num_telefono and len(num_telefono.strip()) != 9:
+            return jsonify({"error": "El número de teléfono debe tener exactamente 9 dígitos"}), 400
 
         if len(password) < 6:
             return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
@@ -78,6 +82,10 @@ def signup():
 
         # 🔹 Usar método registrar() de la clase Usuario (según UML)
         insert_data = usuario.registrar()
+        
+        # 🔹 Agregar num_telefono si está presente
+        if num_telefono:
+            insert_data["num_telefono"] = num_telefono.strip()
 
         # 🔹 Insertar en tabla Usuario
         insert_result = supabase.table("Usuario").insert(insert_data).execute()

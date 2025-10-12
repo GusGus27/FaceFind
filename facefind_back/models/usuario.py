@@ -244,9 +244,12 @@ class UsuarioRegistrado(UsuarioBase):
         Registra un usuario regular en el sistema
 
         Returns:
-            Diccionario con el resultado del registro
+            Diccionario con el resultado del registro (sin incluir id para que la BD lo genere)
         """
         data = self.to_dict()
+        # Eliminar el id para que la BD lo genere automáticamente
+        if "id" in data:
+            del data["id"]
         if self._celular:
             data["celular"] = self._celular
         return data
@@ -333,9 +336,13 @@ class UsuarioAdministrador(UsuarioBase):
         Registra un administrador en el sistema
 
         Returns:
-            Diccionario con el resultado del registro
+            Diccionario con el resultado del registro (sin incluir id para que la BD lo genere)
         """
-        return self.to_dict()
+        data = self.to_dict()
+        # Eliminar el id para que la BD lo genere automáticamente
+        if "id" in data:
+            del data["id"]
+        return data
 
     def validarCoincidencia(self, caso_id: int, alerta_id: int, es_valida: bool) -> bool:
         """
