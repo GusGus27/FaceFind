@@ -14,6 +14,8 @@ from config import Config
 
 # Servicios
 from services.face_detection_service import FaceDetectionService
+from models.procesador_facefind import ProcesadorFaceFind
+
 
 # Blueprints (Rutas API)
 from api.auth_routes import auth_bp
@@ -39,9 +41,9 @@ app.register_blueprint(foto_bp, url_prefix="/fotos")
 
 
 # Inicializar servicio de detección facial
-detection_service = None
+detection_service =  ProcesadorFaceFind()
 try:
-    detection_service = FaceDetectionService(
+    detection_service = ProcesadorFaceFind(
         encodings_path=Config.ENCODINGS_FILE,
         tolerance=Config.FACE_TOLERANCE
     )
