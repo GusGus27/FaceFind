@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { getCasosByUserId } from "../services/casoService";
+import { getUserById } from "../services/userService";
 import Header from "../components/common/Header";
 import UserCaseCards from "../components/cases/UserCaseCards";
 import FilterBar from "../components/cases/FilterBar";
@@ -6,91 +10,59 @@ import Pagination from "../components/cases/Pagination";
 import '../styles/views/UserCasesView.css';
 
 export default function UserCasesView() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [cases, setCases] = useState([]);
   const [filteredCases, setFilteredCases] = useState([]);
   const [filter, setFilter] = useState("todos");
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [userId, setUserId] = useState(null);
   const perPage = 5;
 
+  // Obtener usuario_id desde la tabla Usuario usando el email del auth
   useEffect(() => {
-    // Simulación: datos del backend basados en el esquema de DB
-    const mockCases = [
-      { 
-        id: 1, 
-        nombre_completo: "María García López", 
-        title: "Desaparición en zona centro",
-        status: "activo", 
-        priority: "alta",
-        fecha_desaparicion: "2025-10-01",
-        lugar_desaparicion: "Centro Comercial Plaza Mayor, Lima",
-        updated_at: "2025-10-11",
-        img: "https://i.pravatar.cc/150?img=1",
-        description: "Mi hermana desapareció el 1 de octubre. La vi por última vez saliendo del centro comercial Plaza Mayor."
-      },
-      { 
-        id: 2, 
-        nombre_completo: "Carlos Mendoza Ruiz", 
-        title: "Persona extraviada en parque",
-        status: "pendiente", 
-        priority: "media",
-        fecha_desaparicion: "2025-09-28",
-        lugar_desaparicion: "Parque Kennedy, Miraflores",
-        updated_at: "2025-10-10",
-        img: "https://i.pravatar.cc/150?img=12",
-        description: "Mi padre salió a caminar por el Parque Kennedy y no regresó. Necesito ayuda para encontrarlo."
-      },
-      { 
-        id: 3, 
-        nombre_completo: "Ana Sofía Torres", 
-        title: "Caso resuelto - Persona localizada",
-        status: "resuelto", 
-        priority: "baja",
-        fecha_desaparicion: "2025-09-25",
-        lugar_desaparicion: "Universidad Nacional, San Miguel",
-        updated_at: "2025-09-30",
-        img: "https://i.pravatar.cc/150?img=5",
-        description: "¡Gracias a todos! Ana fue encontrada sana y salva. El sistema funcionó perfectamente."
-      },
-      { 
-        id: 4, 
-        nombre_completo: "Roberto Castillo Pérez", 
-        title: "Desaparición en zona industrial",
-        status: "activo", 
-        priority: "alta",
-        fecha_desaparicion: "2025-10-05",
-        lugar_desaparicion: "Zona Industrial Callao",
-        updated_at: "2025-10-11",
-        img: "https://i.pravatar.cc/150?img=8",
-        description: "Mi esposo no regresó del trabajo hace 6 días. Salió de la zona industrial del Callao y desapareció."
-      },
-      { 
-        id: 5, 
-        nombre_completo: "Lucía Fernández Vega", 
-        title: "Menor desaparecida",
-        status: "activo", 
-        priority: "alta",
-        fecha_desaparicion: "2025-10-08",
-        lugar_desaparicion: "Colegio Santa Rosa, San Isidro",
-        updated_at: "2025-10-11",
-        img: "https://i.pravatar.cc/150?img=9",
-        description: "¡URGENTE! Mi hija de 15 años no regresó del colegio. Por favor ayúdenme a encontrarla."
-      },
-      { 
-        id: 6, 
-        nombre_completo: "Jorge Luis Ramírez", 
-        title: "Desaparición voluntaria",
-        status: "pendiente", 
-        priority: "media",
-        fecha_desaparicion: "2025-09-20",
-        lugar_desaparicion: "Surco, Lima",
-        updated_at: "2025-10-09",
-        img: "https://i.pravatar.cc/150?img=13",
-        description: "Mi hermano desapareció hace 3 semanas. Su familia lo está buscando desesperadamente."
-      },
-    ];
-    setCases(mockCases);
-    setFilteredCases(mockCases);
-  }, []);
+    const fetchUserId = async () => {
+      if (user?.email) {
+        try {
+          // Buscar usuario en la BD por email de Supabase Auth
+          const response = await fetch(`http://localhost:5000/users?search=${user.email}`);
+          const result = await response.json();
+          
+          if (result.success && result.data.length > 0) {
+            setUserId(result.data[0].id);
+          }
+        } catch (err) {
+          console.error('Error fetching user ID:', err);
+        }
+      }
+    };
+
+    fetchUserId();
+  }, [user]);
+
+  // Cargar casos del usuario
+  useEffect(() => {
+    const loadUserCases = async () => {
+      if (!userId) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const casesData = await getCasosByUserId(userId);
+        setCases(casesData);
+        setFilteredCases(casesData);
+      } catch (err) {
+        console.error('Error loading cases:', err);
+        setError('Error al cargar los casos. Intenta nuevamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserCases();
+  }, [userId]);
 
   // Filtrado
   useEffect(() => {
@@ -104,22 +76,69 @@ export default function UserCasesView() {
   const paginatedCases = filteredCases.slice(startIndex, startIndex + perPage);
   const totalPages = Math.ceil(filteredCases.length / perPage);
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="user-cases-container">
+          <div className="loading-state">
+            <p>Cargando casos...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Header />
+        <div className="user-cases-container">
+          <div className="error-state">
+            <p>{error}</p>
+            <button onClick={handleBackToHome} className="btn-back">
+              ← Volver al Inicio
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
       <div className="user-cases-container">
         <div className="user-cases-header">
-          <h1 className="title">Casos Activos del Usuario</h1>
+          <button onClick={handleBackToHome} className="btn-back">
+            ← Volver al Inicio
+          </button>
+          <h1 className="title">Mis Casos Activos</h1>
           <FilterBar filter={filter} setFilter={setFilter} />
         </div>
 
-        <UserCaseCards cases={paginatedCases} />
+        {cases.length === 0 ? (
+          <div className="empty-state">
+            <p>No tienes casos registrados aún.</p>
+            <button onClick={handleBackToHome} className="btn-primary">
+              Registrar Nuevo Caso
+            </button>
+          </div>
+        ) : (
+          <>
+            <UserCaseCards cases={paginatedCases} />
 
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          setPage={setPage}
-        />
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              setPage={setPage}
+            />
+          </>
+        )}
       </div>
     </>
   );

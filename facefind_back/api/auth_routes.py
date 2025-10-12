@@ -14,6 +14,7 @@ def signup():
         email = data.get('email')
         password = data.get('password')
         nombre = data.get('nombre')
+        dni = data.get('dni')
 
         # 🔹 Validaciones básicas
         if not email or not password:
@@ -21,6 +22,9 @@ def signup():
         
         if not nombre or len(nombre.strip()) < 2:
             return jsonify({"error": "El nombre debe tener al menos 2 caracteres"}), 400
+        
+        if dni and len(dni.strip()) != 8:
+            return jsonify({"error": "El DNI debe tener exactamente 8 dígitos"}), 400
         
         if len(password) < 6:
             return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
@@ -47,14 +51,20 @@ def signup():
         # 🔹 Insertar en tabla Usuario (SIN guardar password - ya está en auth.users hasheada)
         # NOTA: No incluimos 'id' porque la tabla lo genera automáticamente
         # NOTA: Incluimos "password" con valor dummy porque la columna es NOT NULL (legacy)
-        insert_result = supabase.table("Usuario").insert({
+        insert_data = {
             # "id" se genera automáticamente (autoincremental)
             "nombre": nombre,
             "email": user_email,
             "password": "NO_SE_USA",  # Dummy - la real está en auth.users hasheada
             "role": "user",  # Rol por defecto
             "status": "active"
-        }).execute()
+        }
+        
+        # Agregar DNI solo si fue proporcionado
+        if dni:
+            insert_data["dni"] = dni.strip()
+        
+        insert_result = supabase.table("Usuario").insert(insert_data).execute()
 
         # Obtener el ID generado
         inserted_user = insert_result.data[0] if insert_result.data else None
