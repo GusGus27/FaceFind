@@ -1,6 +1,3 @@
-"""
-Cliente de Supabase centralizado
-"""
 from supabase import create_client
 from config import Config
 
