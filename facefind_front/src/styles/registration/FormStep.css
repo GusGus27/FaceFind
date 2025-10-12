@@ -280,6 +280,108 @@
   font-size: 0.9rem;
 }
 
+/* Photo Counter */
+.photo-counter {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.counter-valid {
+  color: #27ae60;
+}
+
+.counter-invalid {
+  color: #e74c3c;
+}
+
+.counter-warning {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #e67e22;
+}
+
+/* Photos Sections */
+.photos-section {
+  margin-bottom: 2rem;
+}
+
+.photos-section .section-title {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* Additional Photos Section */
+.additional-section {
+  background: #f8f9ff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px dashed #667eea;
+}
+
+.optional-badge {
+  display: inline-block;
+  background: #667eea;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Add More Photo Box */
+.add-more-box {
+  border: 2px dashed #667eea;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.add-more-box:hover {
+  border-color: #5568d3;
+  background: #f8f9ff;
+}
+
+.add-more-label {
+  cursor: pointer;
+}
+
+.add-more-label .upload-icon {
+  font-size: 2.5rem;
+  color: #667eea;
+}
+
+/* Additional Photos Info */
+.additional-photos-info {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #e8f4f8;
+  border-left: 3px solid #3498db;
+  border-radius: 4px;
+}
+
+.additional-photos-info p {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+/* Max Photos Notice */
+.max-photos-notice {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  color: #155724;
+  text-align: center;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .form-step {
