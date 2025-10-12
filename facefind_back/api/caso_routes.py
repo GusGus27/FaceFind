@@ -1,12 +1,9 @@
 from flask import Blueprint, request, jsonify
-from services.supabase_client import supabase
+from services.caso_service import CasoService
 from services.encodings_generator import encodings_generator
 from services.user_service import UserService
 from datetime import datetime
-from models.caso import Caso
-from models.persona_desaparecida import PersonaDesaparecida
 from models.usuario import UsuarioBase, UsuarioRegistrado
-from models.enums import EstadoCaso
 
 caso_bp = Blueprint("casos", __name__)
 
@@ -15,7 +12,7 @@ caso_bp = Blueprint("casos", __name__)
 def create_caso():
     """
     Crea un nuevo caso de persona desaparecida
-    Refactorizado para usar clases OOP: Caso, PersonaDesaparecida, UsuarioRegistrado
+    Usa CasoService (OOP) para manejar la lógica de negocio
     """
     try:
         data = request.get_json()
@@ -28,77 +25,21 @@ def create_caso():
             if field not in data or not data[field]:
                 return jsonify({"error": f"El campo '{field}' es obligatorio."}), 400
 
-        # Paso 1: Crear objeto PersonaDesaparecida (OOP)
-        persona = PersonaDesaparecida(
-            nombre_completo=data.get("nombre_completo"),
-            fecha_nacimiento=data.get("fecha_nacimiento"),
-            gender=data.get("gender"),
-            altura=data.get("altura"),
-            peso=data.get("peso"),
-            skin_color=data.get("skinColor"),
-            hair_color=data.get("hairColor"),
-            eye_color=data.get("eyeColor"),
-            senas_particulares=data.get("senas_particulares"),
-            edad_desaparicion=data.get("age"),
-            clothing=data.get("clothing")
-        )
-
-        # Guardar PersonaDesaparecida en BD
-        persona_data = persona.to_dict()
-        persona_response = supabase.table("PersonaDesaparecida").insert(persona_data).execute()
-
-        if hasattr(persona_response, "error") and persona_response.error:
-            return jsonify({"error": f"Error al crear persona: {str(persona_response.error)}"}), 500
-
-        persona_id = persona_response.data[0]["id"]
-
-        # Paso 2: Crear objeto Caso (OOP)
-        estado = EstadoCaso.from_string(data.get("status", "pendiente"))
-
-        caso = Caso(
-            usuario_id=data["usuario_id"],
-            persona_id=persona_id,
-            fecha_desaparicion=data["fecha_desaparicion"],
-            lugar_desaparicion=data["lugar_desaparicion"],
-            estado=estado,
-            disappearance_time=data.get("disappearanceTime"),
-            last_seen_location=data.get("lastSeenLocation"),
-            last_seen=data.get("lastSeen"),
-            circumstances=data.get("circumstances"),
-            description=data.get("description"),
-            location=data.get("location"),
-            priority=data.get("priority", "medium"),
-            reporter_name=data.get("reporterName"),
-            relationship=data.get("relationship"),
-            contact_phone=data.get("contactPhone"),
-            contact_email=data.get("contactEmail"),
-            additional_contact=data.get("additionalContact"),
-            resolution_date=data.get("resolutionDate"),
-            resolution_note=data.get("resolutionNote"),
-            observaciones=data.get("observaciones")
-        )
-
-        # Asociar PersonaDesaparecida al Caso usando método del UML
-        caso.anadirPersonaDes(persona)
-
-        # Guardar Caso en BD
-        caso_data = caso.to_dict()
-        caso_response = supabase.table("Caso").insert(caso_data).execute()
-
-        if hasattr(caso_response, "error") and caso_response.error:
-            # Si falla el caso, intentar borrar la persona creada
-            supabase.table("PersonaDesaparecida").delete().eq("id", persona_id).execute()
-            return jsonify({"error": f"Error al crear caso: {str(caso_response.error)}"}), 500
-
-        caso_id = caso_response.data[0]["id"]
+        # Crear caso usando Service OOP
+        caso_dict = CasoService.create_caso(data)
+        
+        caso_id = caso_dict.get("id")
+        persona_dict = caso_dict.get("PersonaDesaparecida", {})
+        persona_id = persona_dict.get("id")
 
         # Paso 3: Procesar fotos y generar encodings (si se proporcionaron)
         encodings_result = None
         if "photos" in data and data["photos"]:
-            print(f"📸 Procesando fotos para {persona.nombre}...")
+            persona_nombre = persona_dict.get("nombre_completo", "Desconocido")
+            print(f"📸 Procesando fotos para {persona_nombre}...")
             try:
                 encodings_result = encodings_generator.process_case_photos(
-                    person_name=persona.nombre,
+                    person_name=persona_nombre,
                     photos=data["photos"]
                 )
 
@@ -123,10 +64,10 @@ def create_caso():
         response_data = {
             "success": True,
             "message": "Caso creado correctamente",
-            "data": caso_response.data,
+            "data": caso_dict,
             "caso_id": caso_id,
             "persona_id": persona_id,
-            "persona": persona.to_dict()
+            "persona": persona_dict
         }
 
         # Agregar información de encodings si se procesaron fotos
@@ -145,27 +86,11 @@ def create_caso():
 def get_all_casos():
     """
     Obtiene todos los casos con sus PersonaDesaparecida
-    Retorna objetos Caso serializados
+    Usa CasoService (OOP)
     """
     try:
-        # Hacer JOIN con PersonaDesaparecida para obtener datos del desaparecido
-        response = supabase.table("Caso").select(
-            "*, PersonaDesaparecida(*)"
-        ).order("created_at", desc=True).execute()
-
-        if hasattr(response, "error") and response.error:
-            return jsonify({"error": str(response.error)}), 500
-
-        # Convertir los datos a objetos OOP Caso
-        casos = []
-        for caso_data in response.data:
-            try:
-                caso = Caso.from_dict(caso_data)
-                casos.append(caso.to_dict())
-            except Exception as e:
-                print(f"⚠️ Error convirtiendo caso a OOP: {e}")
-                casos.append(caso_data)  # Fallback a dict original
-
+        casos = CasoService.get_all_casos()
+        
         return jsonify({
             "data": casos,
             "count": len(casos)
@@ -179,29 +104,18 @@ def get_all_casos():
 def get_caso(caso_id):
     """
     Obtiene un caso específico por ID
-    Retorna objeto Caso serializado
+    Usa CasoService (OOP)
     """
     try:
-        # Hacer JOIN con PersonaDesaparecida
-        response = supabase.table("Caso").select(
-            "*, PersonaDesaparecida(*)"
-        ).eq("id", caso_id).single().execute()
+        caso = CasoService.get_caso_by_id(caso_id)
+        
+        if not caso:
+            return jsonify({"error": "Caso no encontrado"}), 404
 
-        if hasattr(response, "error") and response.error:
-            return jsonify({"error": str(response.error)}), 404
-
-        # Convertir a objeto OOP Caso
-        try:
-            caso = Caso.from_dict(response.data)
-            caso_dict = caso.to_dict()
-
-            return jsonify({
-                "data": caso_dict,
-                "tipo_objeto": "Caso (OOP)"
-            })
-        except Exception as e:
-            print(f"⚠️ Error convirtiendo caso a OOP: {e}")
-            return jsonify({"data": response.data})
+        return jsonify({
+            "data": caso,
+            "tipo_objeto": "Caso (OOP)"
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -211,11 +125,11 @@ def get_caso(caso_id):
 # ✅ Actualizar un caso
 @caso_bp.route("/<int:caso_id>", methods=["PUT"])
 def update_caso(caso_id):
+    """Actualiza un caso - Usa CasoService (OOP)"""
     data = request.get_json()
     try:
-        updates = {**data, "updated_at": datetime.utcnow().isoformat()}
-        res = supabase.table("Caso").update(updates).eq("id", caso_id).execute()
-        return jsonify({"success": True, "data": res.data})
+        caso_actualizado = CasoService.update_caso(caso_id, data)
+        return jsonify({"success": True, "data": caso_actualizado})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -223,9 +137,13 @@ def update_caso(caso_id):
 # ✅ Eliminar un caso
 @caso_bp.route("/<int:caso_id>", methods=["DELETE"])
 def delete_caso(caso_id):
+    """Elimina un caso - Usa CasoService (OOP)"""
     try:
-        res = supabase.table("Caso").delete().eq("id", caso_id).execute()
-        return jsonify({"success": True, "message": "Caso eliminado correctamente"})
+        success = CasoService.delete_caso(caso_id)
+        if success:
+            return jsonify({"success": True, "message": "Caso eliminado correctamente"})
+        else:
+            return jsonify({"success": False, "error": "No se pudo eliminar el caso"}), 500
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -233,16 +151,11 @@ def delete_caso(caso_id):
 # ✅ Buscar casos por nombre
 @caso_bp.route("/search", methods=["GET"])
 def search_casos_by_name():
+    """Busca casos por nombre - Usa CasoService (OOP)"""
     try:
         search_term = request.args.get("q", "")
-        res = (
-            supabase.table("Caso")
-            .select("*")
-            .ilike("nombre_completo", f"%{search_term}%")
-            .order("created_at", desc=True)
-            .execute()
-        )
-        return jsonify({"success": True, "data": res.data})
+        casos = CasoService.search_casos(search_term)
+        return jsonify({"success": True, "data": casos})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -251,37 +164,23 @@ def search_casos_by_name():
 @caso_bp.route("/<int:caso_id>/status", methods=["PATCH"])
 def update_caso_status(caso_id):
     """
-    Cambia el estado de un caso
-    Usa el método cambiarEstado() de la clase Caso (según UML)
+    Cambia el estado de un caso - Usa CasoService (OOP)
     """
     data = request.get_json()
     try:
         new_status = data.get("status")
-        nota = data.get("nota")
-
-        # Obtener el caso actual
-        response = supabase.table("Caso").select("*, PersonaDesaparecida(*)").eq("id", caso_id).single().execute()
-
-        if not response.data:
+        
+        caso_actualizado = CasoService.update_caso_status(caso_id, new_status)
+        
+        if not caso_actualizado:
             return jsonify({"success": False, "error": "Caso no encontrado"}), 404
 
-        # Convertir a objeto OOP
-        caso = Caso.from_dict(response.data)
-
-        # Cambiar estado usando método de la clase
-        nuevo_estado = EstadoCaso.from_string(new_status)
-        caso.cambiarEstado(nuevo_estado, nota)
-
-        # Guardar cambios en BD
-        updates = caso.to_dict()
-        res = supabase.table("Caso").update(updates).eq("id", caso_id).execute()
-
-        print(f"✅ Estado del caso {caso_id} cambiado a: {nuevo_estado.value}")
+        print(f"✅ Estado del caso {caso_id} cambiado a: {new_status}")
 
         return jsonify({
             "success": True,
-            "data": res.data,
-            "mensaje": f"Caso actualizado a estado: {nuevo_estado.value}"
+            "data": caso_actualizado,
+            "mensaje": f"Caso actualizado a estado: {new_status}"
         })
     except Exception as e:
         print(f"❌ Error actualizando estado del caso: {e}")
@@ -291,20 +190,9 @@ def update_caso_status(caso_id):
 # ✅ Estadísticas de casos
 @caso_bp.route("/stats", methods=["GET"])
 def get_caso_stats():
+    """Obtiene estadísticas de casos - Usa CasoService (OOP)"""
     try:
-        res = supabase.table("Caso").select("status, priority").execute()
-        data = res.data
-
-        stats = {
-            "total": len(data),
-            "byStatus": {},
-            "byPriority": {},
-        }
-
-        for c in data:
-            stats["byStatus"][c["status"]] = stats["byStatus"].get(c["status"], 0) + 1
-            stats["byPriority"][c["priority"]] = stats["byPriority"].get(c["priority"], 0) + 1
-
+        stats = CasoService.get_casos_stats()
         return jsonify({"success": True, "data": stats})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -313,16 +201,10 @@ def get_caso_stats():
 # ✅ Obtener casos de un usuario específico
 @caso_bp.route("/user/<int:user_id>", methods=["GET"])
 def get_casos_by_user(user_id):
+    """Obtiene casos de un usuario - Usa CasoService (OOP)"""
     try:
-        # Hacer JOIN con PersonaDesaparecida
-        response = supabase.table("Caso").select(
-            "*, PersonaDesaparecida(*)"
-        ).eq("usuario_id", user_id).order("created_at", desc=True).execute()
-        
-        if hasattr(response, "error") and response.error:
-            return jsonify({"error": str(response.error)}), 500
-
-        return jsonify({"success": True, "data": response.data, "count": len(response.data)})
+        casos = CasoService.get_casos_by_user(user_id)
+        return jsonify({"success": True, "data": casos, "count": len(casos)})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

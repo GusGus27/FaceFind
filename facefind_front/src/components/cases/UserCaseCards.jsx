@@ -1,6 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import CaseDetailModal from "./CaseDetailModal";
 
 export default function UserCaseCards({ cases }) {
+  const navigate = useNavigate();
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleViewDetails = (caso) => {
+    setSelectedCase(caso);
+    setShowModal(true);
+  };
+
+  const handleEdit = (caso) => {
+    navigate(`/casos/${caso.id}/editar`);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedCase(null);
+  };
+
+  const handleEditFromModal = () => {
+    if (selectedCase) {
+      closeModal();
+      navigate(`/casos/${selectedCase.id}/editar`);
+    }
+  };
   if (!cases || cases.length === 0) {
     return (
       <div className="empty-state">
@@ -122,10 +148,16 @@ export default function UserCaseCards({ cases }) {
               </span>
 
               <div className="case-action-buttons">
-                <button className="btn-case-action btn-view-detail">
+                <button 
+                  className="btn-case-action btn-view-detail"
+                  onClick={() => handleViewDetails(caso)}
+                >
                   📄 Ver Detalles
                 </button>
-                <button className="btn-case-action btn-edit-case">
+                <button 
+                  className="btn-case-action btn-edit-case"
+                  onClick={() => handleEdit(caso)}
+                >
                   ✏️ Actualizar
                 </button>
               </div>
@@ -133,7 +165,17 @@ export default function UserCaseCards({ cases }) {
           </div>
         );
       })}
+
+      {/* Modal de Detalles */}
+      {showModal && selectedCase && (
+        <CaseDetailModal
+          caso={selectedCase}
+          onClose={closeModal}
+          onEdit={handleEditFromModal}
+          showEditButton={true}
+          isAdmin={false}
+        />
+      )}
     </div>
   );
 }
-
