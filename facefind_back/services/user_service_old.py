@@ -1,7 +1,7 @@
 """
-User Service (OOP Refactored)
-Maneja la lógica de negocio de usuarios usando clases OOP
-Implementa el patrón Service + Repository según UML
+User Service
+Handles all user-related business logic
+Refactorizado para usar clases OOP según diagrama UML
 """
 from repositories.user_repository import UserRepository
 from typing import Optional, Dict, List
@@ -12,13 +12,9 @@ from models.enums import Rol
 
 class UserService:
     """
-    Servicio para gestión de usuarios usando OOP
-    Arquitectura en capas: Controller -> Service (OOP) -> Repository -> DB
+    Service for managing users
+    Usa clases OOP (UsuarioBase y subclases) + Repository pattern
     """
-
-    # ============================================================================
-    # MÉTODOS OOP - Trabajan con instancias de UsuarioBase
-    # ============================================================================
 
     @staticmethod
     def crear_usuario(user_data: Dict) -> UsuarioBase:
@@ -30,9 +26,6 @@ class UserService:
             
         Returns:
             Instancia OOP del usuario creado
-            
-        Raises:
-            ValueError: Si email o DNI ya existen
         """
         try:
             # Validar que no exista el email
@@ -67,7 +60,7 @@ class UserService:
                     dni=user_data.get("dni")
                 )
             
-            # Usar el método registrar() de la clase OOP
+            # Usar el método registrar() de la clase
             user_dict = usuario.registrar()
             
             # Guardar en BD usando Repository
@@ -83,6 +76,7 @@ class UserService:
             print(f"Error in UserService.crear_usuario: {str(e)}")
             raise Exception(f"Failed to create user: {str(e)}")
 
+    
     @staticmethod
     def obtener_usuario(user_id: int) -> Optional[UsuarioBase]:
         """
@@ -98,7 +92,7 @@ class UserService:
         if not user_data:
             return None
         return UsuarioBase.from_dict(user_data)
-
+    
     @staticmethod
     def obtener_usuario_por_email(email: str) -> Optional[UsuarioBase]:
         """Obtiene un usuario por email como objeto OOP"""
@@ -106,11 +100,11 @@ class UserService:
         if not user_data:
             return None
         return UsuarioBase.from_dict(user_data)
-
+    
     @staticmethod
     def actualizar_usuario(user_id: int, updates: Dict) -> UsuarioBase:
         """
-        Actualiza un usuario usando OOP
+        Actualiza un usuario (OOP)
         
         Args:
             user_id: ID del usuario
@@ -164,7 +158,8 @@ class UserService:
         except Exception as e:
             print(f"Error in UserService.actualizar_usuario: {str(e)}")
             raise Exception(f"Failed to update user: {str(e)}")
-
+    
+    
     @staticmethod
     def activar_usuario_por_admin(admin: UsuarioAdministrador, user_id: int) -> UsuarioBase:
         """
@@ -177,9 +172,6 @@ class UserService:
             
         Returns:
             Usuario activado
-            
-        Raises:
-            PermissionError: Si no es administrador
         """
         if not isinstance(admin, UsuarioAdministrador):
             raise PermissionError("Only administrators can activate users")
@@ -189,7 +181,7 @@ class UserService:
             raise Exception("Failed to activate user")
         
         return UserService.obtener_usuario(user_id)
-
+    
     @staticmethod
     def suspender_usuario_por_admin(admin: UsuarioAdministrador, user_id: int) -> UsuarioBase:
         """
@@ -202,9 +194,6 @@ class UserService:
             
         Returns:
             Usuario suspendido
-            
-        Raises:
-            PermissionError: Si no es administrador
         """
         if not isinstance(admin, UsuarioAdministrador):
             raise PermissionError("Only administrators can suspend users")
@@ -214,31 +203,31 @@ class UserService:
             raise Exception("Failed to suspend user")
         
         return UserService.obtener_usuario(user_id)
-
-    # ============================================================================
-    # MÉTODOS DE COMPATIBILIDAD - Retornan Dict para la API REST
-    # ============================================================================
-
+    
+    
+    # ===== Métodos de consulta (retornan Dict para compatibilidad con API) =====
+    
     @staticmethod
     def get_all_users(filters: Optional[Dict] = None) -> List[Dict]:
         """Obtiene todos los usuarios (retorna dict para API)"""
         return UserRepository.find_all(filters)
-
+    
     @staticmethod
     def get_user_by_id(user_id: int) -> Optional[Dict]:
         """Obtiene usuario por ID (retorna dict para API)"""
         return UserRepository.find_by_id(user_id)
-
+    
     @staticmethod
     def get_user_by_email(email: str) -> Optional[Dict]:
         """Obtiene usuario por email (retorna dict para API)"""
         return UserRepository.find_by_email(email)
-
+    
     @staticmethod
     def get_user_by_dni(dni: str) -> Optional[Dict]:
         """Obtiene usuario por DNI (retorna dict para API)"""
         return UserRepository.find_by_dni(dni)
-
+    
+    
     @staticmethod
     def create_user(user_data: Dict) -> Dict:
         """
@@ -253,7 +242,8 @@ class UserService:
             return usuario_oop.to_dict()
         except (ValueError, Exception) as e:
             raise
-
+    
+    
     @staticmethod
     def update_user(user_id: int, updates: Dict) -> Dict:
         """
@@ -268,7 +258,8 @@ class UserService:
             return usuario_oop.to_dict()
         except (ValueError, Exception) as e:
             raise
-
+    
+    
     @staticmethod
     def activate_user(user_id: int) -> Dict:
         """Activa un usuario (wrapper para compatibilidad)"""
@@ -281,7 +272,7 @@ class UserService:
         except Exception as e:
             print(f"Error in activate_user: {str(e)}")
             raise Exception(f"Failed to activate user: {str(e)}")
-
+    
     @staticmethod
     def deactivate_user(user_id: int) -> Dict:
         """Desactiva un usuario (wrapper para compatibilidad)"""
@@ -294,7 +285,7 @@ class UserService:
         except Exception as e:
             print(f"Error in deactivate_user: {str(e)}")
             raise Exception(f"Failed to deactivate user: {str(e)}")
-
+    
     @staticmethod
     def delete_user(user_id: int) -> bool:
         """Elimina un usuario (soft delete)"""
@@ -303,16 +294,13 @@ class UserService:
         except Exception as e:
             print(f"Error in delete_user: {str(e)}")
             raise Exception(f"Failed to delete user: {str(e)}")
-
-    # ============================================================================
-    # MÉTODOS DE UTILIDAD
-    # ============================================================================
-
+    
     @staticmethod
     def get_user_stats() -> Dict:
-        """Obtiene estadísticas de usuarios"""
+        """Get user statistics"""
         try:
-            all_users = UserRepository.find_all()
+            # Get all users
+            all_users = UserService.get_all_users()
             
             stats = {
                 "total": len(all_users),
@@ -321,7 +309,7 @@ class UserService:
                 "by_role": {}
             }
             
-            # Contar por rol
+            # Count by role
             for user in all_users:
                 role = user.get("role", "user")
                 stats["by_role"][role] = stats["by_role"].get(role, 0) + 1
@@ -330,13 +318,22 @@ class UserService:
         except Exception as e:
             print(f"Error in get_user_stats: {str(e)}")
             return {"total": 0, "active": 0, "inactive": 0, "by_role": {}}
-
+    
     @staticmethod
     def check_blacklist(email: str = None, dni: str = None) -> Dict:
-        """Verifica si email o DNI están en blacklist (usuarios inactivos)"""
+        """
+        Check if email or DNI is in blacklist (inactive users)
+        
+        Args:
+            email: Email to check
+            dni: DNI to check
+            
+        Returns:
+            Dict with is_blacklisted (bool) and reason (str)
+        """
         try:
             if email:
-                user = UserRepository.find_by_email(email)
+                user = UserService.get_user_by_email(email)
                 if user and user.get("status") == "inactive":
                     return {
                         "is_blacklisted": True,
@@ -344,7 +341,7 @@ class UserService:
                     }
             
             if dni:
-                user = UserRepository.find_by_dni(dni)
+                user = UserService.get_user_by_dni(dni)
                 if user and user.get("status") == "inactive":
                     return {
                         "is_blacklisted": True,
@@ -355,29 +352,30 @@ class UserService:
         except Exception as e:
             print(f"Error in check_blacklist: {str(e)}")
             return {"is_blacklisted": False, "reason": None}
-
+    
     @staticmethod
     def get_inactive_users() -> List[Dict]:
-        """Obtiene todos los usuarios inactivos (blacklist)"""
+        """Get all inactive users (blacklist)"""
         try:
-            return UserRepository.find_all({"status": "inactive"})
+            return UserService.get_all_users({"status": "inactive"})
         except Exception as e:
             print(f"Error in get_inactive_users: {str(e)}")
             return []
-
+    
+    
     @staticmethod
     def get_user_cases_count(user_id: int) -> int:
         """Obtiene el número de casos de un usuario"""
         return UserRepository.count_cases_by_user(user_id)
-
+    
     @staticmethod
     def get_users_with_cases_count() -> List[Dict]:
-        """Obtiene todos los usuarios con su conteo de casos"""
+        """Get all users with their cases count"""
         try:
-            users = UserRepository.find_all()
+            users = UserService.get_all_users()
             
             for user in users:
-                user["cases_count"] = UserRepository.count_cases_by_user(user["id"])
+                user["cases_count"] = UserService.get_user_cases_count(user["id"])
             
             return users
         except Exception as e:

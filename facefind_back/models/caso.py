@@ -187,15 +187,18 @@ class Caso:
                 self._resolution_note = nota
         self._updated_at = datetime.now()
 
-    def to_dict(self) -> Dict:
+    def to_dict(self, include_relations: bool = False) -> Dict:
         """
         Convierte el caso a diccionario para BD o API
+
+        Args:
+            include_relations: Si es True, incluye objetos relacionados (para API).
+                              Si es False, solo campos de la tabla (para INSERT/UPDATE en BD)
 
         Returns:
             Diccionario con los datos del caso
         """
         data = {
-            "id": self._id,
             "usuario_id": self._usuario_id,
             "persona_id": self._persona_id,
             "fecha_desaparicion": self._fecha_desaparicion.isoformat() if isinstance(self._fecha_desaparicion, date) else self._fecha_desaparicion,
@@ -215,13 +218,21 @@ class Caso:
             "additionalContact": self._additional_contact,
             "resolutionDate": self._resolution_date.isoformat() if isinstance(self._resolution_date, date) else self._resolution_date,
             "resolutionNote": self._resolution_note,
-            "observaciones": self._observaciones,
-            "created_at": self._created_at.isoformat() if isinstance(self._created_at, datetime) else self._created_at,
-            "updated_at": self._updated_at.isoformat() if isinstance(self._updated_at, datetime) else self._updated_at
+            "observaciones": self._observaciones
         }
+        
+        # Solo incluir id si existe (para updates, no para inserts)
+        if self._id is not None:
+            data["id"] = self._id
+            
+        # Solo incluir timestamps si existen
+        if self._created_at is not None:
+            data["created_at"] = self._created_at.isoformat() if isinstance(self._created_at, datetime) else self._created_at
+        if self._updated_at is not None:
+            data["updated_at"] = self._updated_at.isoformat() if isinstance(self._updated_at, datetime) else self._updated_at
 
-        # Incluir PersonaDesaparecida si existe
-        if self._persona_desaparecida:
+        # SOLO para API (no para INSERT en BD): Incluir PersonaDesaparecida si existe y se solicita
+        if include_relations and self._persona_desaparecida:
             data["PersonaDesaparecida"] = self._persona_desaparecida.to_dict()
 
         return data

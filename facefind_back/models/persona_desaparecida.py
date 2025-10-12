@@ -22,7 +22,7 @@ class PersonaDesaparecida:
                  hair_color: Optional[str] = None,
                  eye_color: Optional[str] = None,
                  senas_particulares: Optional[str] = None,
-                 age: Optional[int] = None,
+                 edad_desaparicion: Optional[int] = None,
                  clothing: Optional[str] = None,
                  id: Optional[int] = None):
         """
@@ -38,13 +38,13 @@ class PersonaDesaparecida:
             hair_color: Color de cabello
             eye_color: Color de ojos
             senas_particulares: Señas particulares
-            age: Edad
+            edad_desaparicion: Edad al momento de la desaparición
             clothing: Ropa que vestía
             id: ID en base de datos
         """
         self._id = id
         self._nombre = nombre_completo
-        self._edad = age
+        self._edad = edad_desaparicion
         self._fecha_nac = fecha_nacimiento
         self._gender = gender
         self._altura = altura
@@ -151,8 +151,6 @@ class PersonaDesaparecida:
         """
         if "nombre_completo" in updates:
             self._nombre = updates["nombre_completo"]
-        if "edad" in updates:
-            self._edad = updates["edad"]
         if "age" in updates:
             self._edad = updates["age"]
         if "fecha_nacimiento" in updates:
@@ -181,10 +179,8 @@ class PersonaDesaparecida:
         Returns:
             Diccionario con los datos de la persona
         """
-        return {
-            "id": self._id,
+        data = {
             "nombre_completo": self._nombre,
-            "edad": self._edad,
             "age": self._edad,
             "fecha_nacimiento": self._fecha_nac.isoformat() if isinstance(self._fecha_nac, date) else self._fecha_nac,
             "gender": self._gender,
@@ -196,6 +192,12 @@ class PersonaDesaparecida:
             "senas_particulares": self._senas_particulares,
             "clothing": self._clothing
         }
+        
+        # Solo incluir id si existe (para updates, no para inserts)
+        if self._id is not None:
+            data["id"] = self._id
+            
+        return data
 
     @classmethod
     def from_dict(cls, data: Dict) -> 'PersonaDesaparecida':
@@ -218,7 +220,7 @@ class PersonaDesaparecida:
             hair_color=data.get("hairColor"),
             eye_color=data.get("eyeColor"),
             senas_particulares=data.get("senas_particulares"),
-            age=data.get("age"),
+            edad_desaparicion=data.get("age"),
             clothing=data.get("clothing"),
             id=data.get("id")
         )

@@ -39,7 +39,7 @@ def create_caso():
             hair_color=data.get("hairColor"),
             eye_color=data.get("eyeColor"),
             senas_particulares=data.get("senas_particulares"),
-            age=data.get("age"),
+            edad_desaparicion=data.get("age"),
             clothing=data.get("clothing")
         )
 

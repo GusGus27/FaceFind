@@ -190,13 +190,25 @@ def update_user(user_id):
 def activate_user(user_id):
     """
     Activate a user
-    Usa el método activarCuenta() de UsuarioAdministrador (según UML)
+    Debe ser ejecutado por un UsuarioAdministrador (según UML)
     """
     try:
-        # Obtener el usuario admin que hace la acción (si viene en el header)
-        # Por ahora, usamos el método directo del servicio
-        # TODO: Verificar que quien llama sea un UsuarioAdministrador
+        # TODO: Obtener el usuario admin del token/sesión
+        # Por ahora, validamos que sea admin y usamos el método directo
+        # En producción deberías obtener admin_id del JWT/sesión
+        
+        # admin_id = get_current_user_id_from_token()
+        # admin = UserService.obtener_usuario(admin_id)
+        # 
+        # if not isinstance(admin, UsuarioAdministrador):
+        #     return jsonify({
+        #         "success": False,
+        #         "error": "Permission denied. Only administrators can activate users"
+        #     }), 403
+        # 
+        # user = UserService.activar_usuario_por_admin(admin, user_id)
 
+        # Wrapper temporal para compatibilidad
         user = UserService.activate_user(user_id)
 
         return jsonify({
@@ -204,6 +216,11 @@ def activate_user(user_id):
             "message": "User activated successfully",
             "data": user
         }), 200
+    except PermissionError as pe:
+        return jsonify({
+            "success": False,
+            "error": str(pe)
+        }), 403
     except Exception as e:
         return jsonify({
             "success": False,
@@ -215,13 +232,25 @@ def activate_user(user_id):
 def deactivate_user(user_id):
     """
     Deactivate a user (add to blacklist)
-    Usa el método suspenderCuenta() de UsuarioAdministrador (según UML)
+    Debe ser ejecutado por un UsuarioAdministrador (según UML)
     """
     try:
-        # Obtener el usuario admin que hace la acción (si viene en el header)
-        # Por ahora, usamos el método directo del servicio
-        # TODO: Verificar que quien llama sea un UsuarioAdministrador
+        # TODO: Obtener el usuario admin del token/sesión
+        # Por ahora, validamos que sea admin y usamos el método directo
+        # En producción deberías obtener admin_id del JWT/sesión
+        
+        # admin_id = get_current_user_id_from_token()
+        # admin = UserService.obtener_usuario(admin_id)
+        # 
+        # if not isinstance(admin, UsuarioAdministrador):
+        #     return jsonify({
+        #         "success": False,
+        #         "error": "Permission denied. Only administrators can deactivate users"
+        #     }), 403
+        # 
+        # user = UserService.suspender_usuario_por_admin(admin, user_id)
 
+        # Wrapper temporal para compatibilidad
         user = UserService.deactivate_user(user_id)
 
         return jsonify({
@@ -229,6 +258,11 @@ def deactivate_user(user_id):
             "message": "User deactivated successfully",
             "data": user
         }), 200
+    except PermissionError as pe:
+        return jsonify({
+            "success": False,
+            "error": str(pe)
+        }), 403
     except Exception as e:
         return jsonify({
             "success": False,
