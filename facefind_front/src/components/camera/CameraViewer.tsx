@@ -30,14 +30,17 @@ interface CameraViewerProps {
 
 const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
+    const imgRef = useRef<HTMLImageElement | null>(null); // Para streams MJPEG
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const overlayRef = useRef<HTMLCanvasElement | null>(null);
     const intervalRef = useRef<number | null>(null);
+    const mjpegConnectionRef = useRef<string | null>(null); // Para rastrear conexión MJPEG activa
 
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
     const [recognizedName, setRecognizedName] = useState<string>("Desconocido");
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
+    const [useMjpeg, setUseMjpeg] = useState<boolean>(false); // Para saber si usar img o video
     
     // Estados para reconocimiento en tiempo real
     const [isRealTimeActive, setIsRealTimeActive] = useState<boolean>(false);
@@ -53,21 +56,79 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
         const startCamera = async () => {
             try {
                 // Si es cámara IP, usar URL directa
-                if (cameraSettings.type === 'IP' && cameraSettings.url) {
-                    if (videoRef.current) {
-                        // Para cámaras IP con stream (MJPEG, HLS, etc)
-                        videoRef.current.src = cameraSettings.url;
-                        videoRef.current.onloadeddata = () => {
-                            setIsConnected(true);
-                            console.log('✅ Cámara IP conectada:', cameraSettings.url);
-                        };
-                        videoRef.current.onerror = (e) => {
-                            console.error('❌ Error conectando cámara IP:', e);
-                            setIsConnected(false);
-                        };
+                if (cameraSettings.type === 'IP') {
+                    if (!cameraSettings.url || cameraSettings.url.trim() === '') {
+                        console.error('❌ Error: No se proporcionó URL para la cámara IP');
+                        alert('Por favor ingresa una URL válida para la cámara IP');
+                        setIsConnected(false);
+                        return;
                     }
-                } else {
+                    
+                    console.log('🔗 Intentando conectar a cámara IP:', cameraSettings.url);
+                    
+                    // Detectar si es MJPEG (común en apps como IP Webcam)
+                    const isMjpeg = cameraSettings.url.includes('/video') || 
+                                   cameraSettings.url.includes('mjpeg') || 
+                                   cameraSettings.url.includes(':8080');
+                    
+                    if (isMjpeg) {
+                        console.log('📷 Detectado stream MJPEG, usando tag <img>');
+                        setUseMjpeg(true);
+                        
+                        if (imgRef.current) {
+                            // Timestamp para evitar cache
+                            const urlWithTimestamp = cameraSettings.url + 
+                                (cameraSettings.url.includes('?') ? '&' : '?') + 
+                                '_t=' + Date.now();
+                            
+                            mjpegConnectionRef.current = cameraSettings.url; // Guardar referencia
+                            imgRef.current.src = urlWithTimestamp;
+                            
+                            imgRef.current.onload = () => {
+                                // Verificar que la imagen tenga dimensiones válidas
+                                if (imgRef.current && imgRef.current.naturalWidth > 0) {
+                                    setIsConnected(true);
+                                    console.log('✅ Cámara IP (MJPEG) conectada exitosamente', {
+                                        width: imgRef.current.naturalWidth,
+                                        height: imgRef.current.naturalHeight
+                                    });
+                                } else {
+                                    console.error('❌ Imagen sin dimensiones válidas');
+                                    setIsConnected(false);
+                                }
+                            };
+                            
+                            imgRef.current.onerror = (e) => {
+                                console.error('❌ Error conectando cámara IP MJPEG:', e);
+                                setIsConnected(false);
+                                alert(`No se pudo conectar a la cámara IP.\n\nURL: ${cameraSettings.url}\n\nVerifica:\n- La URL es correcta\n- El dispositivo está en la misma red\n- El servidor de la cámara está activo`);
+                            };
+                        }
+                    } else {
+                        console.log('🎥 Stream de video estándar (HLS/RTSP), usando tag <video>');
+                        setUseMjpeg(false);
+                        
+                        if (videoRef.current) {
+                            videoRef.current.src = cameraSettings.url;
+                            
+                            videoRef.current.onloadeddata = () => {
+                                setIsConnected(true);
+                                console.log('✅ Cámara IP conectada exitosamente');
+                            };
+                            
+                            videoRef.current.onerror = (e) => {
+                                console.error('❌ Error conectando cámara IP:', e);
+                                console.error('URL intentada:', cameraSettings.url);
+                                setIsConnected(false);
+                                alert(`No se pudo conectar a la cámara IP.\n\nURL: ${cameraSettings.url}\n\nVerifica:\n- La URL es correcta\n- El dispositivo está en la misma red\n- El servidor de la cámara está activo`);
+                            };
+                        }
+                    }
+                } else if (cameraSettings.type === 'USB') {
                     // Cámara USB local
+                    console.log('🔗 Intentando conectar a cámara USB...');
+                    setUseMjpeg(false);
+                    
                     const stream = await navigator.mediaDevices.getUserMedia({
                         video: { 
                             width: { ideal: videoWidth },
@@ -78,40 +139,138 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
                         setIsConnected(true);
+                        console.log('✅ Cámara USB conectada exitosamente');
                     }
+                } else {
+                    console.error('❌ Tipo de cámara no válido:', cameraSettings.type);
+                    setIsConnected(false);
                 }
             } catch (err) {
-                console.error("Error accessing camera:", err);
+                console.error("❌ Error accessing camera:", err);
                 setIsConnected(false);
+                
+                if (cameraSettings.type === 'USB') {
+                    alert('No se pudo acceder a la cámara USB.\n\nVerifica que:\n- Tienes una cámara conectada\n- Diste permiso de acceso a la cámara\n- Ninguna otra aplicación está usando la cámara');
+                }
             }
         };
 
         startCamera();
 
         return () => {
+            console.log('🧹 Limpiando recursos de cámara...');
+            
+            // Detener reconocimiento en tiempo real si está activo
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+            
             // Limpiar stream de USB
             if (videoRef.current?.srcObject instanceof MediaStream) {
                 const tracks = videoRef.current.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
+                tracks.forEach(track => {
+                    track.stop();
+                    console.log('✅ Track de USB detenido');
+                });
+                videoRef.current.srcObject = null;
             }
-            // Limpiar source de IP
-            if (videoRef.current && cameraSettings.type === 'IP') {
+            
+            // Limpiar source de IP (video tag)
+            if (videoRef.current && cameraSettings.type === 'IP' && !useMjpeg) {
+                videoRef.current.pause(); // Pausar primero
                 videoRef.current.src = '';
+                videoRef.current.load(); // Forzar liberación del recurso
+                videoRef.current.removeAttribute('src');
+                console.log('✅ Video source limpiado');
             }
+            
+            // Limpiar source de IP (img tag para MJPEG)
+            if (imgRef.current && useMjpeg && mjpegConnectionRef.current) {
+                console.log('🔌 Cerrando conexión MJPEG...');
+                
+                // Remover event listeners para evitar errores
+                imgRef.current.onload = null;
+                imgRef.current.onerror = null;
+                
+                // Crear una imagen vacía 1x1 para forzar cierre de conexión
+                const emptyImage = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                imgRef.current.src = emptyImage;
+                
+                // Forzar que el navegador cierre la conexión anterior
+                // Removiendo y recreando el elemento
+                const parent = imgRef.current.parentElement;
+                const oldImg = imgRef.current;
+                
+                if (parent) {
+                    parent.removeChild(oldImg);
+                    // El componente se está desmontando, no necesitamos recrearlo
+                }
+                
+                mjpegConnectionRef.current = null;
+                console.log('✅ MJPEG conexión cerrada completamente');
+            } else if (imgRef.current && useMjpeg) {
+                // Limpieza simple si no hay referencia de conexión
+                imgRef.current.src = '';
+                imgRef.current.onload = null;
+                imgRef.current.onerror = null;
+                console.log('✅ MJPEG source limpiado');
+            }
+            
+            console.log('✅ Recursos de cámara liberados completamente');
         };
-    }, [cameraSettings, videoWidth, videoHeight]);
+    }, [cameraSettings, videoWidth, videoHeight, useMjpeg]);
 
     const captureAndRecognize = async () => {
-        if (!videoRef.current || !canvasRef.current || isProcessing) return;
+        // Fuente de video puede ser video o img
+        const videoSource = useMjpeg ? imgRef.current : videoRef.current;
+        
+        if (!videoSource || !canvasRef.current || isProcessing) {
+            console.warn('⚠️ No se puede capturar:', {
+                hasSource: !!videoSource,
+                hasCanvas: !!canvasRef.current,
+                isProcessing
+            });
+            return;
+        }
+
+        // Validar que la imagen/video tenga dimensiones válidas
+        if (useMjpeg && imgRef.current) {
+            if (imgRef.current.naturalWidth === 0 || imgRef.current.naturalHeight === 0) {
+                console.error('❌ Imagen MJPEG no cargada completamente');
+                alert('La imagen de la cámara no está lista. Espera un momento e intenta de nuevo.');
+                return;
+            }
+            console.log('📸 Capturando desde MJPEG:', {
+                width: imgRef.current.naturalWidth,
+                height: imgRef.current.naturalHeight
+            });
+        } else if (!useMjpeg && videoRef.current) {
+            if (videoRef.current.readyState < 2) { // HAVE_CURRENT_DATA
+                console.error('❌ Video no está listo');
+                alert('El video no está listo. Espera un momento e intenta de nuevo.');
+                return;
+            }
+            console.log('📸 Capturando desde video:', {
+                readyState: videoRef.current.readyState,
+                width: videoRef.current.videoWidth,
+                height: videoRef.current.videoHeight
+            });
+        }
 
         setIsProcessing(true);
         const context = canvasRef.current.getContext('2d');
-        if (!context) return;
+        if (!context) {
+            setIsProcessing(false);
+            return;
+        }
 
         try {
-            // Captura frame con dimensiones correctas
-            context.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+            // Captura frame con dimensiones correctas (usa la fuente correcta: video o img)
+            context.drawImage(videoSource, 0, 0, videoWidth, videoHeight);
             const imageData = canvasRef.current.toDataURL('image/jpeg');
+            
+            console.log('📤 Enviando frame al backend...');
 
             // Llamada al backend (actualizado a nueva ruta)
             const response = await fetch('http://localhost:5000/detection/detect-faces', {
@@ -206,6 +365,7 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
     };
 
     const stopRealTimeRecognition = () => {
+        console.log('⏹ Deteniendo reconocimiento en tiempo real');
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
@@ -220,28 +380,56 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
     }, []);
+    
+    // Detener reconocimiento en tiempo real si la cámara se desconecta
+    useEffect(() => {
+        if (!isConnected && isRealTimeActive) {
+            console.log('⏹ Deteniendo reconocimiento automático por desconexión');
+            stopRealTimeRecognition();
+        }
+    }, [isConnected, isRealTimeActive]);
 
     return (
         <div className="camera-viewer">
             <div className="camera-status">
-                <p>Estado: {isConnected ? 'Conectado' : 'Desconectado'}</p>
+                <p>Estado: {isConnected ? '🟢 Conectado' : '🔴 Desconectado'}</p>
                 <p>Resolución: {cameraSettings.resolution} @ {cameraSettings.fps} FPS</p>
-                {isProcessing && <p>Procesando...</p>}
+                {cameraSettings.type === 'IP' && (
+                    <p>Modo: {useMjpeg ? 'MJPEG (img tag)' : 'Stream de video'}</p>
+                )}
+                {isProcessing && <p>⏳ Procesando...</p>}
             </div>
 
             <div className="camera-container" style={{ position: 'relative', width: videoWidth, height: videoHeight }}>
-                <video
-                    ref={videoRef}
-                    width={videoWidth}
-                    height={videoHeight}
-                    autoPlay
-                    playsInline
-                    muted
-                    style={{ position: 'absolute', top: 0, left: 0 }}
-                />
+                {/* Video tag para USB y streams de video estándar */}
+                {!useMjpeg && (
+                    <video
+                        ref={videoRef}
+                        width={videoWidth}
+                        height={videoHeight}
+                        autoPlay
+                        playsInline
+                        muted
+                        style={{ position: 'absolute', top: 0, left: 0 }}
+                    />
+                )}
+                
+                {/* Img tag para streams MJPEG (cámaras de celular) */}
+                {useMjpeg && (
+                    <img
+                        ref={imgRef}
+                        width={videoWidth}
+                        height={videoHeight}
+                        alt="Camera stream"
+                        crossOrigin="anonymous"
+                        style={{ position: 'absolute', top: 0, left: 0, objectFit: 'cover' }}
+                    />
+                )}
+                
                 <canvas
                     ref={overlayRef}
                     width={videoWidth}

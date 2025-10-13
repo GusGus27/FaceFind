@@ -54,8 +54,11 @@ const CameraConfig: React.FC<CameraConfigProps> = ({ onConfigChange }) => {
                             name="url"
                             value={config.url}
                             onChange={handleChange}
-                            placeholder="rtsp:// o http://"
+                            placeholder="http://192.168.1.X:8080/video"
                         />
+                        <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
+                            Ejemplos: http://192.168.1.100:8080/video (IP Webcam) o rtsp://...
+                        </small>
                     </div>
                 )}
 

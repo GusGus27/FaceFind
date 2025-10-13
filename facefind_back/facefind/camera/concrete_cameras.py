@@ -32,18 +32,28 @@ class USBCamera(ICamera):
         self.is_connected = False
 
 class IPCamera(ICamera):
-    def __init__(self):
+    def __init__(self, url: str = None):
         self.stream = None
         self.is_connected = False
-        self.url = "http://192.168.1.100:8080/video"  # Default IP camera URL
+        self.url = url
 
     def set_url(self, url: str):
         self.url = url
 
     def connect(self) -> bool:
         try:
+            if not self.url:
+                return False
+                
+            print(f"🔗 Conectando a cámara IP: {self.url}")
             self.stream = cv2.VideoCapture(self.url)
             self.is_connected = self.stream.isOpened()
+            
+            if self.is_connected:
+                print(f"Conectado exitosamente a: {self.url}")
+            else:
+                print(f"No se pudo conectar a: {self.url}")
+                
             return self.is_connected
         except Exception as e:
             print(f"Error connecting to IP camera: {e}")

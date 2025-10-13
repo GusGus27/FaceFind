@@ -135,3 +135,199 @@ def get_fotos_by_caso(caso_id):
     except Exception as e:
         print(f"❌ Error obteniendo fotos del caso {caso_id}:", e)
         return jsonify({"error": str(e)}), 500
+
+
+@foto_bp.route("/replace/<int:foto_id>", methods=["PUT"])
+def replace_foto(foto_id):
+    """
+    Reemplaza una foto existente:
+    1. Elimina los encodings antiguos de la tabla Embedding
+    2. Elimina la foto antigua del storage
+    3. Sube la nueva foto
+    4. Actualiza el registro en FotoReferencia
+    5. Genera nuevos encodings
+    6. Recarga el modelo de detección
+    """
+    try:
+        # Validar que venga el archivo
+        if 'file' not in request.files:
+            return jsonify({"error": "No se envió ningún archivo"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Nombre de archivo vacío"}), 400
+
+        print(f"🔄 Iniciando reemplazo de foto ID: {foto_id}")
+
+        # 1. Obtener información de la foto actual
+        foto_response = supabase.table("FotoReferencia")\
+            .select("*")\
+            .eq("id", foto_id)\
+            .execute()
+        
+        if not foto_response.data:
+            return jsonify({"error": "Foto no encontrada"}), 404
+        
+        foto_actual = foto_response.data[0]
+        caso_id = foto_actual['caso_id']
+        ruta_antigua = foto_actual['ruta_archivo']
+        
+        print(f"📸 Foto actual: caso_id={caso_id}, ruta={ruta_antigua}")
+
+        # 2. Eliminar encodings antiguos de la tabla Embedding
+        print(f"🗑️ Eliminando encodings antiguos para foto_id={foto_id}")
+        delete_encodings = supabase.table("Embedding")\
+            .delete()\
+            .eq("foto_referencia_id", foto_id)\
+            .execute()
+        
+        if delete_encodings.data:
+            print(f"✅ {len(delete_encodings.data)} encodings eliminados")
+        else:
+            print("⚠️ No se encontraron encodings para eliminar (o ya fueron eliminados)")
+
+        # 3. Eliminar foto antigua del storage (opcional, puedes comentar si quieres mantener historial)
+        try:
+            # Extraer el path del storage desde la URL
+            if BUCKET_NAME in ruta_antigua:
+                # Formato: https://[...].supabase.co/storage/v1/object/public/fotos-referencia/12/frontal_123456.jpg
+                storage_path = ruta_antigua.split(f"{BUCKET_NAME}/")[-1]
+                print(f"🗑️ Eliminando foto antigua del storage: {storage_path}")
+                
+                delete_response = supabase.storage.from_(BUCKET_NAME).remove([storage_path])
+                print(f"✅ Foto antigua eliminada del storage")
+        except Exception as storage_error:
+            print(f"⚠️ No se pudo eliminar foto antigua del storage: {storage_error}")
+            # No es crítico, continuamos
+
+        # 4. Subir nueva foto
+        print(f"📤 Subiendo nueva foto para caso_id={caso_id}")
+        tipo_foto = "updated"  # Puedes inferir el tipo si lo necesitas
+        nueva_url, error = upload_photo_to_supabase(file, caso_id, tipo_foto)
+        
+        if error:
+            return jsonify({"error": f"Error subiendo nueva foto: {error}"}), 500
+        
+        print(f"✅ Nueva foto subida: {nueva_url}")
+
+        # 5. Actualizar registro en FotoReferencia
+        print(f"🔄 Actualizando registro FotoReferencia ID={foto_id}")
+        update_response = supabase.table("FotoReferencia")\
+            .update({
+                "ruta_archivo": nueva_url,
+                "created_at": datetime.now().isoformat()  # Actualizar fecha
+            })\
+            .eq("id", foto_id)\
+            .execute()
+        
+        if not update_response.data:
+            return jsonify({"error": "No se pudo actualizar el registro de la foto"}), 500
+        
+        print(f"✅ Registro actualizado")
+
+        # 6. Generar nuevos encodings
+        print(f"🧠 Generando nuevos encodings para foto_id={foto_id}")
+        generador = GeneradorEncodings()
+        encoding_obj = generador.generar_encodings(nueva_url, foto_id)
+        
+        if not encoding_obj:
+            print("⚠️ No se pudo generar encoding para la nueva foto")
+            return jsonify({
+                "success": True,
+                "message": "Foto reemplazada pero no se generó encoding",
+                "nueva_url": nueva_url,
+                "foto_id": foto_id
+            }), 200
+        
+        # Guardar encoding en DB
+        encoding_dict = encoding_obj.guardar_en_db(supabase)
+        print(f"✅ Nuevo encoding guardado: {encoding_dict}")
+
+        # 7. Recargar encodings en el sistema de detección
+        from api.detection_routes import initialize_detection_service
+        
+        print("🔄 Recargando encodings en el sistema de detección...")
+        reload_success = initialize_detection_service()
+        
+        if reload_success:
+            print("✅ Encodings recargados automáticamente")
+        else:
+            print("⚠️ No se pudieron recargar los encodings automáticamente")
+
+        return jsonify({
+            "success": True,
+            "message": "Foto reemplazada exitosamente",
+            "foto_id": foto_id,
+            "nueva_url": nueva_url,
+            "encoding_generado": bool(encoding_obj),
+            "encodings_reloaded": reload_success
+        }), 200
+
+    except Exception as e:
+        import traceback
+        print("❌ Error reemplazando foto:", e)
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
+@foto_bp.route("/delete/<int:foto_id>", methods=["DELETE"])
+def delete_foto(foto_id):
+    """
+    Elimina una foto de referencia:
+    1. Elimina encodings asociados
+    2. Elimina del storage
+    3. Elimina registro de BD
+    4. Recarga modelo
+    """
+    try:
+        print(f"🗑️ Iniciando eliminación de foto ID: {foto_id}")
+
+        # 1. Obtener información de la foto
+        foto_response = supabase.table("FotoReferencia")\
+            .select("*")\
+            .eq("id", foto_id)\
+            .execute()
+        
+        if not foto_response.data:
+            return jsonify({"error": "Foto no encontrada"}), 404
+        
+        foto = foto_response.data[0]
+        ruta_archivo = foto['ruta_archivo']
+
+        # 2. Eliminar encodings
+        print(f"🗑️ Eliminando encodings para foto_id={foto_id}")
+        supabase.table("Embedding")\
+            .delete()\
+            .eq("foto_referencia_id", foto_id)\
+            .execute()
+
+        # 3. Eliminar del storage
+        try:
+            if BUCKET_NAME in ruta_archivo:
+                storage_path = ruta_archivo.split(f"{BUCKET_NAME}/")[-1]
+                print(f"🗑️ Eliminando del storage: {storage_path}")
+                supabase.storage.from_(BUCKET_NAME).remove([storage_path])
+        except Exception as storage_error:
+            print(f"⚠️ Error eliminando del storage: {storage_error}")
+
+        # 4. Eliminar registro de BD
+        delete_response = supabase.table("FotoReferencia")\
+            .delete()\
+            .eq("id", foto_id)\
+            .execute()
+
+        # 5. Recargar encodings
+        from api.detection_routes import initialize_detection_service
+        reload_success = initialize_detection_service()
+
+        return jsonify({
+            "success": True,
+            "message": "Foto eliminada exitosamente",
+            "encodings_reloaded": reload_success
+        }), 200
+
+    except Exception as e:
+        import traceback
+        print("❌ Error eliminando foto:", e)
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
