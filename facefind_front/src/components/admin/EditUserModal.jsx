@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getAllRoles } from '../../services/userService';
 import '../../styles/admin/EditUserModal.css';
 
 /**
@@ -13,9 +14,23 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
     nombre: '',
     email: '',
     dni: '',
-    role: 'user'
+    role_id: 2 // Default to "Usuario" role
   });
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Cargar roles disponibles
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        const rolesData = await getAllRoles();
+        setRoles(rolesData);
+      } catch (err) {
+        console.error('Error loading roles:', err);
+      }
+    };
+    loadRoles();
+  }, []);
 
   // Cargar datos del usuario cuando cambia
   useEffect(() => {
@@ -24,7 +39,7 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
         nombre: user.nombre || '',
         email: user.email || '',
         dni: user.dni || '',
-        role: user.role || 'user'
+        role_id: user.Rol?.id || user.role_id || 2
       });
     }
   }, [user]);
@@ -150,13 +165,14 @@ const EditUserModal = ({ isOpen, onClose, onUpdateUser, user }) => {
             <label htmlFor="edit-role">Rol *</label>
             <select
               id="edit-role"
-              name="role"
-              value={formData.role}
+              name="role_id"
+              value={formData.role_id}
               onChange={handleInputChange}
               disabled={loading}
             >
-              <option value="user">Usuario</option>
-              <option value="admin">Administrador</option>
+              {roles.map(role => (
+                <option key={role.id} value={role.id}>{role.nombre}</option>
+              ))}
             </select>
           </div>
 

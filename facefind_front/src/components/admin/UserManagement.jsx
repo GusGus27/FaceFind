@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import AddUserModal from './AddUserModal';
 import EditUserModal from './EditUserModal';
 import UserCasesModal from './UserCasesModal';
@@ -7,12 +8,16 @@ import {
   activateUser, 
   deactivateUser, 
   updateUser as updateUserService,
-  getBlacklist 
+  getBlacklist,
+  getAllRoles,
+  changeUserRole
 } from '../../services/userService';
 import '../../styles/admin/UserManagement.css';
 
 const UserManagement = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('todos'); // todos, active, inactive
@@ -27,10 +32,11 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const usersPerPage = 5;
 
-  // Cargar usuarios y lista negra desde la API
+  // Cargar usuarios, lista negra y roles desde la API
   useEffect(() => {
     loadUsers();
     loadBlacklist();
+    loadRoles();
   }, []);
 
   const loadUsers = async () => {
@@ -56,6 +62,15 @@ const UserManagement = () => {
     }
   };
 
+  const loadRoles = async () => {
+    try {
+      const rolesData = await getAllRoles();
+      setRoles(rolesData);
+    } catch (err) {
+      console.error('Error loading roles:', err);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     // Búsqueda por nombre, email o DNI
     const matchesSearch = 
@@ -63,7 +78,8 @@ const UserManagement = () => {
       user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.dni?.includes(searchTerm);
     
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    // Filtro por role_id
+    const matchesRole = filterRole === 'all' || user.role_id === parseInt(filterRole);
     
     // Filtro de estado
     let matchesStatus;
@@ -107,19 +123,31 @@ const UserManagement = () => {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
+  const handleRoleChange = async (userId, newRoleId) => {
     try {
-      await updateUserService(userId, { role: newRole });
+      // Verificar que no sea el mismo usuario
+      if (currentUser && currentUser.db_id === userId) {
+        alert('No puedes cambiar tu propio rol');
+        return;
+      }
+      
+      // Cambiar rol
+      await changeUserRole(userId, newRoleId, currentUser?.db_id);
       
       // Actualizar localmente
       setUsers(users.map(user =>
-        user.id === userId ? { ...user, role: newRole } : user
+        user.id === userId ? { 
+          ...user, 
+          role_id: newRoleId,
+          Rol: roles.find(r => r.id === newRoleId)
+        } : user
       ));
       
       alert('Rol actualizado correctamente');
+      await loadUsers(); // Recargar para tener datos actualizados
     } catch (err) {
       console.error('Error updating role:', err);
-      alert('Error al actualizar el rol');
+      alert(err.message || 'Error al actualizar el rol');
     }
   };
 
@@ -241,9 +269,9 @@ const UserManagement = () => {
           onChange={(e) => setFilterRole(e.target.value)}
         >
           <option value="all">Todos los roles</option>
-          <option value="admin">Administrador</option>
-          <option value="moderator">Moderador</option>
-          <option value="user">Usuario</option>
+          {roles.map(role => (
+            <option key={role.id} value={role.id}>{role.nombre}</option>
+          ))}
         </select>
         <select
           className="filter-select"
@@ -289,17 +317,19 @@ const UserManagement = () => {
                   <td>{user.email}</td>
                   <td>{user.dni || 'N/A'}</td>
                   <td>
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="role-select"
-                    disabled={user.status === 'inactive'}
-                  >
-                    <option value="user">Usuario</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
-                <td>
+                    <select
+                      value={user.Rol?.id || user.role_id || ''}
+                      onChange={(e) => handleRoleChange(user.id, parseInt(e.target.value))}
+                      className="role-select"
+                      disabled={user.status === 'inactive' || (currentUser && currentUser.db_id === user.id)}
+                      title={(currentUser && currentUser.db_id === user.id) ? 'No puedes cambiar tu propio rol' : ''}
+                    >
+                      {roles.map(role => (
+                        <option key={role.id} value={role.id}>{role.nombre}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
                   <button 
                     className="btn-cases"
                     onClick={() => handleViewCases(user)}

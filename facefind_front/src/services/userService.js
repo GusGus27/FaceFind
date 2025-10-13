@@ -290,3 +290,53 @@ export const checkBlacklist = async (data) => {
     throw error;
   }
 };
+
+/**
+ * Get all available roles
+ * @returns {Promise<Array>} List of roles
+ */
+export const getAllRoles = async () => {
+  try {
+    const response = await fetch(`${API_URL}/users/roles`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch roles');
+    }
+    
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    console.error('Error fetching roles:', error);
+    throw error;
+  }
+};
+
+/**
+ * Change user role
+ * @param {number} userId - User ID
+ * @param {number} roleId - New role ID
+ * @param {number} adminId - Admin performing the change
+ * @returns {Promise<Object>} Updated user
+ */
+export const changeUserRole = async (userId, roleId, adminId) => {
+  try {
+    const response = await fetch(`${API_URL}/users/${userId}/role`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ role_id: roleId, admin_id: adminId }),
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to change role');
+    }
+    
+    return result.data;
+  } catch (error) {
+    console.error('Error changing role:', error);
+    throw error;
+  }
+};

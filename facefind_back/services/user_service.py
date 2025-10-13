@@ -162,6 +162,10 @@ class UserService:
             if "num_telefono" in updates:
                 update_data["num_telefono"] = updates["num_telefono"]
             
+            # Agregar role_id si está presente en updates
+            if "role_id" in updates:
+                update_data["role_id"] = updates["role_id"]
+            
             UserRepository.update(user_id, update_data)
             
             # Retornar usuario actualizado
@@ -233,26 +237,24 @@ class UserService:
     def get_all_users(filters: Optional[Dict] = None) -> List[Dict]:
         """
         Obtiene todos los usuarios (retorna dict para API)
-        Usa OOP internamente pero retorna Dict para compatibilidad
+        Preserva el objeto Rol anidado del JOIN
         """
-        # Obtener datos del Repository
+        # Obtener datos del Repository (incluye JOIN con Rol)
         users_data = UserRepository.find_all(filters)
         
-        # Convertir cada Dict a objeto OOP y luego de vuelta a Dict
-        # Esto asegura que se apliquen las reglas de negocio de la clase
-        usuarios_oop = [UsuarioBase.from_dict(user) for user in users_data]
-        
-        # Retornar como lista de diccionarios para la API
-        return [usuario.to_dict() for usuario in usuarios_oop]
+        # Retornar directamente los datos del repository
+        # Ya incluyen el objeto Rol anidado del JOIN
+        return users_data
 
     @staticmethod
     def get_user_by_id(user_id: int) -> Optional[Dict]:
         """
         Obtiene usuario por ID (retorna dict para API)
-        Usa OOP internamente pero retorna Dict para compatibilidad
+        Preserva el objeto Rol anidado del JOIN
         """
-        usuario_oop = UserService.obtener_usuario(user_id)
-        return usuario_oop.to_dict() if usuario_oop else None
+        # Obtener datos del Repository (incluye JOIN con Rol)
+        user_data = UserRepository.find_by_id(user_id)
+        return user_data
 
     @staticmethod
     def get_user_by_email(email: str) -> Optional[Dict]:

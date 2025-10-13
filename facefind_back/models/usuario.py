@@ -145,12 +145,15 @@ class UsuarioBase(ABC):
         Returns:
             Diccionario con los datos del usuario
         """
+        # Mapear rol a role_id (1=Administrador, 2=Usuario)
+        role_id = 1 if self._rol == Rol.ADMINISTRADOR else 2
+        
         return {
             "id": self._id,
             "nombre": self._nombre,
             "email": self._email,
             "password": self._password,
-            "role": self._rol.to_string(),
+            "role_id": role_id,  # Usar role_id en lugar de role
             "status": self._status,
             "created_at": self._created_at.isoformat() if isinstance(self._created_at, datetime) else self._created_at,
             "updated_at": self._updated_at.isoformat() if isinstance(self._updated_at, datetime) else self._updated_at,
@@ -169,7 +172,17 @@ class UsuarioBase(ABC):
         Returns:
             Instancia de UsuarioRegistrado o UsuarioAdministrador
         """
-        rol_str = data.get("role", "user")
+        # Manejar tanto el formato antiguo (role) como el nuevo (role_id + Rol)
+        if "Rol" in data and isinstance(data["Rol"], dict):
+            # Formato nuevo con JOIN: data.Rol = {id: 1, nombre: "Administrador"}
+            rol_str = "admin" if data["Rol"]["nombre"] == "Administrador" else "user"
+        elif "role_id" in data:
+            # Formato con solo role_id: mapear 1=admin, 2=user
+            rol_str = "admin" if data["role_id"] == 1 else "user"
+        else:
+            # Formato antiguo con column role
+            rol_str = data.get("role", "user")
+        
         rol = Rol.from_string(rol_str)
 
         # Determinar qué subclase instanciar
@@ -191,7 +204,7 @@ class UsuarioBase(ABC):
                 email=data["email"],
                 password=data.get("password", "NO_SE_USA"),
                 rol=rol,
-                celular=data.get("celular"),
+                celular=data.get("celular") or data.get("num_telefono"),
                 id=data.get("id"),
                 status=data.get("status", "active"),
                 created_at=data.get("created_at"),

@@ -18,22 +18,25 @@ class UserRepository:
     def find_all(filters: Optional[Dict] = None) -> List[Dict]:
         """
         Obtiene todos los usuarios con filtros opcionales
+        Incluye datos del Rol mediante JOIN especificando la relación FK
         
         Args:
-            filters: Filtros opcionales (status, role, search)
+            filters: Filtros opcionales (status, role_id, search)
             
         Returns:
-            Lista de diccionarios de usuarios
+            Lista de diccionarios de usuarios con rol anidado
         """
         try:
-            query = supabase.table("Usuario").select("*")
+            # JOIN con Rol especificando la FK para evitar ambigüedad
+            # Usamos Rol!Usuario_role_id_fkey para especificar la relación many-to-one
+            query = supabase.table("Usuario").select("*, Rol!Usuario_role_id_fkey(*)")
             
             if filters:
                 if "status" in filters and filters["status"]:
                     query = query.eq("status", filters["status"])
                 
-                if "role" in filters and filters["role"]:
-                    query = query.eq("role", filters["role"])
+                if "role_id" in filters and filters["role_id"]:
+                    query = query.eq("role_id", filters["role_id"])
                 
                 if "search" in filters and filters["search"]:
                     search_term = f"%{filters['search']}%"
@@ -49,9 +52,9 @@ class UserRepository:
 
     @staticmethod
     def find_by_id(user_id: int) -> Optional[Dict]:
-        """Busca un usuario por ID"""
+        """Busca un usuario por ID con datos del Rol"""
         try:
-            response = supabase.table("Usuario").select("*").eq("id", user_id).single().execute()
+            response = supabase.table("Usuario").select("*, Rol!Usuario_role_id_fkey(*)").eq("id", user_id).single().execute()
             return response.data if response.data else None
         except Exception as e:
             print(f"Error in UserRepository.find_by_id: {str(e)}")
@@ -59,9 +62,9 @@ class UserRepository:
 
     @staticmethod
     def find_by_email(email: str) -> Optional[Dict]:
-        """Busca un usuario por email"""
+        """Busca un usuario por email con datos del Rol"""
         try:
-            response = supabase.table("Usuario").select("*").eq("email", email).execute()
+            response = supabase.table("Usuario").select("*, Rol!Usuario_role_id_fkey(*)").eq("email", email).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             print(f"Error in UserRepository.find_by_email: {str(e)}")
@@ -153,3 +156,33 @@ class UserRepository:
         except Exception as e:
             print(f"Error in UserRepository.count_cases_by_user: {str(e)}")
             return 0
+
+    @staticmethod
+    def get_all_roles() -> List[Dict]:
+        """Obtiene todos los roles disponibles en el sistema"""
+        try:
+            response = supabase.table("Rol").select("*").order("id").execute()
+            return response.data if response.data else []
+        except Exception as e:
+            print(f"Error in UserRepository.get_all_roles: {str(e)}")
+            return []
+
+    @staticmethod
+    def get_role_by_id(role_id: int) -> Optional[Dict]:
+        """Obtiene un rol por su ID"""
+        try:
+            response = supabase.table("Rol").select("*").eq("id", role_id).single().execute()
+            return response.data if response.data else None
+        except Exception as e:
+            print(f"Error in UserRepository.get_role_by_id: {str(e)}")
+            return None
+
+    @staticmethod
+    def get_role_by_name(name: str) -> Optional[Dict]:
+        """Obtiene un rol por su nombre"""
+        try:
+            response = supabase.table("Rol").select("*").eq("nombre", name).single().execute()
+            return response.data if response.data else None
+        except Exception as e:
+            print(f"Error in UserRepository.get_role_by_name: {str(e)}")
+            return None

@@ -2,18 +2,27 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.Rol (
+  id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
+  nombre character varying NOT NULL UNIQUE,
+  descripcion text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT Rol_pkey PRIMARY KEY (id)
+);
+
 CREATE TABLE public.Usuario (
   id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
   nombre character varying NOT NULL,
   email character varying NOT NULL UNIQUE,
   password character varying NOT NULL,
-  role character varying NOT NULL DEFAULT 'user'::character varying,
   status character varying NOT NULL DEFAULT 'active'::character varying,
   created_at timestamp without time zone DEFAULT now(),
   updated_at timestamp without time zone DEFAULT now(),
   dni character varying UNIQUE,
   num_telefono character varying,
-  CONSTRAINT Usuario_pkey PRIMARY KEY (id)
+  role_id integer,
+  CONSTRAINT Usuario_pkey PRIMARY KEY (id),
+  CONSTRAINT Usuario_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.Rol(id)
 );
 
 CREATE TABLE public.PersonaDesaparecida (
@@ -71,19 +80,19 @@ CREATE TABLE public.CasoActualizacion (
   CONSTRAINT CasoActualizacion_caso_id_fkey FOREIGN KEY (caso_id) REFERENCES public.Caso(id)
 );
 
-CREATE TABLE public.Rol (
-  id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
-  nombre character varying NOT NULL UNIQUE,
-  descripcion text,
-  created_at timestamp without time zone DEFAULT now(),
-  CONSTRAINT Rol_pkey PRIMARY KEY (id)
-);
-
 CREATE TABLE public.Permiso (
   id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
   nombre character varying NOT NULL UNIQUE,
   descripcion text,
   CONSTRAINT Permiso_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE public.RolPermiso (
+  rol_id integer NOT NULL,
+  permiso_id integer NOT NULL,
+  CONSTRAINT RolPermiso_pkey PRIMARY KEY (rol_id, permiso_id),
+  CONSTRAINT RolPermiso_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.Rol(id),
+  CONSTRAINT RolPermiso_permiso_id_fkey FOREIGN KEY (permiso_id) REFERENCES public.Permiso(id)
 );
 
 CREATE TABLE public.UsuarioRol (
@@ -93,14 +102,6 @@ CREATE TABLE public.UsuarioRol (
   CONSTRAINT UsuarioRol_pkey PRIMARY KEY (usuario_id, rol_id),
   CONSTRAINT UsuarioRol_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.Usuario(id),
   CONSTRAINT UsuarioRol_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.Rol(id)
-);
-
-CREATE TABLE public.RolPermiso (
-  rol_id integer NOT NULL,
-  permiso_id integer NOT NULL,
-  CONSTRAINT RolPermiso_pkey PRIMARY KEY (permiso_id, rol_id),
-  CONSTRAINT RolPermiso_rol_id_fkey FOREIGN KEY (rol_id) REFERENCES public.Rol(id),
-  CONSTRAINT RolPermiso_permiso_id_fkey FOREIGN KEY (permiso_id) REFERENCES public.Permiso(id)
 );
 
 CREATE TABLE public.FotoReferencia (

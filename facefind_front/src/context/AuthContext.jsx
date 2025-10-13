@@ -79,10 +79,31 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.signIn(email, password);
 
       if (response?.user) {
-        // Guardar el user con sus metadatos
-        setUser(response.user);
-        // Persistir en localStorage
-        localStorage.setItem("facefind_user", JSON.stringify(response.user));
+        // Buscar usuario en la BD para obtener role_id
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const userResponse = await fetch(`${API_URL}/users?search=${response.user.email}`);
+        const userResult = await userResponse.json();
+        
+        if (userResult.success && userResult.data.length > 0) {
+          const dbUser = userResult.data[0];
+          // Combinar datos de Supabase Auth con datos de BD
+          const completeUser = {
+            ...response.user,
+            db_id: dbUser.id,
+            role_id: dbUser.role_id,
+            role_name: dbUser.Rol?.nombre,
+            nombre: dbUser.nombre,
+            dni: dbUser.dni
+          };
+          
+          setUser(completeUser);
+          localStorage.setItem("facefind_user", JSON.stringify(completeUser));
+        } else {
+          // Si no se encuentra en BD, usar solo datos de Auth
+          setUser(response.user);
+          localStorage.setItem("facefind_user", JSON.stringify(response.user));
+        }
+        
         if (response.session) {
           localStorage.setItem("facefind_session", JSON.stringify(response.session));
         }
@@ -113,14 +134,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 🔹 Helpers
-  //const isAdmin = () => user?.role === "admin";
-  //const isAdmin = () => user?.email === "admin@facefind.com";
-  //const isAdmin = () => user?.app_metadata?.role === "admin";
+  // Verificar si el usuario es admin basado en role_id de la BD
+  // role_id 1 = Administrador (según esquema de BD)
   const isAdmin = () => {
-  if (!user) return false;
-  return user.app_metadata?.role === "admin" || user.email === "admin@facefind.com";
-};
-
+    if (!user) return false;
+    // Verificar por role_id (prioridad) o por nombre de rol o por email hardcodeado (fallback temporal)
+    return user.role_id === 1 || 
+           user.role_name === 'Administrador' || 
+           user.email === "admin@facefind.com";
+  };
 
   const isAuthenticated = () => user !== null;
 

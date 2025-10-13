@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from services.user_service import UserService
 from models.usuario import UsuarioBase, UsuarioRegistrado, UsuarioAdministrador
 from models.enums import Rol
+from datetime import datetime
 
 user_bp = Blueprint("users", __name__)
 
@@ -336,6 +337,81 @@ def check_blacklist():
         return jsonify({
             "success": True,
             "data": result
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@user_bp.route("/roles", methods=["GET"])
+def get_all_roles():
+    """Get all available roles in the system"""
+    try:
+        from repositories.user_repository import UserRepository
+        
+        roles = UserRepository.get_all_roles()
+        
+        return jsonify({
+            "success": True,
+            "data": roles,
+            "count": len(roles)
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@user_bp.route("/<int:user_id>/role", methods=["PUT"])
+def change_user_role(user_id):
+    """
+    Change user role
+    Only administrators can change roles
+    Administrators cannot change their own role
+    """
+    try:
+        data = request.get_json()
+        
+        if "role_id" not in data:
+            return jsonify({
+                "success": False,
+                "error": "role_id is required"
+            }), 400
+        
+        # TODO: Get current admin user from JWT/session
+        # For now, we accept a admin_id in the request
+        admin_id = data.get("admin_id")
+        
+        if not admin_id:
+            return jsonify({
+                "success": False,
+                "error": "admin_id is required (temporary, should come from JWT)"
+            }), 400
+        
+        # Prevent admin from changing own role
+        if admin_id == user_id:
+            return jsonify({
+                "success": False,
+                "error": "Cannot change your own role"
+            }), 403
+        
+        # Update role
+        from repositories.user_repository import UserRepository
+        
+        updates = {
+            "role_id": data["role_id"],
+            "updated_at": datetime.now().isoformat()
+        }
+        
+        user = UserRepository.update(user_id, updates)
+        
+        return jsonify({
+            "success": True,
+            "message": "Role updated successfully",
+            "data": user
         }), 200
     except Exception as e:
         return jsonify({

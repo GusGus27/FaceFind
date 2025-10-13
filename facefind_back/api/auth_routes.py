@@ -20,7 +20,7 @@ def signup():
         dni = data.get('dni')
         celular = data.get('celular')
         num_telefono = data.get('num_telefono')
-        role = data.get('role', 'user')  # Por defecto: user
+        role_id = data.get('role_id', 2)  # Por defecto: 2 (Usuario)
 
         # 🔹 Validaciones básicas
         if not email or not password:
@@ -57,8 +57,8 @@ def signup():
         user_id = str(result.user.id)
         user_email = str(result.user.email)
 
-        # 🔹 Crear instancia OOP según el rol
-        rol_enum = Rol.from_string(role)
+        # 🔹 Crear instancia OOP según el rol (role_id: 1=Admin, 2=Usuario)
+        rol_enum = Rol.ADMINISTRADOR if role_id == 1 else Rol.USUARIO
 
         if rol_enum == Rol.ADMINISTRADOR:
             usuario = UsuarioAdministrador(
@@ -103,7 +103,7 @@ def signup():
                 "db_id": db_user_id,  # ID numérico de la tabla Usuario
                 "email": user_email,
                 "nombre": nombre,
-                "role": role,
+                "role_id": role_id,
                 "tipo_usuario": usuario.__class__.__name__  # UsuarioRegistrado o UsuarioAdministrador
             }
         }), 201
@@ -142,28 +142,31 @@ def sign_in():
         auth_id = str(res.user.id)
 
         # 🔹 Buscar el usuario en la tabla Usuario POR EMAIL
-        usuario_query = supabase.table("Usuario").select("*").eq("email", user_email).execute()
+        # Incluir JOIN con Rol para obtener datos del rol
+        from repositories.user_repository import UserRepository
+        usuario_db = UserRepository.find_by_email(user_email)
 
-        usuario_db = None
-        if usuario_query.data and len(usuario_query.data) > 0:
-            usuario_db = usuario_query.data[0]
-        else:
-            # Si no existe en la tabla Usuario, crearlo
+        if not usuario_db:
+            # Si no existe en la tabla Usuario, crearlo con rol por defecto (Usuario)
             nombre = res.user.user_metadata.get("nombre", "Usuario") if res.user.user_metadata else "Usuario"
             insert_result = supabase.table("Usuario").insert({
                 "nombre": nombre,
                 "email": user_email,
                 "password": "NO_SE_USA",  # Dummy - la real está en auth.users
-                "role": "user",
+                "role_id": 2,  # Por defecto: Usuario
                 "status": "active"
             }).execute()
 
-            usuario_db = insert_result.data[0] if insert_result.data else {
-                "id": None,
-                "nombre": nombre,
-                "email": user_email,
-                "role": "user"
-            }
+            # Cargar el usuario recién creado con JOIN
+            usuario_db = UserRepository.find_by_email(user_email)
+            if not usuario_db:
+                # Fallback si algo falla
+                usuario_db = insert_result.data[0] if insert_result.data else {
+                    "id": None,
+                    "nombre": nombre,
+                    "email": user_email,
+                    "role_id": 2
+                }
             print(f"✅ Usuario creado en tabla Usuario: {user_email}")
 
         # 🔹 Crear instancia OOP del usuario (Factory Pattern)
