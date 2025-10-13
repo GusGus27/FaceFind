@@ -79,14 +79,59 @@ def upload_photos():
 
         print("🧪 Debug tipos:", {k: type(v) for k, v in fotos_urls.items()})
 
+        # 🔄 Recargar encodings automáticamente después de generar nuevos
+        # Importación diferida para evitar ciclos de importación
+        from api.detection_routes import initialize_detection_service
+        
+        print("🔄 Recargando encodings en el sistema de detección...")
+        reload_success = initialize_detection_service()
+        if reload_success:
+            print("✅ Encodings recargados automáticamente")
+        else:
+            print("⚠️ No se pudieron recargar los encodings automáticamente")
+
         return jsonify({
             "success": True,
             "message": "Fotos y encodings procesados correctamente",
-            "result": fotos_urls
+            "result": fotos_urls,
+            "encodings_reloaded": reload_success
         }), 200
 
     except Exception as e:
         import traceback
         print("❌ Error interno:", e)
         print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
+@foto_bp.route("/caso/<int:caso_id>", methods=["GET"])
+def get_fotos_by_caso(caso_id):
+    """Obtiene todas las fotos de un caso específico"""
+    try:
+        response = supabase.table("FotoReferencia")\
+            .select("*")\
+            .eq("caso_id", caso_id)\
+            .execute()
+        
+        if not response.data:
+            return jsonify({
+                "success": True,
+                "fotos": [],
+                "message": "No se encontraron fotos para este caso"
+            }), 200
+        
+        # Transformar ruta_archivo a url_foto para compatibilidad con frontend
+        fotos_transformed = []
+        for foto in response.data:
+            foto_copy = foto.copy()
+            foto_copy['url_foto'] = foto_copy.get('ruta_archivo', '')
+            fotos_transformed.append(foto_copy)
+        
+        return jsonify({
+            "success": True,
+            "fotos": fotos_transformed
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Error obteniendo fotos del caso {caso_id}:", e)
         return jsonify({"error": str(e)}), 500

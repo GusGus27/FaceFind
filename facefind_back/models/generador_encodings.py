@@ -32,8 +32,15 @@ class GeneradorEncodings:
                 print(f"⚠️ No se pudo descargar la imagen: {url}")
                 return None
 
+            print(f"✅ Imagen descargada, procesando...")
+            
             img_array = np.asarray(bytearray(response.content), dtype=np.uint8)
             imagen = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+            
+            if imagen is None:
+                print(f"⚠️ No se pudo decodificar la imagen: {url}")
+                return None
+                
             rgb = cv2.cvtColor(imagen, cv2.COLOR_BGR2RGB)
 
             # 2️⃣ Detectar rostro
@@ -42,6 +49,8 @@ class GeneradorEncodings:
                 print(f"⚠️ No se detectó rostro en {url}")
                 return None
 
+            print(f"✅ Rostro detectado, generando encoding...")
+            
             # 3️⃣ Generar encoding
             encoding_array = face_recognition.face_encodings(rgb, ubicaciones)[0]
 

@@ -17,25 +17,68 @@ interface RecognitionResult {
     faces: FaceResult[];
 }
 
-const CameraViewer: React.FC = () => {
+interface CameraSettings {
+    type: 'USB' | 'IP';
+    resolution: string;
+    fps: number;
+    url?: string;
+}
+
+interface CameraViewerProps {
+    cameraSettings: CameraSettings;
+}
+
+const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const overlayRef = useRef<HTMLCanvasElement | null>(null);
+    const intervalRef = useRef<number | null>(null);
 
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
     const [recognizedName, setRecognizedName] = useState<string>("Desconocido");
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
+    
+    // Estados para reconocimiento en tiempo real
+    const [isRealTimeActive, setIsRealTimeActive] = useState<boolean>(false);
+    const [intervalSeconds, setIntervalSeconds] = useState<number>(3);
+
+    // Parsear dimensiones una sola vez
+    const [videoWidth, videoHeight] = React.useMemo(() => {
+        const [w, h] = cameraSettings.resolution.split('x').map(Number);
+        return [w || 640, h || 480]; // Valores por defecto si falla el parseo
+    }, [cameraSettings.resolution]);
 
     useEffect(() => {
         const startCamera = async () => {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480 },
-                });
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                    setIsConnected(true);
+                // Si es cámara IP, usar URL directa
+                if (cameraSettings.type === 'IP' && cameraSettings.url) {
+                    if (videoRef.current) {
+                        // Para cámaras IP con stream (MJPEG, HLS, etc)
+                        videoRef.current.src = cameraSettings.url;
+                        videoRef.current.onloadeddata = () => {
+                            setIsConnected(true);
+                            console.log('✅ Cámara IP conectada:', cameraSettings.url);
+                        };
+                        videoRef.current.onerror = (e) => {
+                            console.error('❌ Error conectando cámara IP:', e);
+                            setIsConnected(false);
+                        };
+                    }
+                } else {
+                    // Cámara USB local
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            width: { ideal: videoWidth },
+                            height: { ideal: videoHeight },
+                            frameRate: { ideal: cameraSettings.fps }
+                        },
+                    });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        setIsConnected(true);
+                    }
                 }
             } catch (err) {
                 console.error("Error accessing camera:", err);
@@ -46,12 +89,17 @@ const CameraViewer: React.FC = () => {
         startCamera();
 
         return () => {
+            // Limpiar stream de USB
             if (videoRef.current?.srcObject instanceof MediaStream) {
                 const tracks = videoRef.current.srcObject.getTracks();
                 tracks.forEach(track => track.stop());
             }
+            // Limpiar source de IP
+            if (videoRef.current && cameraSettings.type === 'IP') {
+                videoRef.current.src = '';
+            }
         };
-    }, []);
+    }, [cameraSettings, videoWidth, videoHeight]);
 
     const captureAndRecognize = async () => {
         if (!videoRef.current || !canvasRef.current || isProcessing) return;
@@ -61,12 +109,12 @@ const CameraViewer: React.FC = () => {
         if (!context) return;
 
         try {
-            // Captura frame
-            context.drawImage(videoRef.current, 0, 0, 640, 480);
+            // Captura frame con dimensiones correctas
+            context.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
             const imageData = canvasRef.current.toDataURL('image/jpeg');
 
-            // Llamada al backend
-            const response = await fetch('http://localhost:5000/detect-faces', {
+            // Llamada al backend (actualizado a nueva ruta)
+            const response = await fetch('http://localhost:5000/detection/detect-faces', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: imageData }),
@@ -140,18 +188,55 @@ const CameraViewer: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, []);
 
+    // Funciones para reconocimiento en tiempo real
+    const startRealTimeRecognition = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        setIsRealTimeActive(true);
+        
+        // Ejecutar inmediatamente la primera vez
+        captureAndRecognize();
+        
+        // Configurar intervalo
+        intervalRef.current = window.setInterval(() => {
+            captureAndRecognize();
+        }, intervalSeconds * 1000);
+    };
+
+    const stopRealTimeRecognition = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+        setIsRealTimeActive(false);
+        clearBoundingBoxes();
+        setRecognizedName("Desconocido");
+    };
+
+    // Limpiar intervalo al desmontar componente
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+            }
+        };
+    }, []);
+
     return (
         <div className="camera-viewer">
             <div className="camera-status">
                 <p>Estado: {isConnected ? 'Conectado' : 'Desconectado'}</p>
+                <p>Resolución: {cameraSettings.resolution} @ {cameraSettings.fps} FPS</p>
                 {isProcessing && <p>Procesando...</p>}
             </div>
 
-            <div className="camera-container" style={{ position: 'relative', width: 640, height: 480 }}>
+            <div className="camera-container" style={{ position: 'relative', width: videoWidth, height: videoHeight }}>
                 <video
                     ref={videoRef}
-                    width={640}
-                    height={480}
+                    width={videoWidth}
+                    height={videoHeight}
                     autoPlay
                     playsInline
                     muted
@@ -159,14 +244,14 @@ const CameraViewer: React.FC = () => {
                 />
                 <canvas
                     ref={overlayRef}
-                    width={640}
-                    height={480}
+                    width={videoWidth}
+                    height={videoHeight}
                     style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
                 />
                 <canvas
                     ref={canvasRef}
-                    width={640}
-                    height={480}
+                    width={videoWidth}
+                    height={videoHeight}
                     style={{ display: 'none' }}
                 />
             </div>
@@ -174,10 +259,32 @@ const CameraViewer: React.FC = () => {
             <div className="camera-controls">
                 <button
                     onClick={captureAndRecognize}
-                    disabled={isProcessing || !isConnected}
+                    disabled={isProcessing || !isConnected || isRealTimeActive}
                 >
-                    {isProcessing ? 'Procesando...' : 'Reconocer (o presiona ESPACIO)'}
+                    {isProcessing ? 'Procesando...' : 'Reconocer Frame (o ESPACIO)'}
                 </button>
+                
+                <div className="real-time-controls">
+                    <label htmlFor="interval">Intervalo (segundos):</label>
+                    <input
+                        id="interval"
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={intervalSeconds}
+                        onChange={(e) => setIntervalSeconds(Number(e.target.value))}
+                        disabled={isRealTimeActive}
+                        style={{ width: '60px', marginLeft: '10px', marginRight: '10px' }}
+                    />
+                    
+                    <button
+                        onClick={isRealTimeActive ? stopRealTimeRecognition : startRealTimeRecognition}
+                        disabled={!isConnected}
+                        className={isRealTimeActive ? 'stop-button' : 'start-button'}
+                    >
+                        {isRealTimeActive ? '⏹ Detener Reconocimiento Automático' : '▶ Iniciar Reconocimiento Automático'}
+                    </button>
+                </div>
             </div>
 
             {/* Mostrar "Quién soy" debajo de la cámara */}

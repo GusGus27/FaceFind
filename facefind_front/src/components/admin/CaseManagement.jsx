@@ -7,6 +7,7 @@ import {
   deleteCaso 
 } from '../../services/casoService';
 import { getUserById } from '../../services/userService';
+import { getFotosByCaso } from '../../services/fotoService';
 import '../../styles/admin/CaseManagement.css';
 
 const CaseManagement = () => {
@@ -18,6 +19,8 @@ const CaseManagement = () => {
   const [filterPriority, setFilterPriority] = useState('all');
   const [selectedCase, setSelectedCase] = useState(null);
   const [selectedCaseUser, setSelectedCaseUser] = useState(null);
+  const [selectedCasePhotos, setSelectedCasePhotos] = useState([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,6 +94,8 @@ const CaseManagement = () => {
   const handleViewDetails = async (caseItem) => {
     setSelectedCase(caseItem);
     setShowDetailsModal(true);
+    setSelectedCasePhotos([]);
+    setLoadingPhotos(true);
     
     // Cargar datos del usuario (reportante)
     if (caseItem.usuario_id) {
@@ -98,9 +103,19 @@ const CaseManagement = () => {
         const user = await getUserById(caseItem.usuario_id);
         setSelectedCaseUser(user);
       } catch (err) {
-        console.error('Error loading user:', err);
+        console.error('Error cargando usuario:', err);
         setSelectedCaseUser(null);
       }
+    }
+
+    // Cargar fotos del caso
+    try {
+      const fotos = await getFotosByCaso(caseItem.id);
+      setSelectedCasePhotos(fotos || []);
+    } catch (err) {
+      console.error('Error cargando fotos:', err);
+    } finally {
+      setLoadingPhotos(false);
     }
   };
 
@@ -108,6 +123,7 @@ const CaseManagement = () => {
     setShowDetailsModal(false);
     setSelectedCase(null);
     setSelectedCaseUser(null);
+    setSelectedCasePhotos([]);
   };
   
   const handleEdit = () => {
@@ -201,70 +217,80 @@ const CaseManagement = () => {
         </select>
       </div>
 
-      <div className="cases-grid">
+      {/* Tabla de Casos */}
+      <div className="cases-table-container">
         {filteredCases.length === 0 ? (
           <div className="no-cases">
             <p>No se encontraron casos</p>
           </div>
         ) : (
-          filteredCases.map(caseItem => (
-            <div key={caseItem.id} className="case-card-admin">
-              <div className="case-card-header">
-                <h3>{caseItem.PersonaDesaparecida?.nombre_completo || 'Sin nombre'}</h3>
-                <div
-                  className="priority-indicator"
-                  style={{ backgroundColor: getPriorityColor(caseItem.priority) }}
-                >
-                  {getPriorityLabel(caseItem.priority)}
-                </div>
-              </div>
-              <div className="case-card-body">
-                <div className="case-info">
-                  <p><strong>📍 Ubicación:</strong> {caseItem.lugar_desaparicion || 'N/A'}</p>
-                  <p><strong>📅 Desaparición:</strong> {formatDate(caseItem.fecha_desaparicion)}</p>
-                  <p><strong>👤 Reportante:</strong> {caseItem.reporterName || 'N/A'}</p>
-                </div>
-                <div className="case-controls">
-                  <label>Estado:</label>
-                  <select
-                    value={caseItem.status}
-                    onChange={(e) => handleStatusChange(caseItem.id, e.target.value)}
-                    className="status-select"
-                  >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="activo">Activo</option>
-                    <option value="resuelto">Resuelto</option>
-                  </select>
-                </div>
-                <div className="case-controls">
-                  <label>Prioridad:</label>
-                  <select
-                    value={caseItem.priority}
-                    onChange={(e) => handlePriorityChange(caseItem.id, e.target.value)}
-                    className="priority-select"
-                  >
-                    <option value="high">Alta</option>
-                    <option value="medium">Media</option>
-                    <option value="low">Baja</option>
-                  </select>
-                </div>
-              </div>
-              <div className="case-card-footer">
-                <button 
-                  className="btn-view"
-                  onClick={() => handleViewDetails(caseItem)}
-                >
-                  👁️ Ver Detalles
-                </button>
-                <button
-                  className="btn-delete"
-                  onClick={() => handleDeleteCase(caseItem.id)}
-                >
-                  🗑️ Eliminar
-                </button>
-              </div>
-            </div>
-          ))
+          <table className="cases-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Ubicación</th>
+                <th>Fecha Desaparición</th>
+                <th>Reportante</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCases.map(caseItem => (
+                <tr key={caseItem.id}>
+                  <td>#{caseItem.id}</td>
+                  <td>
+                    <strong>{caseItem.PersonaDesaparecida?.nombre_completo || 'Sin nombre'}</strong>
+                  </td>
+                  <td>{caseItem.lugar_desaparicion || 'N/A'}</td>
+                  <td>{formatDate(caseItem.fecha_desaparicion)}</td>
+                  <td>{caseItem.reporterName || 'N/A'}</td>
+                  <td>
+                    <select
+                      value={caseItem.status}
+                      onChange={(e) => handleStatusChange(caseItem.id, e.target.value)}
+                      className={`status-select status-${caseItem.status}`}
+                    >
+                      <option value="pendiente">Pendiente</option>
+                      <option value="activo">Activo</option>
+                      <option value="resuelto">Resuelto</option>
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      value={caseItem.priority}
+                      onChange={(e) => handlePriorityChange(caseItem.id, e.target.value)}
+                      className={`priority-select priority-${caseItem.priority}`}
+                    >
+                      <option value="high">Alta</option>
+                      <option value="medium">Media</option>
+                      <option value="low">Baja</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div className="table-actions">
+                      <button 
+                        className="btn-view-table"
+                        onClick={() => handleViewDetails(caseItem)}
+                        title="Ver Detalles"
+                      >
+                        👁️
+                      </button>
+                      <button
+                        className="btn-delete-table"
+                        onClick={() => handleDeleteCase(caseItem.id)}
+                        title="Eliminar"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
@@ -490,6 +516,36 @@ const CaseManagement = () => {
                   </div>
                 </section>
               )}
+
+              {/* Fotos del Caso */}
+              <section className="detail-section">
+                <h3>📸 Fotos del Caso</h3>
+                {loadingPhotos ? (
+                  <p className="loading-text">Cargando fotos...</p>
+                ) : selectedCasePhotos.length > 0 ? (
+                  <div className="photos-grid">
+                    {selectedCasePhotos.map((foto, index) => {
+                      console.log('Foto URL:', foto.url_foto); // Debug
+                      return (
+                        <div key={foto.id || index} className="photo-item">
+                          <img 
+                            src={foto.url_foto} 
+                            alt={`Foto ${index + 1} del caso`}
+                            className="photo-img"
+                            onError={(e) => {
+                              console.error('Error cargando imagen:', foto.url_foto);
+                              e.target.src = 'https://static.vecteezy.com/system/resources/previews/011/269/772/non_2x/missing-person-icon-design-free-vector.jpg';
+                            }}
+                          />
+                          <p className="photo-label">Foto {index + 1}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="no-photos">No hay fotos disponibles para este caso</p>
+                )}
+              </section>
             </div>
 
             <div className="modal-footer">

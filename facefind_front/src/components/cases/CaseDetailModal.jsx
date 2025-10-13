@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getFotosByCaso } from '../../services/fotoService';
 import '../../styles/cases/CaseDetailModal.css';
 
 /**
@@ -20,6 +21,28 @@ const CaseDetailModal = ({
   showEditButton = true,
   isAdmin = false 
 }) => {
+  
+  const [fotos, setFotos] = useState([]);
+  const [loadingFotos, setLoadingFotos] = useState(true);
+  
+  useEffect(() => {
+    if (caso?.id) {
+      loadFotos();
+    }
+  }, [caso?.id]);
+
+  const loadFotos = async () => {
+    try {
+      setLoadingFotos(true);
+      const fotosData = await getFotosByCaso(caso.id);
+      setFotos(fotosData);
+    } catch (error) {
+      console.error('Error cargando fotos:', error);
+      setFotos([]);
+    } finally {
+      setLoadingFotos(false);
+    }
+  };
   
   if (!caso) return null;
 
@@ -358,6 +381,36 @@ const CaseDetailModal = ({
               </div>
             </section>
           )}
+
+          {/* Fotos de Referencia */}
+          <section className="detail-section photos-section">
+            <h3>📸 Fotos de Referencia</h3>
+            {loadingFotos ? (
+              <div className="loading-photos">
+                <p>Cargando fotos...</p>
+              </div>
+            ) : fotos.length > 0 ? (
+              <div className="photos-grid">
+                {fotos.map((foto, index) => (
+                  <div key={foto.id} className="photo-item">
+                    <img 
+                      src={foto.ruta_archivo} 
+                      alt={`Foto ${index + 1}`}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EError%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                    <span className="photo-label">Foto {index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-photos">
+                <p>📷 No hay fotos disponibles para este caso</p>
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Footer */}

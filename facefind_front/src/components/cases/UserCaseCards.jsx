@@ -1,11 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CaseDetailModal from "./CaseDetailModal";
+import { getFotosByCaso } from "../../services/fotoService";
 
 export default function UserCaseCards({ cases }) {
   const navigate = useNavigate();
   const [selectedCase, setSelectedCase] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [casesWithPhotos, setCasesWithPhotos] = useState({});
+
+  // Cargar primera foto de cada caso
+  useEffect(() => {
+    const loadPhotos = async () => {
+      console.log('🔍 Cargando fotos para casos:', cases.length);
+      const photosMap = {};
+      
+      for (const caso of cases) {
+        try {
+          console.log(`📸 Obteniendo fotos del caso ID: ${caso.id}`);
+          const fotos = await getFotosByCaso(caso.id);
+          console.log(`✅ Fotos recibidas para caso ${caso.id}:`, fotos);
+          
+          if (fotos && fotos.length > 0) {
+            photosMap[caso.id] = fotos[0].url_foto;
+            console.log(`✅ Foto asignada a caso ${caso.id}:`, fotos[0].url_foto);
+          } else {
+            console.log(`⚠️ No hay fotos para caso ${caso.id}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error cargando fotos del caso ${caso.id}:`, error);
+        }
+      }
+      
+      console.log('📋 Mapa final de fotos:', photosMap);
+      setCasesWithPhotos(photosMap);
+    };
+
+    if (cases && cases.length > 0) {
+      loadPhotos();
+    }
+  }, [cases]);
 
   const handleViewDetails = (caso) => {
     setSelectedCase(caso);
@@ -91,9 +125,13 @@ export default function UserCaseCards({ cases }) {
             {/* Foto */}
             <div className="case-photo-wrapper">
               <img 
-                src={caso.img || caso.foto || "https://static.vecteezy.com/system/resources/previews/011/269/772/non_2x/missing-person-icon-design-free-vector.jpg"} 
+                src={casesWithPhotos[caso.id] || caso.img || caso.foto || "https://static.vecteezy.com/system/resources/previews/011/269/772/non_2x/missing-person-icon-design-free-vector.jpg"} 
                 alt={caso.PersonaDesaparecida?.nombre_completo || caso.title}
                 className="case-photo-main"
+                onError={(e) => {
+                  console.error('Error cargando imagen del caso:', caso.id);
+                  e.target.src = "https://static.vecteezy.com/system/resources/previews/011/269/772/non_2x/missing-person-icon-design-free-vector.jpg";
+                }}
               />
             </div>
 

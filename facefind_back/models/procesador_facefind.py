@@ -56,17 +56,39 @@ class ProcesadorFaceFind:
     # ======================================================
     # 📥 Cargar encodings desde la tabla Supabase
     # ======================================================
-    
-
     def load_known_faces_from_db(self):
-        response = self.supabase.table("Embedding").select("*").execute()
+        """
+        Carga encodings desde Supabase y obtiene el nombre de la persona desaparecida
+        mediante JOIN con FotoReferencia, Caso y PersonaDesaparecida
+        """
+        # Query con JOIN para obtener el nombre de la persona
+        response = self.supabase.table("Embedding")\
+            .select("id, vector, foto_referencia_id, FotoReferencia(caso_id, Caso(persona_id, PersonaDesaparecida(nombre_completo)))")\
+            .execute()
+        
         if not response.data:
             print("    No se encontraron encodings en BD")
             return
 
         for row in response.data:
             vector_data = row.get("vector")
-            nombre = str(row.get("foto_referencia_id") or f"id_{row.get('id')}")
+            
+            # Intentar obtener el nombre de la persona desaparecida
+            nombre = None
+            try:
+                foto_ref = row.get("FotoReferencia")
+                if foto_ref and isinstance(foto_ref, dict):
+                    caso = foto_ref.get("Caso")
+                    if caso and isinstance(caso, dict):
+                        persona = caso.get("PersonaDesaparecida")
+                        if persona and isinstance(persona, dict):
+                            nombre = persona.get("nombre_completo")
+            except Exception as e:
+                print(f"⚠️ Error obteniendo nombre para embedding {row.get('id')}: {e}")
+            
+            # Si no se pudo obtener el nombre, usar ID como fallback
+            if not nombre:
+                nombre = f"Foto_{row.get('foto_referencia_id', row.get('id'))}"
 
             vector = None
             try:
@@ -86,6 +108,7 @@ class ProcesadorFaceFind:
                 if vector is not None and len(vector) > 0:
                     self.known_encodings.append(vector)
                     self.known_names.append(nombre)
+                    print(f"  ✅ Cargado: {nombre} (ID: {row.get('id')})")
             except Exception as e:
                 print(f"⚠️ No se pudo procesar vector id={row.get('id')}: {e}")
 

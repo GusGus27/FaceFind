@@ -46,7 +46,9 @@ const CameraManager: React.FC = () => {
                 </div>
 
                 <div className="viewer-section">
-                    {isConnected && <CameraViewer />}
+                    {isConnected && cameraSettings && (
+                        <CameraViewer cameraSettings={cameraSettings} />
+                    )}
                 </div>
             </div>
         </div>

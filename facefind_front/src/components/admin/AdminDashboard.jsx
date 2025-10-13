@@ -14,6 +14,8 @@ const AdminDashboard = () => {
     pendingCases: 0
   });
   const [loading, setLoading] = useState(true);
+  const [reloadingEncodings, setReloadingEncodings] = useState(false);
+  const [reloadMessage, setReloadMessage] = useState('');
 
   useEffect(() => {
     loadMetrics();
@@ -47,6 +49,33 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleReloadEncodings = async () => {
+    try {
+      setReloadingEncodings(true);
+      setReloadMessage('');
+      
+      const response = await fetch('http://localhost:5000/detection/reload-encodings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setReloadMessage(`✅ Encodings recargados: ${result.total_encodings} encodings detectados`);
+      } else {
+        setReloadMessage(`❌ Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error reloading encodings:', error);
+      setReloadMessage('❌ Error al recargar encodings');
+    } finally {
+      setReloadingEncodings(false);
+      // Limpiar mensaje después de 5 segundos
+      setTimeout(() => setReloadMessage(''), 5000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="admin-dashboard">
@@ -63,6 +92,18 @@ const AdminDashboard = () => {
       <div className="dashboard-header">
         <h1>Dashboard Administrativo</h1>
         <p>Resumen general del sistema FaceFind</p>
+        <div className="dashboard-actions">
+          <button 
+            className="reload-encodings-btn"
+            onClick={handleReloadEncodings}
+            disabled={reloadingEncodings}
+          >
+            {reloadingEncodings ? '🔄 Recargando...' : '🔄 Recargar Encodings'}
+          </button>
+          {reloadMessage && (
+            <span className="reload-message">{reloadMessage}</span>
+          )}
+        </div>
       </div>
 
       <div className="metrics-grid">
