@@ -37,3 +37,47 @@ export const getFotosByCaso = async (casoId) => {
     throw error;
   }
 };
+
+export const replaceFoto = async (fotoId, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`http://localhost:5000/fotos/replace/${fotoId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al reemplazar foto");
+    }
+
+    const data = await response.json();
+    console.log("✅ Foto reemplazada:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Error en replaceFoto:", error);
+    throw error;
+  }
+};
+
+export const deleteFoto = async (fotoId) => {
+  try {
+    const response = await fetch(`http://localhost:5000/fotos/delete/${fotoId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al eliminar foto");
+    }
+
+    const data = await response.json();
+    console.log("✅ Foto eliminada:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Error en deleteFoto:", error);
+    throw error;
+  }
+};

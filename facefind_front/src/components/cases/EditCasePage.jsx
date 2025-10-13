@@ -6,7 +6,9 @@ import {
   FileText, AlertTriangle, ArrowLeft
 } from 'lucide-react';
 import { getCasoById, updateCaso } from '../../services/casoService';
+import { getFotosByCaso } from '../../services/fotoService';
 import { useAuth } from '../../context/AuthContext';
+import PhotoManager from '../fotos/PhotoManager';
 import '../../styles/cases/EditCasePage.css';
 
 /**
@@ -53,6 +55,7 @@ const EditCasePage = () => {
 
   // Estados de las fotografías
   const [photos, setPhotos] = useState([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
   const [newPhotos, setNewPhotos] = useState([]);
   const [photosToDelete, setPhotosToDelete] = useState([]);
 
@@ -141,8 +144,8 @@ const EditCasePage = () => {
       setFormData(mappedData);
       setOriginalData(mappedData);
       
-      // TODO: Cargar fotos del caso cuando esté disponible el endpoint
-      // setPhotos(caso.fotos || []);
+      // Cargar fotos del caso
+      await loadPhotos();
       
       console.log('✅ Caso cargado:', caso);
     } catch (error) {
@@ -151,6 +154,31 @@ const EditCasePage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadPhotos = async () => {
+    console.log('📸 loadPhotos iniciado para caso:', caseId);
+    setPhotosLoading(true);
+    try {
+      const fotosData = await getFotosByCaso(caseId);
+      console.log('✅ Fotos cargadas:', fotosData);
+      console.log('📊 Número de fotos:', fotosData?.length);
+      setPhotos(fotosData);
+    } catch (error) {
+      console.error('❌ Error cargando fotos:', error);
+      setErrors(prev => ({
+        ...prev,
+        photos: 'Error al cargar las fotos'
+      }));
+    } finally {
+      setPhotosLoading(false);
+    }
+  };
+
+  const handlePhotoUpdated = () => {
+    // Recargar fotos después de actualizar/eliminar
+    console.log('🔄 Recargando fotos...');
+    loadPhotos();
   };
 
   const handleInputChange = (e) => {
@@ -842,21 +870,29 @@ const EditCasePage = () => {
               </div>
             </div>
 
-            {/* Sección: Fotografías (Comentado por ahora) */}
-            {/* <div className="form-section">
+            {/* Sección: Fotografías */}
+            <div className="form-section">
               <div className="section-header">
                 <ImageIcon size={20} />
-                <h2>Fotografías</h2>
+                <h2>Fotografías de Referencia</h2>
                 <span className="photos-count">
-                  {allPhotos.length}/10
+                  {photos.length} foto{photos.length !== 1 ? 's' : ''}
                 </span>
               </div>
 
-              <div className="photos-info">
-                <AlertCircle size={16} />
-                <span>Funcionalidad de fotos próximamente disponible</span>
-              </div>
-            </div> */}
+              {photosLoading ? (
+                <div className="photos-loading">
+                  <div className="spinner"></div>
+                  <p>Cargando fotografías...</p>
+                </div>
+              ) : (
+                <PhotoManager 
+                  fotos={photos} 
+                  casoId={caseId}
+                  onPhotoUpdated={handlePhotoUpdated}
+                />
+              )}
+            </div>
 
             {/* Botones de acción */}
             <div className="form-actions">

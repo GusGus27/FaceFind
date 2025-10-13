@@ -7,6 +7,8 @@ import {
   Archive, RefreshCw
 } from 'lucide-react';
 import { getCasoById, updateCaso } from '../../services/casoService';
+import { getFotosByCaso } from '../../services/fotoService';
+import PhotoManager from '../fotos/PhotoManager';
 import '../../styles/cases/EditCasePage.css';
 
 /**
@@ -58,6 +60,7 @@ const AdminEditCasePage = () => {
   });
 
   const [photos, setPhotos] = useState([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
   const [newPhotos, setNewPhotos] = useState([]);
   const [photosToDelete, setPhotosToDelete] = useState([]);
   const [errors, setErrors] = useState({});
@@ -150,6 +153,9 @@ const AdminEditCasePage = () => {
       setFormData(mappedData);
       setOriginalData(mappedData);
       
+      // Cargar fotos del caso
+      await loadPhotos(id);
+      
       console.log('✅ Caso cargado (Admin):', caso);
       console.log('✅ FormData mapeado:', mappedData);
     } catch (error) {
@@ -158,6 +164,31 @@ const AdminEditCasePage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadPhotos = async (id) => {
+    console.log('📸 loadPhotos iniciado para caso (Admin):', id);
+    setPhotosLoading(true);
+    try {
+      const fotosData = await getFotosByCaso(id);
+      console.log('✅ Fotos cargadas (Admin):', fotosData);
+      console.log('📊 Número de fotos:', fotosData?.length);
+      setPhotos(fotosData);
+    } catch (error) {
+      console.error('❌ Error cargando fotos:', error);
+      setErrors(prev => ({
+        ...prev,
+        photos: 'Error al cargar las fotos'
+      }));
+    } finally {
+      setPhotosLoading(false);
+    }
+  };
+
+  const handlePhotoUpdated = () => {
+    // Recargar fotos después de actualizar/eliminar
+    console.log('🔄 Recargando fotos...');
+    loadPhotos(caseId);
   };
 
   const handleInputChange = (e) => {
@@ -757,68 +788,23 @@ const AdminEditCasePage = () => {
             <div className="form-section">
               <div className="section-header">
                 <ImageIcon size={20} />
-                <h2>Fotografías</h2>
-                <span className="photos-count">{allPhotos.length}/10</span>
+                <h2>Fotografías de Referencia</h2>
+                <span className="photos-count">
+                  {photos.length} foto{photos.length !== 1 ? 's' : ''}
+                </span>
               </div>
 
-              <div className="photos-info">
-                <AlertCircle size={16} />
-                <span>Mínimo 3 fotografías requeridas. Las nuevas fotos serán procesadas automáticamente.</span>
-              </div>
-
-              <div className="photos-grid">
-                {allPhotos.map((photo) => (
-                  <div key={photo.id} className={`photo-card ${photo.isNew ? 'new' : ''} ${!photo.procesado ? 'pending' : ''}`}>
-                    <img src={photo.url} alt="Foto" />
-
-                    {photo.isNew && <div className="photo-badge new-badge">Nueva</div>}
-                    {!photo.procesado && !photo.isNew && <div className="photo-badge pending-badge">Sin procesar</div>}
-
-                    <div className="photo-overlay">
-                      <select
-                        value={photo.tipo}
-                        onChange={(e) => handlePhotoTypeChange(photo.id, e.target.value)}
-                        className="photo-type-select"
-                        disabled={!photo.isNew}
-                      >
-                        <option value="Frontal">Frontal</option>
-                        <option value="Perfil_Der">Perfil Derecho</option>
-                        <option value="Perfil_Izq">Perfil Izquierdo</option>
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePhoto(photo)}
-                        className="delete-photo-btn"
-                        title="Eliminar foto"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {allPhotos.length < 10 && (
-                  <label className="photo-upload-card">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <Upload size={32} />
-                    <span>Agregar Fotos</span>
-                    <span className="upload-hint">Máx. 5MB por foto</span>
-                  </label>
-                )}
-              </div>
-
-              {errors.photos && (
-                <div className="error-message-box">
-                  <AlertCircle size={16} />
-                  {errors.photos}
+              {photosLoading ? (
+                <div className="photos-loading">
+                  <div className="spinner"></div>
+                  <p>Cargando fotografías...</p>
                 </div>
+              ) : (
+                <PhotoManager 
+                  fotos={photos} 
+                  casoId={caseId}
+                  onPhotoUpdated={handlePhotoUpdated}
+                />
               )}
             </div>
 
