@@ -6,7 +6,7 @@ import time
 import os
 
 class ProcesadorFaceFind:
-    def __init__(self, tolerance=0.6, encodings_path='encodings_test.pickle'):
+    def __init__(self, tolerance=0.6, encodings_path='encodings.pickle'):
         self.tolerance = tolerance
         self.encodings_path = encodings_path
         self.known_encodings = []

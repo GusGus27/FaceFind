@@ -28,7 +28,9 @@
 
 .camera-controls {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
     margin-top: 20px;
 }
 
@@ -40,9 +42,68 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
+    transition: background 0.3s ease;
+}
+
+.camera-controls button:hover:not(:disabled) {
+    background: #0056b3;
 }
 
 .camera-controls button:disabled {
     background: #cccccc;
     cursor: not-allowed;
+}
+
+.real-time-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.real-time-controls label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.real-time-controls input[type="number"] {
+    padding: 5px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.start-button {
+    background: #28a745 !important;
+}
+
+.start-button:hover:not(:disabled) {
+    background: #218838 !important;
+}
+
+.stop-button {
+    background: #dc3545 !important;
+}
+
+.stop-button:hover:not(:disabled) {
+    background: #c82333 !important;
+}
+
+.camera-identity {
+    margin-top: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.camera-identity p {
+    margin: 0;
+    font-size: 20px;
+    font-weight: bold;
 }

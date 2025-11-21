@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getCasosByUserId } from '../../services/casoService';
 import '../../styles/admin/UserCasesModal.css';
 
 /**
@@ -7,9 +8,33 @@ import '../../styles/admin/UserCasesModal.css';
  * @param {function} onClose - Función callback para cerrar el modal
  * @param {string} userName - Nombre del usuario propietario de los casos
  * @param {number} userId - ID del usuario para filtrar casos
- * @param {array} cases - Array de casos del usuario
  */
-const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
+const UserCasesModal = ({ isOpen, onClose, userName, userId }) => {
+  const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Cargar casos cuando se abre el modal o cambia userId
+  useEffect(() => {
+    if (isOpen && userId) {
+      loadUserCases();
+    }
+  }, [isOpen, userId]);
+
+  const loadUserCases = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const casesData = await getCasosByUserId(userId);
+      setCases(casesData);
+    } catch (err) {
+      console.error('Error loading user cases:', err);
+      setError('Error al cargar los casos del usuario');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // No renderizar si el modal está cerrado
   if (!isOpen) return null;
 
@@ -21,16 +46,17 @@ const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
       resuelto: '✅',     // Persona encontrada
       cerrado: '⚫'       // Caso cerrado
     };
-    return icons[status] || '📋';
+    return icons[status?.toLowerCase()] || '📋';
   };
 
   // Función para obtener la clase CSS según el estado
   const getStatusClass = (status) => {
-    return `case-status case-status-${status}`;
+    return `case-status case-status-${status?.toLowerCase()}`;
   };
 
   // Formatear fecha
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', { 
       year: 'numeric', 
@@ -51,7 +77,7 @@ const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
       <div className="modal-content">
         {/* Header del modal */}
         <div className="modal-header">
-          <h2>Casoss de {userName}</h2>
+          <h2>Casos de {userName}</h2>
           <button 
             className="close-btn" 
             onClick={onClose}
@@ -63,7 +89,16 @@ const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
 
         {/* Contenido del modal */}
         <div className="modal-body">
-          {cases.length === 0 ? (
+          {loading ? (
+            <div className="loading-message">
+              <p>Cargando casos...</p>
+            </div>
+          ) : error ? (
+            <div className="error-message">
+              <p>{error}</p>
+              <button onClick={loadUserCases}>Reintentar</button>
+            </div>
+          ) : cases.length === 0 ? (
             <div className="no-cases">
               <p className="no-cases-icon">📭</p>
               <p className="no-cases-text">Este usuario no tiene casos registrados</p>
@@ -79,25 +114,34 @@ const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
                   <div key={caso.id} className="case-item">
                     <div className="case-header">
                       <span className="case-icon">{getStatusIcon(caso.status)}</span>
-                      <h3 className="case-title">{caso.title}</h3>
+                      <h3 className="case-title">
+                        {caso.PersonaDesaparecida?.nombre_completo || 'Sin nombre'}
+                      </h3>
                     </div>
                     
                     <div className="case-details">
                       <span className={getStatusClass(caso.status)}>
-                        {caso.status.charAt(0).toUpperCase() + caso.status.slice(1)}
+                        {caso.status ? caso.status.charAt(0).toUpperCase() + caso.status.slice(1) : 'N/A'}
                       </span>
                       <span className="case-date">
-                        📅 {formatDate(caso.reportDate)}
+                        📅 {formatDate(caso.fecha_desaparicion || caso.created_at)}
                       </span>
-                      {caso.location && (
+                      {caso.lugar_desaparicion && (
                         <span className="case-location">
-                          📍 {caso.location}
+                          📍 {caso.lugar_desaparicion}
+                        </span>
+                      )}
+                      {caso.priority && (
+                        <span className={`case-priority priority-${caso.priority}`}>
+                          {caso.priority === 'high' ? '🔴 Alta' : caso.priority === 'medium' ? '🟡 Media' : '🟢 Baja'}
                         </span>
                       )}
                     </div>
 
-                    {caso.description && (
-                      <p className="case-description">{caso.description}</p>
+                    {caso.circumstances && (
+                      <p className="case-description">
+                        {caso.circumstances}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -114,17 +158,6 @@ const UserCasesModal = ({ isOpen, onClose, userName, userId, cases = [] }) => {
           >
             Cerrar
           </button>
-          {cases.length > 0 && (
-            <button 
-              className="btn-primary"
-              onClick={() => {
-                // Aquí podrías redirigir a CaseManagement con filtro
-                alert('Redirección a vista completa de casos (por implementar)');
-              }}
-            >
-              Ver todos los detalles
-            </button>
-          )}
         </div>
       </div>
     </div>

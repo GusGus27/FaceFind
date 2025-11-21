@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import UserManagement from '../components/admin/UserManagement';
@@ -13,6 +13,7 @@ import '../styles/admin/AdminPanel.css';
 
 const AdminPanel = () => {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
 
     const [selectedCase, setSelectedCase] = useState(null);
@@ -56,6 +57,13 @@ const AdminPanel = () => {
           <p>Gestión del Sistema</p>
         </div>
         <nav className="admin-nav">
+          <button
+            className="admin-nav-item btn-back-home"
+            onClick={() => navigate('/')}
+          >
+            <span className="icon">🏠</span>
+            Volver al Inicio
+          </button>
           <button
             className={`admin-nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveSection('dashboard')}

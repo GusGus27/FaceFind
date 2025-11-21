@@ -1,0 +1,11 @@
+flask
+flask-cors
+fastapi 
+uvicorn 
+supabase
+python-dotenv
+bcrypt
+opencv-python
+numpy
+face-recognition
+requests

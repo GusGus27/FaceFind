@@ -53,3 +53,49 @@ Sube la rama `main` actualizada al remoto:
 ```bash
 git push origin main
 ```
+
+---
+
+# 📹 Guía Rápida: Usar Cámara IP
+
+## Ejemplo 1: Celular como Cámara
+
+### Usando IP Webcam (Android):
+
+1. **Instala la app**
+   - Descarga "IP Webcam" desde Play Store
+
+2. **Inicia el servidor**
+   - Abre la app
+   - Presiona "Iniciar servidor"
+   - La app mostrará: `http://192.168.1.105:8080`
+
+3. **Configura en FaceFind**
+   ```
+   Tipo: Cámara IP
+   URL: http://192.168.1.105:8080/video
+   Resolución: 1280x720
+   FPS: 20
+   ```
+
+## Ejemplo 2: Cámara de Seguridad IP
+
+```
+Tipo: Cámara IP
+URL: http://192.168.1.64/mjpg/video.mjpg
+Resolución: 640x480
+FPS: 15
+```
+
+## Ejemplo 3: Stream Público de Prueba
+
+Para probar sin tener cámara IP:
+
+```
+Tipo: Cámara IP
+URL: http://webcam.domain.com/mjpg/video.mjpg
+Resolución: 640x480
+FPS: 30
+```
+
+> 📚 **Documentación completa:** Ver `facefind_front/docs/GUIA_CAMARA_IP.md`

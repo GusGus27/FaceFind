@@ -79,7 +79,7 @@ class CameraAPITester:
         """Envía un frame a la API y obtiene resultados"""
         try:
             response = requests.post(
-                f"{self.api_url}/detect-faces",
+                f"{self.api_url}/detection/detect-faces",
                 json={"image": img_base64},
                 #timeout=10
             )

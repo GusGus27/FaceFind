@@ -286,7 +286,13 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 0;
+  background-color: #ffffff;
+  color: #1e293b;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-group input::placeholder {
+  color: #94a3b8;
 }
 
 .form-group input:focus {
@@ -295,64 +301,152 @@ body{font-family: Inter, Arial, sans-serif; margin:0}
   box-shadow: 0 0 8px rgba(26, 10, 60, 0.35);
 }
 
-/* Form Options (Remember Me + Forgot Password) */
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
+/* 🔧 CORRECCIÓN: Inputs con fondo blanco y texto oscuro */
+.auth-form input[type="text"],
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="tel"],
+.auth-form input[type="number"],
+/* 🔧 AGREGADO: Input de recuperar contraseña */
+input[type="email"].forgot-password-input,
+input[type="text"].forgot-password-input,
+input[type="password"].forgot-password-input,
+.forgot-password-form input[type="email"],
+.forgot-password-form input[type="text"],
+.forgot-password-form input[type="password"] {
+  background-color: #ffffff !important; /* Fondo blanco */
+  color: #1e293b !important; /* Texto oscuro para legibilidad */
+  border: 2px solid #e2e8f0 !important; /* Borde gris claro */
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  transition: all 0.3s ease !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.remember-me {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+/* 🔧 PLACEHOLDERS UNIFICADOS */
+.auth-form input[type="text"]::placeholder,
+.auth-form input[type="email"]::placeholder,
+.auth-form input[type="password"]::placeholder,
+.auth-form input[type="tel"]::placeholder,
+.auth-form input[type="number"]::placeholder,
+input[type="email"].forgot-password-input::placeholder,
+input[type="text"].forgot-password-input::placeholder,
+input[type="password"].forgot-password-input::placeholder,
+.forgot-password-form input::placeholder {
+  color: #94a3b8 !important; /* Gris medio para placeholders */
+  opacity: 1 !important;
 }
 
-.remember-me input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #667eea;
+/* 🔧 ESTADO FOCUS UNIFICADO */
+.auth-form input[type="text"]:focus,
+.auth-form input[type="email"]:focus,
+.auth-form input[type="password"]:focus,
+.auth-form input[type="tel"]:focus,
+.auth-form input[type="number"]:focus,
+input[type="email"].forgot-password-input:focus,
+input[type="text"].forgot-password-input:focus,
+input[type="password"].forgot-password-input:focus,
+.forgot-password-form input:focus {
+  outline: none !important;
+  border-color: #6f3be0 !important; /* Color púrpura del proyecto */
+  box-shadow: 0 0 0 3px rgba(111, 59, 224, 0.1) !important;
 }
 
-.remember-me label {
-  font-size: 0.9rem;
-  color: #64748b;
-  cursor: pointer;
-  font-weight: 500;
+/* 🔧 MODIFICACIONES AGREGADAS AL CSS PARA TOGGLE DE CONTRASEÑA */
+
+/* 🔧 Wrapper para campos de contraseña con toggle */
+.password-field-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-.forgot-password {
-  font-size: 0.84rem;
-  color: #f78f2e;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
+.password-field-wrapper .form-input {
+  flex: 1 !important;
+  padding-right: 50px !important; /* Espacio para el botón toggle */
+  width: 100% !important;
 }
 
-.forgot-password:hover {
-  color: #cc7000;
-  text-decoration: none;
+/* 🔧 Botón toggle de contraseña - MÁS VISIBLE */
+.password-toggle-btn {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: #ffffff !important; /* Fondo blanco */
+  border: 1px solid #e2e8f0 !important; /* Borde gris */
+  color: #6f3be0 !important; /* Morado del proyecto */
+  cursor: pointer !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  z-index: 10 !important; /* Asegurar que esté encima */
 }
 
-/* Submit Button */
-.auth-container .btn-submit {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  font-weight: 100;
-  background: var(--purple);
-  color: #fff;
-  border: none;
-  border-radius: 28px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 12px;
+.password-toggle-btn:hover {
+  color: #7f4ae8 !important; /* Morado más claro */
+  background-color: #f8fafc !important; /* Gris muy claro */
+  border-color: #6f3be0 !important;
 }
 
-.auth-container .btn-submit:hover {
-  background-color: #732cc1;
+.password-toggle-btn:focus {
+  outline: 2px solid #6f3be0 !important;
+  outline-offset: 2px !important;
+}
+
+.password-toggle-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2 !important;
+}
+
+/* 🔧 Indicador de coincidencia de contraseñas */
+.password-match-indicator {
+  margin-top: 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.password-match-indicator.match {
+  color: #10b981 !important; /* Verde para coinciden */
+}
+
+.password-match-indicator.no-match {
+  color: #ef4444 !important; /* Rojo para no coinciden */
+}
+
+/* 🔧 Enlace "¿Olvidaste tu contraseña?" en color morado */
+.forgot-password-link {
+  color: var(--purple) !important; /* Morado principal del proyecto */
+  text-decoration: none !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: color 0.2s ease !important;
+  text-align: center !important;
+  margin-top: 8px !important;
+  display: block !important;
+}
+
+.forgot-password-link:hover {
+  color: var(--purple-2) !important; /* Morado más claro al hacer hover */
+  text-decoration: underline !important;
+}
+
+/* Asegurar que el input tenga el espacio correcto */
+.form-group input[type="password"] {
+  padding-right: 50px !important;
 }
 
 /* Responsive Design */

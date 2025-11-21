@@ -6,7 +6,10 @@ import {
   FileText, AlertTriangle, ArrowLeft, Shield,
   Archive, RefreshCw
 } from 'lucide-react';
-import './EditCasePage.css';
+import { getCasoById, updateCaso } from '../../services/casoService';
+import { getFotosByCaso } from '../../services/fotoService';
+import PhotoManager from '../fotos/PhotoManager';
+import '../../styles/cases/EditCasePage.css';
 
 /**
  * Componente de edición de casos para ADMINISTRADORES
@@ -21,22 +24,43 @@ const AdminEditCasePage = () => {
 
   // Estados del formulario
   const [formData, setFormData] = useState({
-    nombre: '',
+    // Información de la persona
+    nombre_completo: '',
     edad: '',
-    fechaNacimiento: '',
-    fechaDesaparicion: '',
-    caracteristicasFisicas: '',
-    ultimaUbicacion: '',
-    descripcionCircunstancias: '',
-    contacto: '',
-    telefonoContacto: '',
+    fecha_nacimiento: '',
+    gender: '',
+    altura: '',
+    peso: '',
+    skinColor: '',
+    hairColor: '',
+    eyeColor: '',
+    senas_particulares: '',
+    clothing: '',
+    
+    // Información del caso
+    fecha_desaparicion: '',
+    lugar_desaparicion: '',
+    disappearanceTime: '',
+    lastSeenLocation: '',
+    lastSeen: '',
+    circumstances: '',
+    description: '',
+    
+    // Contacto
+    reporterName: '',
+    relationship: '',
+    contactPhone: '',
+    contactEmail: '',
+    additionalContact: '',
+    
     // Campos adicionales para admin
-    estado: 'Activo',
-    prioridad: 'Media',
-    notas: ''
+    estado: 'pendiente',
+    prioridad: 'medium',
+    observaciones: ''
   });
 
   const [photos, setPhotos] = useState([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
   const [newPhotos, setNewPhotos] = useState([]);
   const [photosToDelete, setPhotosToDelete] = useState([]);
   const [errors, setErrors] = useState({});
@@ -71,68 +95,100 @@ const AdminEditCasePage = () => {
   const loadCaseData = async (id) => {
     setIsLoading(true);
     try {
-      // Simulación de carga
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const caso = await getCasoById(id);
+      
+      if (!caso) {
+        setErrors({ general: 'Caso no encontrado' });
+        setTimeout(() => navigate('/admin'), 2000);
+        return;
+      }
 
-      const mockCaseInfo = {
+      const persona = caso.PersonaDesaparecida || {};
+      
+      // Información del caso
+      setCaseInfo({
         numCaso: `CASO-2025-${id}`,
-        usuario: 'Juan Pérez',
-        email: 'juan.perez@example.com',
-        fechaRegistro: '2025-09-15T10:00:00'
+        usuario: caso.reporterName || 'N/A',
+        email: caso.contactEmail || 'N/A',
+        fechaRegistro: caso.created_at || new Date().toISOString()
+      });
+
+      // Mapear TODOS los datos del backend al formulario
+      const mappedData = {
+        // Información de la persona
+        nombre_completo: persona.nombre_completo || '',
+        edad: persona.age || '',
+        fecha_nacimiento: persona.fecha_nacimiento || '',
+        gender: persona.gender || '',
+        altura: persona.altura || '',
+        peso: persona.peso || '',
+        skinColor: persona.skinColor || '',
+        hairColor: persona.hairColor || '',
+        eyeColor: persona.eyeColor || '',
+        senas_particulares: persona.senas_particulares || '',
+        clothing: persona.clothing || '',
+        
+        // Información del caso
+        fecha_desaparicion: caso.fecha_desaparicion || '',
+        lugar_desaparicion: caso.lugar_desaparicion || '',
+        disappearanceTime: caso.disappearanceTime || '',
+        lastSeenLocation: caso.lastSeenLocation || '',
+        lastSeen: caso.lastSeen || '',
+        circumstances: caso.circumstances || '',
+        description: caso.description || '',
+        
+        // Contacto
+        reporterName: caso.reporterName || '',
+        relationship: caso.relationship || '',
+        contactPhone: caso.contactPhone || '',
+        contactEmail: caso.contactEmail || '',
+        additionalContact: caso.additionalContact || '',
+        
+        // Admin fields
+        estado: caso.status || 'pendiente',
+        prioridad: caso.priority || 'medium',
+        observaciones: caso.observaciones || ''
       };
 
-      const mockData = {
-        nombre: 'María González Pérez',
-        edad: 25,
-        fechaNacimiento: '1999-03-15',
-        fechaDesaparicion: '2025-09-10',
-        caracteristicasFisicas: 'Estatura media (1.65m), cabello castaño largo, ojos marrones, lunar en mejilla izquierda',
-        ultimaUbicacion: 'Lima, Perú - Av. Arequipa 1234',
-        descripcionCircunstancias: 'Salió de su casa el día 10 de septiembre a las 8:00 AM hacia su trabajo y no regresó.',
-        contacto: 'Juan Pérez',
-        telefonoContacto: '+51 999 888 777',
-        estado: 'Activo',
-        prioridad: 'Alta',
-        notas: ''
-      };
-
-      const mockPhotos = [
-        { id: 1, url: 'https://via.placeholder.com/300', tipo: 'Frontal', fecha: '2025-09-15', procesado: true },
-        { id: 2, url: 'https://via.placeholder.com/300', tipo: 'Perfil_Der', fecha: '2025-09-15', procesado: true },
-        { id: 3, url: 'https://via.placeholder.com/300', tipo: 'Perfil_Izq', fecha: '2025-09-15', procesado: true }
-      ];
-
-      const mockHistory = [
-        {
-          fecha: '2025-09-15T10:00:00',
-          usuario: 'Juan Pérez (Usuario)',
-          accion: 'Creación del caso',
-          cambios: ['Caso creado inicialmente']
-        },
-        {
-          fecha: '2025-09-20T14:30:00',
-          usuario: 'Juan Pérez (Usuario)',
-          accion: 'Actualización de información',
-          cambios: ['Modificó última ubicación', 'Actualizó circunstancias']
-        },
-        {
-          fecha: '2025-09-25T16:45:00',
-          usuario: 'Admin - Carlos Rodríguez',
-          accion: 'Validación administrativa',
-          cambios: ['Cambió prioridad a Alta', 'Agregó notas internas']
-        }
-      ];
-
-      setCaseInfo(mockCaseInfo);
-      setFormData(mockData);
-      setOriginalData(mockData);
-      setPhotos(mockPhotos);
-      setChangeHistory(mockHistory);
+      setFormData(mappedData);
+      setOriginalData(mappedData);
+      
+      // Cargar fotos del caso
+      await loadPhotos(id);
+      
+      console.log('✅ Caso cargado (Admin):', caso);
+      console.log('✅ FormData mapeado:', mappedData);
     } catch (error) {
-      console.error('Error cargando caso:', error);
+      console.error('❌ Error cargando caso:', error);
+      setErrors({ general: 'Error al cargar el caso' });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadPhotos = async (id) => {
+    console.log('📸 loadPhotos iniciado para caso (Admin):', id);
+    setPhotosLoading(true);
+    try {
+      const fotosData = await getFotosByCaso(id);
+      console.log('✅ Fotos cargadas (Admin):', fotosData);
+      console.log('📊 Número de fotos:', fotosData?.length);
+      setPhotos(fotosData);
+    } catch (error) {
+      console.error('❌ Error cargando fotos:', error);
+      setErrors(prev => ({
+        ...prev,
+        photos: 'Error al cargar las fotos'
+      }));
+    } finally {
+      setPhotosLoading(false);
+    }
+  };
+
+  const handlePhotoUpdated = () => {
+    // Recargar fotos después de actualizar/eliminar
+    console.log('🔄 Recargando fotos...');
+    loadPhotos(caseId);
   };
 
   const handleInputChange = (e) => {
@@ -219,16 +275,25 @@ const AdminEditCasePage = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
-    if (!formData.edad || formData.edad < 0 || formData.edad > 120)
+    if (!formData.nombre_completo?.trim()) {
+      newErrors.nombre_completo = 'El nombre es requerido';
+    }
+    
+    if (!formData.edad || formData.edad < 0 || formData.edad > 120) {
       newErrors.edad = 'La edad debe estar entre 0 y 120 años';
-    if (!formData.fechaDesaparicion) newErrors.fechaDesaparicion = 'La fecha de desaparición es requerida';
-    if (!formData.caracteristicasFisicas.trim() || formData.caracteristicasFisicas.length < 20)
-      newErrors.caracteristicasFisicas = 'Las características físicas deben tener al menos 20 caracteres';
-    if (!formData.ultimaUbicacion.trim()) newErrors.ultimaUbicacion = 'La última ubicación es requerida';
+    }
+    
+    if (!formData.fecha_desaparicion) {
+      newErrors.fecha_desaparicion = 'La fecha de desaparición es requerida';
+    }
+    
+    if (!formData.lugar_desaparicion?.trim()) {
+      newErrors.lugar_desaparicion = 'La última ubicación es requerida';
+    }
 
-    const totalPhotos = photos.length + newPhotos.length - photosToDelete.length;
-    if (totalPhotos < 3) newErrors.photos = 'Debe tener al menos 3 fotografías';
+    // Validación de fotos deshabilitada temporalmente
+    // const totalPhotos = photos.length + newPhotos.length - photosToDelete.length;
+    // if (totalPhotos < 3) newErrors.photos = 'Debe tener al menos 3 fotografías';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -245,13 +310,16 @@ const AdminEditCasePage = () => {
 
     setIsSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Datos a guardar (Admin):', {
-        formData,
-        newPhotos: newPhotos.map(p => ({ file: p.file, tipo: p.tipo })),
-        photosToDelete,
-        caseInfo
+      // Obtener solo los campos que cambiaron
+      const updates = {};
+      Object.keys(formData).forEach(key => {
+        if (originalData[key] !== formData[key]) {
+          updates[key] = formData[key];
+        }
       });
+
+      // Llamar API para actualizar
+      await updateCaso(caseId, updates);
 
       setShowSuccess(true);
       setHasChanges(false);
@@ -259,17 +327,13 @@ const AdminEditCasePage = () => {
       setNewPhotos([]);
       setPhotosToDelete([]);
 
-      setChangeHistory(prev => [{
-        fecha: new Date().toISOString(),
-        usuario: 'Admin - Carlos Rodríguez',
-        accion: 'Actualización administrativa',
-        cambios: getChangeSummary()
-      }, ...prev]);
-
-      setTimeout(() => setShowSuccess(false), 5000);
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigate('/admin');
+      }, 2000);
     } catch (error) {
-      setErrors({ general: 'Error al guardar los cambios. Intenta nuevamente.' });
-      console.error('Error:', error);
+      setErrors({ general: error.message || 'Error al guardar los cambios' });
+      console.error('❌ Error al guardar:', error);
     } finally {
       setIsSaving(false);
     }
@@ -409,14 +473,14 @@ const AdminEditCasePage = () => {
                   <select
                     id="estado"
                     name="estado"
-                    value={formData.estado}
+                    value={formData.estado || ''}
                     onChange={handleInputChange}
                     className="admin-select"
                   >
-                    <option value="Activo">Activo</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Resuelto">Resuelto</option>
-                    <option value="Cancelado">Cancelado</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="activo">Activo</option>
+                    <option value="resuelto">Resuelto</option>
+                    <option value="cancelado">Cancelado</option>
                   </select>
                 </div>
 
@@ -425,14 +489,14 @@ const AdminEditCasePage = () => {
                   <select
                     id="prioridad"
                     name="prioridad"
-                    value={formData.prioridad}
+                    value={formData.prioridad || ''}
                     onChange={handleInputChange}
                     className="admin-select"
                   >
-                    <option value="Baja">Baja</option>
-                    <option value="Media">Media</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Crítica">Crítica</option>
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
+                    <option value="urgent">Urgente</option>
                   </select>
                 </div>
 
@@ -480,18 +544,18 @@ const AdminEditCasePage = () => {
 
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="nombre">
+                  <label htmlFor="nombre_completo">
                     Nombre Completo <span className="required">*</span>
                   </label>
                   <input
                     type="text"
-                    id="nombre"
-                    name="nombre"
-                    value={formData.nombre}
+                    id="nombre_completo"
+                    name="nombre_completo"
+                    value={formData.nombre_completo || ''}
                     onChange={handleInputChange}
-                    className={errors.nombre ? 'error' : ''}
+                    className={errors.nombre_completo ? 'error' : ''}
                   />
-                  {errors.nombre && <span className="error-message">{errors.nombre}</span>}
+                  {errors.nombre_completo && <span className="error-message">{errors.nombre_completo}</span>}
                 </div>
 
                 <div className="form-group">
@@ -512,30 +576,30 @@ const AdminEditCasePage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
+                  <label htmlFor="fecha_nacimiento">Fecha de Nacimiento</label>
                   <input
                     type="date"
-                    id="fechaNacimiento"
-                    name="fechaNacimiento"
-                    value={formData.fechaNacimiento}
+                    id="fecha_nacimiento"
+                    name="fecha_nacimiento"
+                    value={formData.fecha_nacimiento || ''}
                     onChange={handleInputChange}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="fechaDesaparicion">
+                  <label htmlFor="fecha_desaparicion">
                     Fecha de Desaparición <span className="required">*</span>
                   </label>
                   <input
                     type="date"
-                    id="fechaDesaparicion"
-                    name="fechaDesaparicion"
-                    value={formData.fechaDesaparicion}
+                    id="fecha_desaparicion"
+                    name="fecha_desaparicion"
+                    value={formData.fecha_desaparicion || ''}
                     onChange={handleInputChange}
                     max={new Date().toISOString().split('T')[0]}
-                    className={errors.fechaDesaparicion ? 'error' : ''}
+                    className={errors.fecha_desaparicion ? 'error' : ''}
                   />
-                  {errors.fechaDesaparicion && <span className="error-message">{errors.fechaDesaparicion}</span>}
+                  {errors.fecha_desaparicion && <span className="error-message">{errors.fecha_desaparicion}</span>}
                 </div>
               </div>
             </div>
@@ -548,24 +612,19 @@ const AdminEditCasePage = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="caracteristicasFisicas">
-                  Descripción Detallada <span className="required">*</span>
+                <label htmlFor="senas_particulares">
+                  Descripción Detallada
                 </label>
                 <textarea
-                  id="caracteristicasFisicas"
-                  name="caracteristicasFisicas"
-                  value={formData.caracteristicasFisicas}
+                  id="senas_particulares"
+                  name="senas_particulares"
+                  value={formData.senas_particulares || ''}
                   onChange={handleInputChange}
                   rows="4"
                   placeholder="Estatura, complexión, color de cabello, ojos, señas particulares, etc."
-                  className={errors.caracteristicasFisicas ? 'error' : ''}
+                  className={errors.senas_particulares ? 'error' : ''}
                 />
-                <div className="textarea-footer">
-                  <span className={`char-count ${formData.caracteristicasFisicas.length < 20 ? 'warning' : ''}`}>
-                    {formData.caracteristicasFisicas.length} caracteres (mínimo 20)
-                  </span>
-                </div>
-                {errors.caracteristicasFisicas && <span className="error-message">{errors.caracteristicasFisicas}</span>}
+                {errors.senas_particulares && <span className="error-message">{errors.senas_particulares}</span>}
               </div>
             </div>
 
@@ -577,32 +636,81 @@ const AdminEditCasePage = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="ultimaUbicacion">
+                <label htmlFor="lugar_desaparicion">
                   Última Ubicación Conocida <span className="required">*</span>
                 </label>
                 <input
                   type="text"
-                  id="ultimaUbicacion"
-                  name="ultimaUbicacion"
-                  value={formData.ultimaUbicacion}
+                  id="lugar_desaparicion"
+                  name="lugar_desaparicion"
+                  value={formData.lugar_desaparicion || ''}
                   onChange={handleInputChange}
                   placeholder="Dirección, distrito, ciudad"
-                  className={errors.ultimaUbicacion ? 'error' : ''}
+                  className={errors.lugar_desaparicion ? 'error' : ''}
                 />
-                {errors.ultimaUbicacion && <span className="error-message">{errors.ultimaUbicacion}</span>}
+                {errors.lugar_desaparicion && <span className="error-message">{errors.lugar_desaparicion}</span>}
+              </div>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="disappearanceTime">Hora de Desaparición</label>
+                  <input
+                    type="time"
+                    id="disappearanceTime"
+                    name="disappearanceTime"
+                    value={formData.disappearanceTime || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="lastSeenLocation">Último Lugar Visto</label>
+                  <input
+                    type="text"
+                    id="lastSeenLocation"
+                    name="lastSeenLocation"
+                    value={formData.lastSeenLocation || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ubicación específica"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="descripcionCircunstancias">
+                <label htmlFor="lastSeen">Última vez visto/a</label>
+                <textarea
+                  id="lastSeen"
+                  name="lastSeen"
+                  value={formData.lastSeen || ''}
+                  onChange={handleInputChange}
+                  rows="2"
+                  placeholder="Descripción de la última vez que se le vio"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="circumstances">
                   Descripción de las Circunstancias
                 </label>
                 <textarea
-                  id="descripcionCircunstancias"
-                  name="descripcionCircunstancias"
-                  value={formData.descripcionCircunstancias}
+                  id="circumstances"
+                  name="circumstances"
+                  value={formData.circumstances || ''}
                   onChange={handleInputChange}
                   rows="4"
                   placeholder="Describa las circunstancias de la desaparición"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Descripción Adicional</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description || ''}
+                  onChange={handleInputChange}
+                  rows="3"
+                  placeholder="Cualquier información adicional relevante"
                 />
               </div>
             </div>
@@ -616,25 +724,61 @@ const AdminEditCasePage = () => {
 
               <div className="form-grid">
                 <div className="form-group">
-                  <label htmlFor="contacto">Nombre del Contacto</label>
+                  <label htmlFor="reporterName">Nombre del Reportante</label>
                   <input
                     type="text"
-                    id="contacto"
-                    name="contacto"
-                    value={formData.contacto}
+                    id="reporterName"
+                    name="reporterName"
+                    value={formData.reporterName || ''}
                     onChange={handleInputChange}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="telefonoContacto">Teléfono de Contacto</label>
+                  <label htmlFor="relationship">Parentesco</label>
+                  <input
+                    type="text"
+                    id="relationship"
+                    name="relationship"
+                    value={formData.relationship || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Madre, Hermano, Amigo"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contactPhone">Teléfono de Contacto</label>
                   <input
                     type="tel"
-                    id="telefonoContacto"
-                    name="telefonoContacto"
-                    value={formData.telefonoContacto}
+                    id="contactPhone"
+                    name="contactPhone"
+                    value={formData.contactPhone || ''}
                     onChange={handleInputChange}
                     placeholder="+51 999 888 777"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contactEmail">Email de Contacto</label>
+                  <input
+                    type="email"
+                    id="contactEmail"
+                    name="contactEmail"
+                    value={formData.contactEmail || ''}
+                    onChange={handleInputChange}
+                    placeholder="email@ejemplo.com"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="additionalContact">Contacto Adicional</label>
+                  <textarea
+                    id="additionalContact"
+                    name="additionalContact"
+                    value={formData.additionalContact || ''}
+                    onChange={handleInputChange}
+                    rows="2"
+                    placeholder="Otros números telefónicos o formas de contacto"
                   />
                 </div>
               </div>
@@ -644,68 +788,23 @@ const AdminEditCasePage = () => {
             <div className="form-section">
               <div className="section-header">
                 <ImageIcon size={20} />
-                <h2>Fotografías</h2>
-                <span className="photos-count">{allPhotos.length}/10</span>
+                <h2>Fotografías de Referencia</h2>
+                <span className="photos-count">
+                  {photos.length} foto{photos.length !== 1 ? 's' : ''}
+                </span>
               </div>
 
-              <div className="photos-info">
-                <AlertCircle size={16} />
-                <span>Mínimo 3 fotografías requeridas. Las nuevas fotos serán procesadas automáticamente.</span>
-              </div>
-
-              <div className="photos-grid">
-                {allPhotos.map((photo) => (
-                  <div key={photo.id} className={`photo-card ${photo.isNew ? 'new' : ''} ${!photo.procesado ? 'pending' : ''}`}>
-                    <img src={photo.url} alt="Foto" />
-
-                    {photo.isNew && <div className="photo-badge new-badge">Nueva</div>}
-                    {!photo.procesado && !photo.isNew && <div className="photo-badge pending-badge">Sin procesar</div>}
-
-                    <div className="photo-overlay">
-                      <select
-                        value={photo.tipo}
-                        onChange={(e) => handlePhotoTypeChange(photo.id, e.target.value)}
-                        className="photo-type-select"
-                        disabled={!photo.isNew}
-                      >
-                        <option value="Frontal">Frontal</option>
-                        <option value="Perfil_Der">Perfil Derecho</option>
-                        <option value="Perfil_Izq">Perfil Izquierdo</option>
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePhoto(photo)}
-                        className="delete-photo-btn"
-                        title="Eliminar foto"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {allPhotos.length < 10 && (
-                  <label className="photo-upload-card">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <Upload size={32} />
-                    <span>Agregar Fotos</span>
-                    <span className="upload-hint">Máx. 5MB por foto</span>
-                  </label>
-                )}
-              </div>
-
-              {errors.photos && (
-                <div className="error-message-box">
-                  <AlertCircle size={16} />
-                  {errors.photos}
+              {photosLoading ? (
+                <div className="photos-loading">
+                  <div className="spinner"></div>
+                  <p>Cargando fotografías...</p>
                 </div>
+              ) : (
+                <PhotoManager 
+                  fotos={photos} 
+                  casoId={caseId}
+                  onPhotoUpdated={handlePhotoUpdated}
+                />
               )}
             </div>
 

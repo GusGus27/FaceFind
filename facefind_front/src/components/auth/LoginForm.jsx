@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import FormInput from '../common/FormInput';
 
 const LoginForm = ({ onSubmit, error }) => {
@@ -8,20 +9,23 @@ const LoginForm = ({ onSubmit, error }) => {
     password: '',
     rememberMe: false
   });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit(formData);
-    }
+    onSubmit(formData);
   };
 
-  const handleChange = (e) => {
-    const { id, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [id]: type === 'checkbox' ? checked : value
-    }));
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -33,6 +37,7 @@ const LoginForm = ({ onSubmit, error }) => {
           <label htmlFor="username">Usuario</label>
           <FormInput
             id="username"
+            name="username"
             type="text"
             placeholder="Ingresa tu usuario"
             value={formData.username}
@@ -43,14 +48,25 @@ const LoginForm = ({ onSubmit, error }) => {
         
         <div className="form-group">
           <label htmlFor="password">Contraseña</label>
-          <FormInput
-            id="password"
-            type="password"
-            placeholder="Ingresa tu contraseña"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+          <div className="password-field-wrapper">
+            <FormInput
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Ingresa tu contraseña"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="password-toggle-btn"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
         
         <div className="form-options">
@@ -58,12 +74,13 @@ const LoginForm = ({ onSubmit, error }) => {
             <input
               type="checkbox"
               id="rememberMe"
+              name="rememberMe"
               checked={formData.rememberMe}
               onChange={handleChange}
             />
             <label htmlFor="rememberMe">Recuérdame</label>
           </div>
-          <Link to="/forgot-password" className="forgot-password">
+          <Link to="/forgot-password" className="forgot-password-link">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>

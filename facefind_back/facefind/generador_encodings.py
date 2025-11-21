@@ -36,7 +36,9 @@ class GeneradorEncodings:
                     print(f"⚠️ No se detectó rostro en {filename}")
                     continue
 
+                
                 encoding = face_recognition.face_encodings(rgb, ubicaciones)[0]
+                print(f"Encoding generado para {filename}:", encoding)
                 encodings_persona.append(encoding)
 
             if len(encodings_persona) >= 1:

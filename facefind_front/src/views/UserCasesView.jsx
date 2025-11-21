@@ -1,28 +1,68 @@
 import React, { useState, useEffect } from "react";
-import CaseList from "../components/cases/CaseList";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { getCasosByUserId } from "../services/casoService";
+import { getUserById } from "../services/userService";
+import Header from "../components/common/Header";
+import UserCaseCards from "../components/cases/UserCaseCards";
 import FilterBar from "../components/cases/FilterBar";
 import Pagination from "../components/cases/Pagination";
-import "../styles/views/UserCasesView.css";
+import '../styles/views/UserCasesView.css';
 
 export default function UserCasesView() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [cases, setCases] = useState([]);
   const [filteredCases, setFilteredCases] = useState([]);
   const [filter, setFilter] = useState("todos");
   const [page, setPage] = useState(1);
-  const perPage = 4;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const perPage = 5;
 
+  // Obtener usuario_id desde la tabla Usuario usando el email del auth
   useEffect(() => {
-    // Simulación: datos del backend
-    const mockCases = [
-      { id: 1, title: "Robo de bicicleta", status: "activo", lastUpdate: "2025-10-02", img: "https://placekitten.com/300/200", description: "Caso abierto en comisaría local." },
-      { id: 2, title: "Pérdida de documento", status: "pendiente", lastUpdate: "2025-09-28", img: "https://placekitten.com/301/200", description: "En espera de confirmación." },
-      { id: 3, title: "Vehículo recuperado", status: "resuelto", lastUpdate: "2025-09-30", img: "https://placekitten.com/302/200", description: "Caso cerrado con éxito." },
-      { id: 4, title: "Fraude en línea", status: "activo", lastUpdate: "2025-10-01", img: "https://placekitten.com/303/200", description: "Investigación en curso." },
-      { id: 5, title: "Daños a propiedad", status: "pendiente", lastUpdate: "2025-10-03", img: "https://placekitten.com/304/200", description: "Pendiente de revisión policial." },
-    ];
-    setCases(mockCases);
-    setFilteredCases(mockCases);
-  }, []);
+    const fetchUserId = async () => {
+      if (user?.email) {
+        try {
+          // Buscar usuario en la BD por email de Supabase Auth
+          const response = await fetch(`http://localhost:5000/users?search=${user.email}`);
+          const result = await response.json();
+          
+          if (result.success && result.data.length > 0) {
+            setUserId(result.data[0].id);
+          }
+        } catch (err) {
+          console.error('Error fetching user ID:', err);
+        }
+      }
+    };
+
+    fetchUserId();
+  }, [user]);
+
+  // Cargar casos del usuario
+  useEffect(() => {
+    const loadUserCases = async () => {
+      if (!userId) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const casesData = await getCasosByUserId(userId);
+        setCases(casesData);
+        setFilteredCases(casesData);
+      } catch (err) {
+        console.error('Error loading cases:', err);
+        setError('Error al cargar los casos. Intenta nuevamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserCases();
+  }, [userId]);
 
   // Filtrado
   useEffect(() => {
@@ -36,20 +76,70 @@ export default function UserCasesView() {
   const paginatedCases = filteredCases.slice(startIndex, startIndex + perPage);
   const totalPages = Math.ceil(filteredCases.length / perPage);
 
+  const handleBackToHome = () => {
+    navigate('/');
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="user-cases-container">
+          <div className="loading-state">
+            <p>Cargando casos...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Header />
+        <div className="user-cases-container">
+          <div className="error-state">
+            <p>{error}</p>
+            <button onClick={handleBackToHome} className="btn-back">
+              ← Volver al Inicio
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <div className="user-cases-container">
-      <div className="user-cases-header">
-        <h1 className="title">Casos Activos del Usuario</h1>
-        <FilterBar filter={filter} setFilter={setFilter} />
+    <>
+      <Header />
+      <div className="user-cases-container">
+        <div className="user-cases-header">
+          <button onClick={handleBackToHome} className="btn-back">
+            ← Volver al Inicio
+          </button>
+          <h1 className="title">Mis Casos Activos</h1>
+          <FilterBar filter={filter} setFilter={setFilter} />
+        </div>
+
+        {cases.length === 0 ? (
+          <div className="empty-state">
+            <p>No tienes casos registrados aún.</p>
+            <button onClick={handleBackToHome} className="btn-primary">
+              Registrar Nuevo Caso
+            </button>
+          </div>
+        ) : (
+          <>
+            <UserCaseCards cases={paginatedCases} />
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              setPage={setPage}
+            />
+          </>
+        )}
       </div>
-
-      <CaseList cases={paginatedCases} />
-
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        setPage={setPage}
-      />
-    </div>
+    </>
   );
 }

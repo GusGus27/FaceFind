@@ -1,5 +1,6 @@
 import React from "react";
 import CaseCard from "./CaseCard";
+import "../../styles/views/UserCasesView.css";
 
 export default function CaseList({ cases }) {
   if (cases.length === 0)

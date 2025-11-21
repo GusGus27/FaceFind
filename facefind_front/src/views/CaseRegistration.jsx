@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { uploadFotos } from "../services/fotoService";
 import FormStep1 from '../components/registration/FormStep1';
 import FormStep2 from '../components/registration/FormStep2';
 import FormStep3 from '../components/registration/FormStep3';
@@ -9,6 +11,7 @@ import '../styles/registration/CaseRegistration.css';
 
 const CaseRegistration = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [caseNumber, setCaseNumber] = useState(null);
@@ -131,8 +134,8 @@ const CaseRegistration = () => {
     
     if (!formData.contactPhone.trim()) {
       newErrors.contactPhone = 'El teléfono de contacto es obligatorio';
-    } else if (!/^\d{10}$/.test(formData.contactPhone.replace(/\D/g, ''))) {
-      newErrors.contactPhone = 'El teléfono debe tener 10 dígitos';
+    } else if (!/^\d{9}$/.test(formData.contactPhone.replace(/\D/g, ''))) {
+      newErrors.contactPhone = 'El teléfono debe tener 9 dígitos';
     }
     
     if (!formData.contactEmail.trim()) {
@@ -211,44 +214,140 @@ const CaseRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      // Preparar FormData para envío multipart/form-data
-      const submitData = new FormData();
+      // Obtener el ID del usuario autenticado
+      const usuarioId = user?.id;
       
-      // Agregar campos de texto
-      Object.keys(formData).forEach(key => {
-        if (key !== 'photos') {
-          submitData.append(key, formData[key]);
-        }
-      });
-      
-      // Agregar fotos
-      if (formData.photos.frontal) {
-        submitData.append('photo_frontal', formData.photos.frontal);
-      }
-      if (formData.photos.profile1) {
-        submitData.append('photo_profile1', formData.photos.profile1);
-      }
-      if (formData.photos.profile2) {
-        submitData.append('photo_profile2', formData.photos.profile2);
+      if (!usuarioId) {
+        alert('Error: No se pudo obtener el ID del usuario. Por favor, inicia sesión nuevamente.');
+        navigate('/login');
+        return;
       }
 
-      // TODO: Reemplazar con llamada real al backend
-      // const response = await fetch('/api/cases', {
-      //   method: 'POST',
-      //   body: submitData
-      // });
-      // const data = await response.json();
+      // Convertir fotos a base64
+      const convertFileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      };
+
+      let photosBase64 = {};
       
-      // Simular respuesta del servidor
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const generatedCaseNumber = generateCaseNumber();
+      // Convertir cada foto a base64 si existe
+      if (formData.photos.frontal) {
+        photosBase64.frontal = await convertFileToBase64(formData.photos.frontal);
+      }
+      if (formData.photos.profile1) {
+        photosBase64.profile1 = await convertFileToBase64(formData.photos.profile1);
+      }
+      if (formData.photos.profile2) {
+        photosBase64.profile2 = await convertFileToBase64(formData.photos.profile2);
+      }
+
+      // Preparar datos del caso para enviar al backend
+      const caseData = {
+        usuario_id: usuarioId,
+        
+        // Información de la persona desaparecida
+        nombre_completo: formData.fullName,
+        fecha_nacimiento: formData.birthDate,
+        age: parseInt(formData.age),
+        gender: formData.gender,
+        altura: parseFloat(formData.height),
+        peso: parseFloat(formData.weight) || null,
+        skinColor: formData.skinColor,
+        hairColor: formData.hairColor,
+        eyeColor: formData.eyeColor,
+        senas_particulares: formData.distinctiveMarks,
+        clothing: formData.clothing,
+        
+        // Información de desaparición
+        fecha_desaparicion: formData.disappearanceDate,
+        disappearanceTime: formData.disappearanceTime || null,
+        lugar_desaparicion: formData.lastKnownLocation,
+        lastSeenLocation: formData.lastKnownLocation,
+        circumstances: formData.circumstances,
+        
+        // Información de contacto
+        reporterName: formData.reporterName,
+        relationship: formData.relationship,
+        contactPhone: formData.contactPhone,
+        contactEmail: formData.contactEmail,
+        additionalContact: formData.additionalContact || null,
+        
+        // Status y prioridad por defecto
+        status: 'pendiente',
+        priority: 'medium',
+        
+        // Fotos en base64
+        photos: photosBase64
+      };
+
+      console.log('📤 Enviando caso con fotos...');
+
+      // Llamada al backend
+      const response = await fetch('http://localhost:5000/casos/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(caseData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al registrar el caso');
+      }
+
+      const data = await response.json();
+      
+      console.log('✅ Respuesta del servidor:', data);
+      
+      // Mostrar información de encodings si se generaron
+      if (data.encodings) {
+        if (data.encodings.success) {
+          console.log(`✅ Encodings generados: ${data.encodings.encodings_generated}`);
+          console.log(`☁️ Sincronizado con la nube: ${data.encodings.cloud_synced ? 'Sí' : 'No'}`);
+        } else {
+          console.warn('⚠️ No se pudieron generar encodings:', data.encodings.error);
+        }
+      }
+      
+      // Si el backend retorna el ID del caso, usarlo para generar el número
+      const generatedCaseNumber = data.caso_id 
+        ? `FC-${data.caso_id}` 
+        : generateCaseNumber();
+      
       setCaseNumber(generatedCaseNumber);
       
-      console.log('Caso registrado exitosamente:', generatedCaseNumber);
+      console.log('✅ Caso registrado exitosamente:', data);
       
+      // ✅ Subir fotos después de crear el caso
+      const casoId = data.caso_id || data.data?.[0]?.id;
+
+      if (casoId) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("caso_id", casoId);
+
+        // Adjuntar las fotos si existen
+        const { photos } = formData;
+        for (const [type, file] of Object.entries(photos)) {
+          if (file) formDataUpload.append(type, file);
+        }
+
+        try {
+          const uploadResponse = await uploadFotos(formDataUpload);
+          console.log("📸 Fotos subidas correctamente:", uploadResponse);
+        } catch (uploadError) {
+          console.error("❌ Error subiendo fotos:", uploadError);
+        }
+      }
+
     } catch (error) {
-      console.error('Error al registrar el caso:', error);
-      alert('Ocurrió un error al registrar el caso. Por favor, intenta nuevamente.');
+      console.error('❌ Error al registrar el caso:', error);
+      alert(`Ocurrió un error al registrar el caso: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
