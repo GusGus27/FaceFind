@@ -1,3 +1,24 @@
+# FaceFind 🔍
+
+![CI/CD Pipeline](https://github.com/GusGus27/FaceFind/actions/workflows/ci-cd.yml/badge.svg)
+![Code Quality](https://github.com/GusGus27/FaceFind/actions/workflows/code-quality.yml/badge.svg)
+
+Sistema de reconocimiento facial para la búsqueda de personas desaparecidas.
+
+## 🚀 CI/CD y Automatización
+
+Este proyecto utiliza **GitHub Actions** para integración y despliegue continuo.
+
+### Workflows Activos:
+
+- **CI/CD Pipeline** (`ci-cd.yml`): Tests, builds y deploy automático
+- **PR Checks** (`pr-checks.yml`): Validación de pull requests
+- **Code Quality** (`code-quality.yml`): Análisis de calidad de código
+
+📖 **[Ver documentación completa de workflows](.github/WORKFLOW_README.md)**
+
+---
+
 # Flujo de Trabajo con Git y GitHub
 Este documento describe los pasos básicos para trabajar con ramas en GitHub, mantener tu rama actualizada, subir tus cambios y fusionarlos con `main`.
 ---
