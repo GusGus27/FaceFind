@@ -17,6 +17,7 @@ import CameraManagement from './views/CameraManagement';
 import AboutPage from './views/AboutPage';
 import StatisticsPage from './views/StatisticsPage';
 import ContactPage from './views/ContactPage';
+import MapView from './components/admin/MapView';
 import './App.css';
 
 function App() {
@@ -63,6 +64,11 @@ function App() {
       <Route path="/admin/camera" element={
         <ProtectedRoute>
           <CameraManagement />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/mapa" element={
+        <ProtectedRoute>
+          <MapView />
         </ProtectedRoute>
       } />
     </Routes>

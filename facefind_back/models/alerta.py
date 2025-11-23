@@ -22,23 +22,33 @@ class Alerta:
                  prioridad: PrioridadAlerta,
                  estado: EstadoAlerta = EstadoAlerta.PENDIENTE,
                  ubicacion: Optional[str] = None,
+                 latitud: Optional[float] = None,
+                 longitud: Optional[float] = None,
                  imagen_captura: Optional[Frame] = None,
                  imagen_bytes: Optional[bytes] = None,
+                 falso_positivo: bool = False,
+                 horario_inicio: Optional[datetime] = None,
+                 horario_fin: Optional[datetime] = None,
                  id: Optional[int] = None,
                  created_at: Optional[datetime] = None):
         """
-        Constructor de Alerta
+        Constructor de Alerta según diagrama UML
 
         Args:
             caso_id: ID del caso que generó la alerta
             camara_id: ID de la cámara que detectó la coincidencia
             timestamp: Momento de la detección
-            similitud: Nivel de confianza/similitud (0.0 - 1.0)
+            similitud: Nivel de confianza/similitud (0.0 - 1.0) - confidence en UML
             prioridad: Prioridad de la alerta (ALTA, MEDIA, BAJA)
-            estado: Estado de la alerta (PENDIENTE, REVISADA, FALSO_POSITIVO)
-            ubicacion: Ubicación de la cámara
-            imagen_captura: Frame capturado
+            estado: Estado de la alerta (PENDIENTE, REVISADA, FALSO_POSITIVO) - status en UML
+            ubicacion: Ubicación de la cámara (string descriptivo)
+            latitud: Coordenada latitud de la cámara (según UML)
+            longitud: Coordenada longitud de la cámara (según UML)
+            imagen_captura: Frame capturado (imagenCaptura en UML)
             imagen_bytes: Imagen en bytes (para BD)
+            falso_positivo: Boolean indicando si es falso positivo (según UML)
+            horario_inicio: Horario inicio del período de alerta (según UML)
+            horario_fin: Horario fin del período de alerta (según UML)
             id: ID en base de datos
             created_at: Fecha de creación
         """
@@ -49,10 +59,15 @@ class Alerta:
         self._confidence = similitud  # confidence en UML
         self._similitud = similitud
         self._ubicacion = ubicacion
+        self._latitud = latitud
+        self._longitud = longitud
         self._estado = estado  # status en UML
         self._prioridad = prioridad
         self._imagen_captura = imagen_captura  # imagenCaptura en UML (Frame)
         self._imagen_bytes = imagen_bytes
+        self._falso_positivo = falso_positivo  # falsoPositivo en UML
+        self._horario_inicio = horario_inicio  # horarioinicio en UML
+        self._horario_fin = horario_fin  # horariofin en UML
         self._created_at = created_at or datetime.now()
 
     @property
@@ -83,6 +98,31 @@ class Alerta:
     @property
     def ubicacion(self) -> Optional[str]:
         return self._ubicacion
+
+    @property
+    def latitud(self) -> Optional[float]:
+        """Coordenada latitud según UML"""
+        return self._latitud
+
+    @property
+    def longitud(self) -> Optional[float]:
+        """Coordenada longitud según UML"""
+        return self._longitud
+
+    @property
+    def falso_positivo(self) -> bool:
+        """falsoPositivo en UML"""
+        return self._falso_positivo
+
+    @property
+    def horario_inicio(self) -> Optional[datetime]:
+        """horarioinicio en UML"""
+        return self._horario_inicio
+
+    @property
+    def horario_fin(self) -> Optional[datetime]:
+        """horariofin en UML"""
+        return self._horario_fin
 
     @property
     def estado(self) -> EstadoAlerta:
@@ -165,8 +205,13 @@ class Alerta:
             "similitud": self._similitud,
             "confidence": self._confidence,
             "ubicacion": self._ubicacion,
+            "latitud": self._latitud,
+            "longitud": self._longitud,
             "estado": self._estado.to_string(),
             "prioridad": self._prioridad.to_string(),
+            "falso_positivo": self._falso_positivo,
+            "horario_inicio": self._horario_inicio.isoformat() if self._horario_inicio and isinstance(self._horario_inicio, datetime) else self._horario_inicio,
+            "horario_fin": self._horario_fin.isoformat() if self._horario_fin and isinstance(self._horario_fin, datetime) else self._horario_fin,
             "created_at": self._created_at.isoformat() if isinstance(self._created_at, datetime) else self._created_at
         }
 
@@ -209,8 +254,13 @@ class Alerta:
             prioridad=prioridad,
             estado=estado,
             ubicacion=data.get("ubicacion"),
+            latitud=data.get("latitud"),
+            longitud=data.get("longitud"),
             imagen_captura=imagen_captura,
             imagen_bytes=data.get("imagen"),
+            falso_positivo=data.get("falso_positivo", False),
+            horario_inicio=data.get("horario_inicio"),
+            horario_fin=data.get("horario_fin"),
             created_at=data.get("created_at")
         )
 
