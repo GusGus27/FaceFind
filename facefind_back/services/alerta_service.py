@@ -11,6 +11,7 @@ from models.alerta import Alerta
 from models.frame import Frame
 from models.enums import EstadoAlerta, PrioridadAlerta
 from services.supabase_client import supabase
+from services.notification_service import NotificationService
 
 
 class AlertaService:
@@ -54,7 +55,7 @@ class AlertaService:
         # Calcular prioridad basada en la similitud
         if confidence >= 0.85:
             prioridad = PrioridadAlerta.ALTA
-        elif confidence >= 0.70:
+        elif confidence >= 0.60:
             prioridad = PrioridadAlerta.MEDIA
         else:
             prioridad = PrioridadAlerta.BAJA
@@ -90,6 +91,20 @@ class AlertaService:
         # Guardar en base de datos
         try:
             alerta_guardada = AlertaService._guardar_en_bd(alerta)
+            
+            # Crear notificación si es alta prioridad (según criterios de aceptación)
+            if prioridad in [PrioridadAlerta.ALTA, PrioridadAlerta.MEDIA]:
+                try:
+                    NotificationService.crear_notificacion_coincidencia(
+                        caso_id=caso_id,
+                        alerta_id=alerta_guardada.id,
+                        confidence=confidence,
+                        ubicacion=ubicacion or "Ubicación desconocida",
+                        timestamp=timestamp
+                    )
+                except Exception as notif_error:
+                    print(f"⚠️ Error creando notificación: {notif_error}")
+            
             return alerta_guardada
         except Exception as e:
             print(f"Error guardando alerta: {e}")
