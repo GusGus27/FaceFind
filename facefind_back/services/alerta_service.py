@@ -12,6 +12,7 @@ from models.frame import Frame
 from models.enums import EstadoAlerta, PrioridadAlerta
 from services.supabase_client import supabase
 from services.notification_service import NotificationService
+from services.evidencia_service import EvidenciaService
 
 
 class AlertaService:
@@ -88,9 +89,29 @@ class AlertaService:
             falso_positivo=falso_positivo
         )
 
-        # Guardar en base de datos
+        # Guardar evidencia en Storage primero
+        print(f"\n📸 Intentando guardar evidencia para alerta...")
+        print(f"   Frame: {frame}, Caso: {caso_id}, Cámara: {camara_id}")
+        imagen_url = None
         try:
-            alerta_guardada = AlertaService._guardar_en_bd(alerta)
+            imagen_url = EvidenciaService.guardar_evidencia(
+                frame=frame,
+                caso_id=caso_id,
+                camara_id=camara_id
+            )
+            if imagen_url:
+                print(f"✅ Evidencia guardada con URL: {imagen_url}")
+            else:
+                print(f"⚠️ No se obtuvo URL de evidencia (retornó None)")
+        except Exception as ev_error:
+            print(f"⚠️ Excepción guardando evidencia: {ev_error}")
+            import traceback
+            traceback.print_exc()
+        
+        # Guardar en base de datos (con o sin imagen_url)
+        try:
+            alerta._imagen_url = imagen_url  # Agregar URL al objeto
+            alerta_guardada = AlertaService._guardar_en_bd(alerta, imagen_url)
             
             # Crear notificación si es alta prioridad (según criterios de aceptación)
             if prioridad in [PrioridadAlerta.ALTA, PrioridadAlerta.MEDIA]:
@@ -111,16 +132,23 @@ class AlertaService:
             raise
 
     @staticmethod
-    def _guardar_en_bd(alerta: Alerta) -> Alerta:
+    def _guardar_en_bd(alerta: Alerta, imagen_url: Optional[str] = None) -> Alerta:
         """
         Guarda la alerta en la base de datos
 
         Args:
             alerta: Objeto Alerta a guardar
+            imagen_url: URL de la imagen en Storage (opcional)
 
         Returns:
             Alerta con ID asignado
         """
+        # Convertir imagen_bytes a base64 string si existe
+        import base64
+        imagen_base64 = None
+        if alerta.imagen_bytes:
+            imagen_base64 = base64.b64encode(alerta.imagen_bytes).decode('utf-8')
+        
         data = {
             "caso_id": alerta.caso_id,
             "camara_id": alerta.camara_id,
@@ -131,7 +159,8 @@ class AlertaService:
             "longitud": alerta.longitud,
             "estado": alerta.estado.to_string(),
             "prioridad": alerta.prioridad.to_string(),
-            "imagen": alerta.imagen_bytes,
+            "imagen": imagen_base64,  # Base64 string o null
+            "imagen_url": imagen_url,  # ✅ URL de Storage
             "falso_positivo": alerta.falso_positivo
         }
 
