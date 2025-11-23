@@ -20,8 +20,14 @@ def initialize_detection_service():
     """Inicializa o reinicializa el servicio de detección"""
     global detection_service
     try:
-        detection_service = ProcesadorFaceFind()
+        detection_service = ProcesadorFaceFind(
+            tolerance=0.55,
+            max_faces=3,
+            enable_parallel=True
+        )
         print(f"✅ Servicio de detección inicializado con {len(detection_service.known_encodings)} encodings")
+        print(f"🎯 Detección: hasta {detection_service.max_faces} rostros por frame")
+        print(f"🔄 Deduplicación: activada (sin alertas duplicadas)")
         return True
     except Exception as e:
         print(f"⚠️  Error inicializando servicio de detección: {e}")
@@ -47,6 +53,10 @@ def clean_results_for_json(results):
     clean_results = {
         "timestamp": float(results["timestamp"]),
         "faces_detected": int(results["faces_detected"]),
+        "total_faces_detected": int(results.get("total_faces_detected", results["faces_detected"])),
+        "faces_processed": int(results.get("faces_processed", results["faces_detected"])),
+        "max_faces_limit": int(results.get("max_faces_limit", 3)),
+        "processing_time_ms": float(results.get("processing_time_ms", 0)),
         "faces": []
     }
     
@@ -66,6 +76,10 @@ def clean_results_for_json(results):
             "distance": float(face["distance"]),
             "top_matches": []
         }
+        
+        # Agregar métrica de calidad si existe
+        if "quality_score" in face:
+            clean_face["quality_score"] = float(face["quality_score"])
         
         # Limpiar similitudes
         for similarity in face["all_similarities"][:3]:
@@ -234,12 +248,81 @@ def detection_status():
             "message": "Servicio de detección no inicializado"
         }), 503
     
-    return jsonify({
+    status_data = {
         "success": True,
         "status": "available",
         "known_faces": len(set(detection_service.known_names)),
-        "total_encodings": len(detection_service.known_encodings)
-    })
+        "total_encodings": len(detection_service.known_encodings),
+        "max_faces": detection_service.max_faces,
+        "parallel_processing_enabled": detection_service.enable_parallel,
+        "deduplication_enabled": True
+    }
+    
+    return jsonify(status_data)
+
+@detection_bp.route('/configure-detection', methods=['POST'])
+def configure_detection():
+    """
+    Configura parámetros de detección en tiempo real
+    
+    Body:
+    {
+        "max_faces": 3,  // Número máximo de rostros a procesar
+        "tolerance": 0.6  // Umbral de similitud (opcional)
+    }
+    """
+    try:
+        if detection_service is None:
+            return jsonify({
+                "success": False,
+                "error": "Servicio no disponible"
+            }), 503
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "No se enviaron datos"
+            }), 400
+        
+        updated_params = {}
+        
+        # Actualizar max_faces
+        if "max_faces" in data:
+            max_faces = int(data["max_faces"])
+            if max_faces < 1 or max_faces > 10:
+                return jsonify({
+                    "success": False,
+                    "error": "max_faces debe estar entre 1 y 10"
+                }), 400
+            
+            detection_service.set_max_faces(max_faces)
+            updated_params["max_faces"] = max_faces
+        
+        # Actualizar tolerance
+        if "tolerance" in data:
+            tolerance = float(data["tolerance"])
+            if tolerance < 0.0 or tolerance > 1.0:
+                return jsonify({
+                    "success": False,
+                    "error": "tolerance debe estar entre 0.0 y 1.0"
+                }), 400
+            
+            detection_service.tolerance = tolerance
+            updated_params["tolerance"] = tolerance
+        
+        return jsonify({
+            "success": True,
+            "message": "Configuración actualizada",
+            "updated_params": updated_params
+        })
+        
+    except Exception as e:
+        print(f"❌ Error en configure_detection: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 # Inicializar el servicio al cargar el módulo
 initialize_detection_service()
