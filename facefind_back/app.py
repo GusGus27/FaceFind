@@ -2,7 +2,7 @@
 FaceFind API - Servidor Principal
 Sistema de reconocimiento facial para localización de personas desaparecidas
 """
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 # Configuración
@@ -17,14 +17,33 @@ from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
 from api.alerta_routes import alerta_bp
 from api.notification_routes import notification_bp
+from api.camera_routes import camera_bp
 
 
 # Inicializar aplicación Flask
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configurar CORS
-CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
+# Configurar CORS - Más permisivo para desarrollo
+CORS(app, 
+     resources={r"/*": {
+         "origins": "*",  # Permitir todos los orígenes en desarrollo
+         "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+         "expose_headers": ["Content-Type"],
+         "supports_credentials": False,  # Cambiar a False cuando origins es *
+         "max_age": 3600
+     }})
+
+# Handler para OPTIONS (preflight)
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "ok"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
+        return response
 
 # Registrar blueprints
 app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -35,6 +54,7 @@ app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
 app.register_blueprint(alerta_bp, url_prefix="/alertas")
 app.register_blueprint(notification_bp, url_prefix="/notifications")
+app.register_blueprint(camera_bp, url_prefix="/cameras")
 
 
 # ============================================================================
@@ -56,7 +76,8 @@ def index():
             "detection": "/detection",
             "fotos": "/fotos",
             "alertas": "/alertas",
-            "notifications": "/notifications"
+            "notifications": "/notifications",
+            "cameras": "/cameras"
         }
     })
 
@@ -104,6 +125,15 @@ if __name__ == '__main__':
     print("   PATCH /alertas/<id>/estado       - Actualizar estado")
     print("   POST /alertas/<id>/revisar       - Marcar como revisada")
     print("   POST /alertas/<id>/falso-positivo - Marcar como falso positivo")
+    print("\n📹 Cámaras (/cameras):")
+    print("   GET  /cameras                    - Listar todas las cámaras")
+    print("   POST /cameras                    - Crear nueva cámara")
+    print("   GET  /cameras/<id>               - Obtener cámara específica")
+    print("   PUT  /cameras/<id>               - Actualizar cámara")
+    print("   DELETE /cameras/<id>             - Eliminar cámara")
+    print("   GET  /cameras/active             - Listar cámaras activas")
+    print("   PATCH /cameras/<id>/toggle       - Activar/Desactivar cámara")
+    print("   GET  /cameras/stats              - Estadísticas de cámaras")
     print("\n" + "=" * 70)
     print(f"✅ Servidor corriendo en http://{Config.HOST}:{Config.PORT}")
     print(f"📊 Debug Mode: {'ON' if Config.DEBUG else 'OFF'}")

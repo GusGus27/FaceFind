@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../../styles/camera/CameraViewer.css';
+import { detectFaces } from '../../services/detectionService';
 
 interface FaceResult {
     face_id: number;
@@ -272,14 +273,8 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
             
             console.log('📤 Enviando frame al backend...');
 
-            // Llamada al backend (actualizado a nueva ruta)
-            const response = await fetch('http://localhost:5000/detection/detect-faces', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageData }),
-            });
-
-            const result = await response.json();
+            // Usar el servicio de detección
+            const result = await detectFaces(imageData);
 
             if (result.success && result.data.faces.length > 0) {
                 const faces: FaceResult[] = result.data.faces;
