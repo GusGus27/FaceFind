@@ -427,9 +427,223 @@
 
 .review-modal-body {
   padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* Banner de porcentaje de detección */
+.detection-percentage-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.percentage-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.percentage-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.percentage-info {
+  flex: 1;
+}
+
+.percentage-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.confidence-level {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.confidence-level.high {
+  color: #d4edda;
+}
+
+.confidence-level.medium {
+  color: #fff3cd;
+}
+
+.confidence-level.low {
+  color: #f8d7da;
+}
+
+/* Sección de comparación de imágenes */
+.review-comparison-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.review-comparison-section > h3 {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.images-comparison-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
+  gap: 20px;
+}
+
+/* Panel de fotos de referencia */
+.reference-images-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reference-images-panel h4 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.panel-subtitle {
+  margin: 0 0 15px 0;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.reference-images-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.reference-image-wrapper {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.reference-image-wrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.reference-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: white;
+  padding: 8px 4px 4px;
+  font-size: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.no-images-placeholder {
+  grid-column: 1 / -1;
+  padding: 40px;
+  text-align: center;
+  color: #95a5a6;
+  background: #ecf0f1;
+  border-radius: 8px;
+}
+
+.no-images-placeholder p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Panel de imagen de detección */
+.detection-image-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detection-image-panel h4 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.detection-image-wrapper {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ecf0f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detection-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.detection-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #95a5a6;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.detection-image-placeholder p {
+  margin: 5px 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.detection-image-placeholder small {
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
 /* Sección de imagen */
@@ -477,15 +691,22 @@
 
 /* Sección de detalles */
 .review-details-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .review-details-section h3 {
   color: #2c3e50;
   font-size: 1.2rem;
-  margin: 0 0 10px 0;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.details-grid {
+  display: grid;
+  gap: 12px;
 }
 
 .review-detail-row {
@@ -576,6 +797,11 @@
   font-weight: 600;
 }
 
+.warning-row {
+  background: #fee;
+  border-left-color: #e74c3c;
+}
+
 /* Footer con acciones */
 .review-modal-footer {
   padding: 20px 30px;
@@ -661,9 +887,31 @@
   }
 
   .review-modal-body {
-    grid-template-columns: 1fr;
     padding: 20px;
     gap: 20px;
+  }
+
+  .detection-percentage-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .percentage-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .percentage-value {
+    font-size: 1.5rem;
+  }
+
+  .images-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-images-container {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
 
   .review-modal-footer {
