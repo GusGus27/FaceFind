@@ -7,7 +7,7 @@ import CaseManagement from '../components/admin/CaseManagement';
 import NotificationPanel from '../components/admin/NotificationPanel';
 import ActivityLogs from '../components/admin/ActivityLogs';
 import SearchCases from '../components/admin/SearchCases'; 
-
+import StatisticsDashboard from '../components/admin/StatisticsDashboard';
 import CameraManager from '../components/camera/CameraManager';
 import '../styles/admin/AdminPanel.css';
 
@@ -44,6 +44,8 @@ const AdminPanel = () => {
          return <SearchCases />;
       case 'camera':
         return <CameraManager />;
+      case 'statistics':
+        return <StatisticsDashboard />;
       default:
         return <AdminDashboard />;
     }
@@ -70,6 +72,13 @@ const AdminPanel = () => {
           >
             <span className="icon">📊</span>
             Dashboard
+          </button>
+          <button
+            className={`admin-nav-item ${activeSection === 'statistics' ? 'active' : ''}`}
+            onClick={() => setActiveSection('statistics')}
+          >
+            <span className="icon">📈</span>
+            Estadísticas Avanzadas
           </button>
           <button
             className={`admin-nav-item ${activeSection === 'users' ? 'active' : ''}`}

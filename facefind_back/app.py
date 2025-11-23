@@ -15,6 +15,7 @@ from api.caso_routes import caso_bp
 from api.encodings_routes import encodings_bp
 from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
+from api.statistics_routes import statistics_bp
 
 
 # Inicializar aplicación Flask
@@ -31,6 +32,7 @@ app.register_blueprint(caso_bp, url_prefix="/casos")
 app.register_blueprint(encodings_bp, url_prefix="/encodings")
 app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
+app.register_blueprint(statistics_bp, url_prefix="/statistics")
 
 
 # ============================================================================
@@ -50,7 +52,8 @@ def index():
             "casos": "/casos",
             "encodings": "/encodings",
             "detection": "/detection",
-            "fotos": "/fotos"
+            "fotos": "/fotos",
+            "statistics": "/statistics"
         }
     })
 
