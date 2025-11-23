@@ -7,7 +7,7 @@ import CaseManagement from '../components/admin/CaseManagement';
 import NotificationPanel from '../components/admin/NotificationPanel';
 import ActivityLogs from '../components/admin/ActivityLogs';
 import SearchCases from '../components/admin/SearchCases'; 
-
+import MapView from '../components/admin/MapView';
 import CameraManager from '../components/camera/CameraManager';
 import '../styles/admin/AdminPanel.css';
 
@@ -44,6 +44,8 @@ const AdminPanel = () => {
          return <SearchCases />;
       case 'camera':
         return <CameraManager />;
+      case 'map':
+        return <MapView />;
       default:
         return <AdminDashboard />;
     }
@@ -84,6 +86,13 @@ const AdminPanel = () => {
           >
             <span className="icon">📹</span>
             Gestión de Cámaras
+          </button>
+          <button
+            className={`admin-nav-item ${activeSection === 'map' ? 'active' : ''}`}
+            onClick={() => setActiveSection('map')}
+          >
+            <span className="icon">🗺️</span>
+            Mapa de Detecciones
           </button>
           <button
             className={`admin-nav-item ${activeSection === 'cases' ? 'active' : ''}`}

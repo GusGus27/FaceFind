@@ -15,6 +15,7 @@ from api.caso_routes import caso_bp
 from api.encodings_routes import encodings_bp
 from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
+from api.alerta_routes import alerta_bp
 
 
 # Inicializar aplicación Flask
@@ -31,6 +32,7 @@ app.register_blueprint(caso_bp, url_prefix="/casos")
 app.register_blueprint(encodings_bp, url_prefix="/encodings")
 app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
+app.register_blueprint(alerta_bp, url_prefix="/alertas")
 
 
 # ============================================================================
@@ -50,7 +52,8 @@ def index():
             "casos": "/casos",
             "encodings": "/encodings",
             "detection": "/detection",
-            "fotos": "/fotos"
+            "fotos": "/fotos",
+            "alertas": "/alertas"
         }
     })
 
@@ -90,6 +93,14 @@ if __name__ == '__main__':
     print("   POST /detection/detect-faces     - Detectar rostros en imagen")
     print("   GET  /detection/get-known-faces  - Lista de caras conocidas")
     print("   POST /detection/reload-encodings - Recargar encodings sin reiniciar")
+    print("\n🚨 Alertas (/alertas):")
+    print("   GET  /alertas                    - Listar alertas (con filtros)")
+    print("   GET  /alertas/geojson            - Alertas en formato GeoJSON para mapas")
+    print("   GET  /alertas/timeline           - Línea temporal de movimientos")
+    print("   GET  /alertas/<id>               - Obtener alerta específica")
+    print("   PATCH /alertas/<id>/estado       - Actualizar estado")
+    print("   POST /alertas/<id>/revisar       - Marcar como revisada")
+    print("   POST /alertas/<id>/falso-positivo - Marcar como falso positivo")
     print("\n" + "=" * 70)
     print(f"✅ Servidor corriendo en http://{Config.HOST}:{Config.PORT}")
     print(f"📊 Debug Mode: {'ON' if Config.DEBUG else 'OFF'}")
