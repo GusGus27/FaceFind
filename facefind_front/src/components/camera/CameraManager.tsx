@@ -25,12 +25,20 @@ interface Camera {
     updated_at?: string;
 }
 
+interface USBDevice {
+    deviceId: string;
+    label: string;
+}
+
 const CameraManager: React.FC = () => {
     const [cameras, setCameras] = useState<Camera[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
     const [stats, setStats] = useState<any>(null);
+    const [availableUSBDevices, setAvailableUSBDevices] = useState<USBDevice[]>([]);
+    const [loadingUSBDevices, setLoadingUSBDevices] = useState(false);
+    const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
     const [formData, setFormData] = useState<Camera>({
         nombre: '',
         type: 'USB',
@@ -45,6 +53,14 @@ const CameraManager: React.FC = () => {
         loadCameras();
         loadStats();
     }, []);
+
+    // Sincronizar selectedDeviceId con formData.url cuando se abre el modal de edición
+    useEffect(() => {
+        if (showModal && editingCamera && editingCamera.type === 'USB' && editingCamera.url) {
+            console.log('🔄 Sincronizando deviceId desde formData:', editingCamera.url);
+            setSelectedDeviceId(editingCamera.url);
+        }
+    }, [showModal, editingCamera]);
 
     const loadCameras = async () => {
         try {
@@ -96,11 +112,71 @@ const CameraManager: React.FC = () => {
         }
     };
 
-    const handleOpenModal = (camera: Camera | null = null) => {
+    const detectBrowserUSBCameras = async () => {
+        setLoadingUSBDevices(true);
+        try {
+            // Solicitar permisos primero
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            
+            // Detener el stream inmediatamente (solo necesitamos permisos)
+            stream.getTracks().forEach(track => track.stop());
+            
+            // Obtener lista de dispositivos
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices
+                .filter(device => device.kind === 'videoinput')
+                .map((device, index) => ({
+                    deviceId: String(index), // Usar el índice como deviceId (0, 1, 2...)
+                    label: device.label || `Cámara USB ${index + 1}`
+                }));
+            
+            console.log('📹 Cámaras USB detectadas:', videoDevices);
+            console.log('🎯 Índice actualmente seleccionado:', selectedDeviceId);
+            
+            setAvailableUSBDevices(videoDevices);
+            
+            // Solo seleccionar la primera automáticamente si:
+            // 1. Hay dispositivos disponibles
+            // 2. No hay ninguno seleccionado actualmente
+            // 3. O el seleccionado ya no existe en la lista
+            const currentExists = videoDevices.some(d => d.deviceId === selectedDeviceId);
+            
+            if (videoDevices.length > 0) {
+                if (!selectedDeviceId || !currentExists) {
+                    const firstDeviceId = videoDevices[0].deviceId;
+                    console.log('🔄 Auto-seleccionando primera cámara (índice ' + firstDeviceId + '):', videoDevices[0].label);
+                    setSelectedDeviceId(firstDeviceId);
+                } else {
+                    console.log('✅ Manteniendo cámara seleccionada (índice ' + selectedDeviceId + ')');
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al detectar cámaras USB:', error);
+            alert('No se pudo acceder a las cámaras USB. Verifica los permisos del navegador.');
+        } finally {
+            setLoadingUSBDevices(false);
+        }
+    };
+
+    const handleOpenModal = async (camera: Camera | null = null) => {
+        // Primero detectar cámaras disponibles
+        await detectBrowserUSBCameras();
+        
         if (camera) {
+            console.log('📝 Editando cámara:', camera);
             setEditingCamera(camera);
             setFormData(camera);
+            
+            // Seleccionar el deviceId guardado
+            if (camera.type === 'USB' && camera.url) {
+                console.log('🔍 Intentando seleccionar deviceId guardado:', camera.url);
+                setSelectedDeviceId(camera.url);
+            } else {
+                setSelectedDeviceId(camera.url || '');
+            }
         } else {
+            console.log('➕ Creando nueva cámara');
             setEditingCamera(null);
             setFormData({
                 nombre: '',
@@ -111,6 +187,7 @@ const CameraManager: React.FC = () => {
                 resolution: '1920x1080',
                 fps: 30
             });
+            setSelectedDeviceId('');
         }
         setShowModal(true);
     };
@@ -131,10 +208,35 @@ const CameraManager: React.FC = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
+        
+        // Si cambia el tipo de cámara a USB, detectar dispositivos
+        if (name === 'type' && value === 'USB' && availableUSBDevices.length === 0) {
+            detectBrowserUSBCameras();
+        }
+        
         setFormData(prev => ({
             ...prev,
             [name]: type === 'number' ? parseInt(value) : value
         }));
+    };
+
+    const handleDeviceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const deviceId = e.target.value;
+        console.log('🔄 Cambiando a dispositivo:', deviceId);
+        
+        setSelectedDeviceId(deviceId);
+        
+        // Actualizar la URL del formData con el deviceId seleccionado
+        setFormData(prev => ({
+            ...prev,
+            url: deviceId
+        }));
+        
+        // Buscar el nombre de la cámara seleccionada
+        const selectedCamera = availableUSBDevices.find(d => d.deviceId === deviceId);
+        if (selectedCamera) {
+            console.log('✅ Cámara seleccionada:', selectedCamera.label);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -156,12 +258,23 @@ const CameraManager: React.FC = () => {
             return;
         }
 
+        if (formData.type === 'USB' && !selectedDeviceId) {
+            alert('Debes seleccionar una cámara USB');
+            return;
+        }
+
+        // Para cámaras USB, guardar el deviceId en el campo url
+        const dataToSend = {
+            ...formData,
+            url: formData.type === 'USB' ? selectedDeviceId : formData.url
+        };
+
         try {
-            console.log('📤 Enviando datos:', formData);
+            console.log('📤 Enviando datos:', dataToSend);
             
             if (editingCamera && editingCamera.id) {
                 // Actualizar cámara existente
-                const response = await updateCamera(editingCamera.id, formData);
+                const response = await updateCamera(editingCamera.id, dataToSend);
                 console.log('✅ Respuesta actualización:', response);
                 if (response.success) {
                     alert('Cámara actualizada exitosamente');
@@ -171,7 +284,7 @@ const CameraManager: React.FC = () => {
                 }
             } else {
                 // Crear nueva cámara
-                const response = await createCamera(formData);
+                const response = await createCamera(dataToSend);
                 console.log('✅ Respuesta creación:', response);
                 if (response.success) {
                     alert('Cámara creada exitosamente');
@@ -337,6 +450,53 @@ const CameraManager: React.FC = () => {
                                     required
                                 />
                             </div>
+
+                            {formData.type === 'USB' && (
+                                <div className="form-group">
+                                    <label htmlFor="usbDevice">Seleccionar Cámara USB *</label>
+                                    {loadingUSBDevices ? (
+                                        <div className="loading-devices">
+                                            <span>🔄 Detectando cámaras...</span>
+                                        </div>
+                                    ) : availableUSBDevices.length === 0 ? (
+                                        <div className="no-devices">
+                                            <p>⚠️ No se detectaron cámaras USB</p>
+                                            <button 
+                                                type="button" 
+                                                onClick={detectBrowserUSBCameras}
+                                                className="btn-refresh-devices"
+                                            >
+                                                🔄 Buscar nuevamente
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select
+                                                id="usbDevice"
+                                                name="usbDevice"
+                                                value={selectedDeviceId}
+                                                onChange={handleDeviceChange}
+                                                required
+                                            >
+                                                <option value="">-- Selecciona una cámara --</option>
+                                                {availableUSBDevices.map((device) => (
+                                                    <option key={device.deviceId} value={device.deviceId}>
+                                                        {device.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button 
+                                                type="button" 
+                                                onClick={detectBrowserUSBCameras}
+                                                className="btn-refresh-devices"
+                                                style={{ marginTop: '8px' }}
+                                            >
+                                                🔄 Actualizar lista
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
 
                             {formData.type === 'IP' && (
                                 <div className="form-group">
