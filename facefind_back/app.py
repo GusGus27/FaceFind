@@ -23,14 +23,14 @@ from api.camera_routes import camera_bp
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configurar CORS - Más permisivo para desarrollo
+# Configurar CORS - Configuración para desarrollo con credenciales
 CORS(app, 
      resources={r"/*": {
-         "origins": "*",  # Permitir todos los orígenes en desarrollo
+         "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],  # Orígenes específicos para credentials
          "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
          "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
          "expose_headers": ["Content-Type"],
-         "supports_credentials": False,  # Cambiar a False cuando origins es *
+         "supports_credentials": True,  # Habilitar credenciales
          "max_age": 3600
      }})
 
@@ -39,7 +39,10 @@ CORS(app,
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({"status": "ok"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
+        origin = request.headers.get("Origin")
+        if origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+            response.headers.add("Access-Control-Allow-Credentials", "true")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
         response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
         return response
