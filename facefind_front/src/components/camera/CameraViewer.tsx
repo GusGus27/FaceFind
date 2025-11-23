@@ -23,6 +23,7 @@ interface CameraSettings {
     resolution: string;
     fps: number;
     url?: string;
+    deviceId?: string;
 }
 
 interface CameraViewerProps {
@@ -130,17 +131,31 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
                     console.log('🔗 Intentando conectar a cámara USB...');
                     setUseMjpeg(false);
                     
-                    const stream = await navigator.mediaDevices.getUserMedia({
+                    // Configurar constraints para el dispositivo específico
+                    const constraints: MediaStreamConstraints = {
                         video: { 
                             width: { ideal: videoWidth },
                             height: { ideal: videoHeight },
                             frameRate: { ideal: cameraSettings.fps }
-                        },
-                    });
+                        }
+                    };
+                    
+                    // Si se especificó un deviceId, agregarlo a las constraints
+                    if (cameraSettings.deviceId) {
+                        (constraints.video as MediaTrackConstraints).deviceId = { 
+                            exact: cameraSettings.deviceId 
+                        };
+                        console.log('📹 Usando cámara específica:', cameraSettings.deviceId);
+                    }
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
                         setIsConnected(true);
-                        console.log('✅ Cámara USB conectada exitosamente');
+                        
+                        // Obtener el label del dispositivo activo
+                        const videoTrack = stream.getVideoTracks()[0];
+                        console.log('✅ Cámara USB conectada exitosamente:', videoTrack.label);
                     }
                 } else {
                     console.error('❌ Tipo de cámara no válido:', cameraSettings.type);

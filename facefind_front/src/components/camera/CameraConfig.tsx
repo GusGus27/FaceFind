@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../styles/camera/CameraConfig.css';
 
 interface CameraSettings {
@@ -6,10 +6,16 @@ interface CameraSettings {
     resolution: string;
     fps: number;
     url: string;
+    deviceId?: string;
 }
 
 interface CameraConfigProps {
     onConfigChange: (config: CameraSettings) => void;
+}
+
+interface MediaDeviceInfo {
+    deviceId: string;
+    label: string;
 }
 
 const CameraConfig: React.FC<CameraConfigProps> = ({ onConfigChange }) => {
@@ -17,8 +23,49 @@ const CameraConfig: React.FC<CameraConfigProps> = ({ onConfigChange }) => {
         type: 'USB',
         resolution: '640x480',
         fps: 30,
-        url: ''
+        url: '',
+        deviceId: ''
     });
+
+    const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
+    const [loadingDevices, setLoadingDevices] = useState<boolean>(false);
+
+    // Cargar dispositivos de video disponibles
+    useEffect(() => {
+        loadVideoDevices();
+    }, []);
+
+    const loadVideoDevices = async () => {
+        setLoadingDevices(true);
+        try {
+            // Solicitar permisos primero
+            await navigator.mediaDevices.getUserMedia({ video: true });
+            
+            // Obtener lista de dispositivos
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices
+                .filter(device => device.kind === 'videoinput')
+                .map((device, index) => ({
+                    deviceId: device.deviceId,
+                    label: device.label || `Cámara ${index + 1}`
+                }));
+            
+            setAvailableDevices(videoDevices);
+            
+            // Si hay dispositivos, seleccionar el primero por defecto
+            if (videoDevices.length > 0 && !config.deviceId) {
+                const newConfig = { ...config, deviceId: videoDevices[0].deviceId };
+                setConfig(newConfig);
+                onConfigChange(newConfig);
+            }
+            
+            console.log('📹 Dispositivos de video detectados:', videoDevices);
+        } catch (error) {
+            console.error('Error al obtener dispositivos de video:', error);
+        } finally {
+            setLoadingDevices(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -45,6 +92,38 @@ const CameraConfig: React.FC<CameraConfigProps> = ({ onConfigChange }) => {
                         <option value="IP">Cámara IP</option>
                     </select>
                 </div>
+
+                {config.type === 'USB' && (
+                    <div className="form-group">
+                        <label>Seleccionar Cámara USB:</label>
+                        <select 
+                            name="deviceId" 
+                            value={config.deviceId || ''} 
+                            onChange={handleChange}
+                            disabled={loadingDevices || availableDevices.length === 0}
+                        >
+                            {loadingDevices ? (
+                                <option value="">Cargando dispositivos...</option>
+                            ) : availableDevices.length === 0 ? (
+                                <option value="">No se detectaron cámaras</option>
+                            ) : (
+                                availableDevices.map((device) => (
+                                    <option key={device.deviceId} value={device.deviceId}>
+                                        {device.label}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                        <button 
+                            type="button" 
+                            onClick={loadVideoDevices}
+                            className="refresh-devices-btn"
+                            style={{ marginTop: '8px', padding: '6px 12px', cursor: 'pointer' }}
+                        >
+                            🔄 Actualizar lista
+                        </button>
+                    </div>
+                )}
 
                 {config.type === 'IP' && (
                     <div className="form-group">

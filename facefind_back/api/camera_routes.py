@@ -363,10 +363,17 @@ def stream_camera(camera_id):
             camera_type = camera_data.get("type", "USB")
             
             if camera_type == "USB":
-                # Extraer device_id de la IP (formato: "usb://0")
-                ip = camera_data.get("ip", "usb://0")
-                device_id = int(ip.split("://")[1]) if "://" in ip else 0
-                camera = cv2.VideoCapture(device_id)
+                # Obtener el índice de la cámara desde el campo url
+                url = camera_data.get("url", "0")
+                try:
+                    # El índice está guardado como string en el campo url
+                    device_index = int(url)
+                    print(f"📹 Intentando abrir cámara USB con índice: {device_index}")
+                except ValueError:
+                    print(f"⚠️ URL no es un índice válido: {url}, usando índice 0")
+                    device_index = 0
+                
+                camera = cv2.VideoCapture(device_index)
             else:  # IP Camera
                 url = camera_data.get("url") or camera_data.get("ip")
                 if not url:
