@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../../styles/camera/CameraViewer.css';
+import { detectFaces } from '../../services/detectionService';
 
 interface FaceResult {
     face_id: number;
@@ -22,6 +23,7 @@ interface CameraSettings {
     resolution: string;
     fps: number;
     url?: string;
+    deviceId?: string;
 }
 
 interface CameraViewerProps {
@@ -129,17 +131,31 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
                     console.log('🔗 Intentando conectar a cámara USB...');
                     setUseMjpeg(false);
                     
-                    const stream = await navigator.mediaDevices.getUserMedia({
+                    // Configurar constraints para el dispositivo específico
+                    const constraints: MediaStreamConstraints = {
                         video: { 
                             width: { ideal: videoWidth },
                             height: { ideal: videoHeight },
                             frameRate: { ideal: cameraSettings.fps }
-                        },
-                    });
+                        }
+                    };
+                    
+                    // Si se especificó un deviceId, agregarlo a las constraints
+                    if (cameraSettings.deviceId) {
+                        (constraints.video as MediaTrackConstraints).deviceId = { 
+                            exact: cameraSettings.deviceId 
+                        };
+                        console.log('📹 Usando cámara específica:', cameraSettings.deviceId);
+                    }
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
                         setIsConnected(true);
-                        console.log('✅ Cámara USB conectada exitosamente');
+                        
+                        // Obtener el label del dispositivo activo
+                        const videoTrack = stream.getVideoTracks()[0];
+                        console.log('✅ Cámara USB conectada exitosamente:', videoTrack.label);
                     }
                 } else {
                     console.error('❌ Tipo de cámara no válido:', cameraSettings.type);
@@ -272,14 +288,8 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
             
             console.log('📤 Enviando frame al backend...');
 
-            // Llamada al backend (actualizado a nueva ruta)
-            const response = await fetch('http://localhost:5000/detection/detect-faces', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageData }),
-            });
-
-            const result = await response.json();
+            // Usar el servicio de detección
+            const result = await detectFaces(imageData);
 
             if (result.success && result.data.faces.length > 0) {
                 const faces: FaceResult[] = result.data.faces;

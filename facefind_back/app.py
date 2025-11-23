@@ -2,7 +2,7 @@
 FaceFind API - Servidor Principal
 Sistema de reconocimiento facial para localización de personas desaparecidas
 """
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 # Configuración
@@ -16,14 +16,38 @@ from api.encodings_routes import encodings_bp
 from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
 from api.statistics_routes import statistics_bp
+from api.alerta_routes import alerta_bp
+from api.notification_routes import notification_bp
+from api.camera_routes import camera_bp
 
 
 # Inicializar aplicación Flask
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configurar CORS
-CORS(app, resources={r"/*": {"origins": Config.CORS_ORIGINS}}, supports_credentials=True)
+# Configurar CORS - Configuración para desarrollo con credenciales
+CORS(app, 
+     resources={r"/*": {
+         "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],  # Orígenes específicos para credentials
+         "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
+         "expose_headers": ["Content-Type"],
+         "supports_credentials": True,  # Habilitar credenciales
+         "max_age": 3600
+     }})
+
+# Handler para OPTIONS (preflight)
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "ok"})
+        origin = request.headers.get("Origin")
+        if origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+            response.headers.add("Access-Control-Allow-Credentials", "true")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
+        return response
 
 # Registrar blueprints
 app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -33,6 +57,9 @@ app.register_blueprint(encodings_bp, url_prefix="/encodings")
 app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
 app.register_blueprint(statistics_bp, url_prefix="/statistics")
+app.register_blueprint(alerta_bp, url_prefix="/alertas")
+app.register_blueprint(notification_bp, url_prefix="/notifications")
+app.register_blueprint(camera_bp, url_prefix="/cameras")
 
 
 # ============================================================================
@@ -53,7 +80,10 @@ def index():
             "encodings": "/encodings",
             "detection": "/detection",
             "fotos": "/fotos",
-            "statistics": "/statistics"
+            "statistics": "/statistics",
+            "alertas": "/alertas",
+            "notifications": "/notifications",
+            "cameras": "/cameras"
         }
     })
 
@@ -93,6 +123,23 @@ if __name__ == '__main__':
     print("   POST /detection/detect-faces     - Detectar rostros en imagen")
     print("   GET  /detection/get-known-faces  - Lista de caras conocidas")
     print("   POST /detection/reload-encodings - Recargar encodings sin reiniciar")
+    print("\n🚨 Alertas (/alertas):")
+    print("   GET  /alertas                    - Listar alertas (con filtros)")
+    print("   GET  /alertas/geojson            - Alertas en formato GeoJSON para mapas")
+    print("   GET  /alertas/timeline           - Línea temporal de movimientos")
+    print("   GET  /alertas/<id>               - Obtener alerta específica")
+    print("   PATCH /alertas/<id>/estado       - Actualizar estado")
+    print("   POST /alertas/<id>/revisar       - Marcar como revisada")
+    print("   POST /alertas/<id>/falso-positivo - Marcar como falso positivo")
+    print("\n📹 Cámaras (/cameras):")
+    print("   GET  /cameras                    - Listar todas las cámaras")
+    print("   POST /cameras                    - Crear nueva cámara")
+    print("   GET  /cameras/<id>               - Obtener cámara específica")
+    print("   PUT  /cameras/<id>               - Actualizar cámara")
+    print("   DELETE /cameras/<id>             - Eliminar cámara")
+    print("   GET  /cameras/active             - Listar cámaras activas")
+    print("   PATCH /cameras/<id>/toggle       - Activar/Desactivar cámara")
+    print("   GET  /cameras/stats              - Estadísticas de cámaras")
     print("\n" + "=" * 70)
     print(f"✅ Servidor corriendo en http://{Config.HOST}:{Config.PORT}")
     print(f"📊 Debug Mode: {'ON' if Config.DEBUG else 'OFF'}")

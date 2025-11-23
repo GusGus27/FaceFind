@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AdminDashboard from '../components/admin/AdminDashboard';
@@ -8,15 +8,34 @@ import NotificationPanel from '../components/admin/NotificationPanel';
 import ActivityLogs from '../components/admin/ActivityLogs';
 import SearchCases from '../components/admin/SearchCases'; 
 import StatisticsDashboard from '../components/admin/StatisticsDashboard';
+import MapView from '../components/admin/MapView';
 import CameraManager from '../components/camera/CameraManager';
+import { getUnreadCount } from '../services/notificationService';
 import '../styles/admin/AdminPanel.css';
 
 const AdminPanel = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-    const [selectedCase, setSelectedCase] = useState(null);
+  // Cargar contador de notificaciones no leídas
+  useEffect(() => {
+    loadUnreadCount();
+    // Auto-refresh cada 30 segundos
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadUnreadCount = async () => {
+    try {
+      const count = await getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
 
 
   if (!isAdmin()) {
@@ -46,6 +65,8 @@ const AdminPanel = () => {
         return <CameraManager />;
       case 'statistics':
         return <StatisticsDashboard />;
+      case 'map':
+        return <MapView />;
       default:
         return <AdminDashboard />;
     }
@@ -95,6 +116,13 @@ const AdminPanel = () => {
             Gestión de Cámaras
           </button>
           <button
+            className={`admin-nav-item ${activeSection === 'map' ? 'active' : ''}`}
+            onClick={() => setActiveSection('map')}
+          >
+            <span className="icon">🗺️</span>
+            Mapa de Detecciones
+          </button>
+          <button
             className={`admin-nav-item ${activeSection === 'cases' ? 'active' : ''}`}
             onClick={() => setActiveSection('cases')}
           >
@@ -103,10 +131,16 @@ const AdminPanel = () => {
           </button>
           <button
             className={`admin-nav-item ${activeSection === 'notifications' ? 'active' : ''}`}
-            onClick={() => setActiveSection('notifications')}
+            onClick={() => {
+              setActiveSection('notifications');
+              loadUnreadCount(); // Recargar al abrir notificaciones
+            }}
           >
             <span className="icon">🔔</span>
             Notificaciones
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
           </button>
           
           <button
