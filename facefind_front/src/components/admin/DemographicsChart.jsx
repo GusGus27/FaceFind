@@ -1,81 +1,26 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import '../../styles/admin/DemographicsChart.css';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const DemographicsChart = ({ data }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    if (!canvasRef.current || !data?.age_distribution) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Limpiar canvas
-    ctx.clearRect(0, 0, width, height);
-
-    const ageGroups = Object.entries(data.age_distribution);
-    if (ageGroups.length === 0) return;
-
-    // Colores para cada grupo de edad
-    const colors = [
-      '#3b82f6', // Azul
-      '#8b5cf6', // Púrpura
-      '#ec4899', // Rosa
-      '#f59e0b', // Ámbar
-      '#10b981', // Verde
-      '#6366f1', // Índigo
-      '#94a3b8'  // Gris
-    ];
-
-    // Calcular total
-    const total = ageGroups.reduce((sum, [_, value]) => sum + value.count, 0);
-
-    // Dibujar gráfico de barras
-    const barWidth = (width - 100) / ageGroups.length;
-    const maxCount = Math.max(...ageGroups.map(([_, value]) => value.count), 1);
-    const chartHeight = height - 80;
-
-    ageGroups.forEach(([group, value], index) => {
-      const barHeight = (value.count / maxCount) * chartHeight;
-      const x = 50 + index * barWidth;
-      const y = height - 60 - barHeight;
-
-      // Dibujar barra
-      ctx.fillStyle = colors[index % colors.length];
-      ctx.fillRect(x, y, barWidth - 10, barHeight);
-
-      // Dibujar etiqueta del grupo
-      ctx.fillStyle = '#666';
-      ctx.font = '11px Arial';
-      ctx.textAlign = 'center';
-      ctx.save();
-      ctx.translate(x + (barWidth - 10) / 2, height - 45);
-      ctx.rotate(-Math.PI / 4);
-      ctx.fillText(group, 0, 0);
-      ctx.restore();
-
-      // Dibujar valor
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 12px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(value.count.toString(), x + (barWidth - 10) / 2, y - 5);
-
-      // Dibujar porcentaje
-      ctx.fillStyle = '#666';
-      ctx.font = '10px Arial';
-      ctx.fillText(`${value.percentage}%`, x + (barWidth - 10) / 2, y - 18);
-    });
-
-    // Título
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Distribución por Grupo de Edad', width / 2, 20);
-
-  }, [data]);
-
   if (!data || !data.age_distribution) {
     return (
       <div className="demographics-chart">
@@ -84,14 +29,85 @@ const DemographicsChart = ({ data }) => {
     );
   }
 
+  const ageGroups = Object.entries(data.age_distribution);
+  
+  const chartData = {
+    labels: ageGroups.map(([group]) => group),
+    datasets: [
+      {
+        label: 'Casos por Grupo de Edad',
+        data: ageGroups.map(([_, value]) => value.count),
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(139, 92, 246, 0.8)',
+          'rgba(236, 72, 153, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(99, 102, 241, 0.8)',
+          'rgba(148, 163, 184, 0.8)'
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          'rgb(139, 92, 246)',
+          'rgb(236, 72, 153)',
+          'rgb(245, 158, 11)',
+          'rgb(16, 185, 129)',
+          'rgb(99, 102, 241)',
+          'rgb(148, 163, 184)'
+        ],
+        borderWidth: 2
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      title: {
+        display: true,
+        text: 'Distribución por Grupo de Edad',
+        font: {
+          size: 16
+        }
+      },
+      tooltip: {
+        callbacks: {
+          afterLabel: function(context) {
+            const percentage = ageGroups[context.dataIndex][1].percentage;
+            return `${percentage}% del total`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0
+        },
+        title: {
+          display: true,
+          text: 'Número de Casos'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Grupo de Edad'
+        }
+      }
+    }
+  };
+
   return (
     <div className="demographics-chart">
-      <canvas 
-        ref={canvasRef} 
-        width={600} 
-        height={400}
-        className="chart-canvas"
-      />
+      <div style={{ height: '400px' }}>
+        <Bar data={chartData} options={options} />
+      </div>
       <div className="demographics-info">
         <div className="info-item">
           <span className="info-label">Total de Casos:</span>
