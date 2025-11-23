@@ -136,6 +136,26 @@ class Alerta:
         """
         return self._prioridad == PrioridadAlerta.ALTA
 
+    def crearNotificacion(self, tipo: str) -> 'Notificacion':
+        """
+        Crea una notificación a partir de esta alerta
+        Método definido en el diagrama UML
+
+        Args:
+            tipo: Tipo de notificación ('email' o 'dashboard')
+
+        Returns:
+            Instancia de Notificacion
+        """
+        from .notificacion import Notificacion, TipoNotificacion
+        
+        tipo_notif = TipoNotificacion.from_string(tipo)
+        return Notificacion(
+            alerta=self,
+            tipo=tipo_notif,
+            prioridad=self._prioridad
+        )
+
     def calcular_prioridad_por_similitud(self) -> PrioridadAlerta:
         """
         Calcula la prioridad basada en el nivel de similitud

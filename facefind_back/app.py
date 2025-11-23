@@ -15,6 +15,7 @@ from api.caso_routes import caso_bp
 from api.encodings_routes import encodings_bp
 from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
+from api.notification_routes import notification_bp
 
 
 # Inicializar aplicación Flask
@@ -31,6 +32,7 @@ app.register_blueprint(caso_bp, url_prefix="/casos")
 app.register_blueprint(encodings_bp, url_prefix="/encodings")
 app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
+app.register_blueprint(notification_bp)
 
 
 # ============================================================================
@@ -50,7 +52,8 @@ def index():
             "casos": "/casos",
             "encodings": "/encodings",
             "detection": "/detection",
-            "fotos": "/fotos"
+            "fotos": "/fotos",
+            "notifications": "/api/notifications"
         }
     })
 
@@ -90,7 +93,31 @@ if __name__ == '__main__':
     print("   POST /detection/detect-faces     - Detectar rostros en imagen")
     print("   GET  /detection/get-known-faces  - Lista de caras conocidas")
     print("   POST /detection/reload-encodings - Recargar encodings sin reiniciar")
+    print("\n🔔 Notificaciones (/api/notifications):")
+    print("   GET  /api/notifications/historial           - Historial de notificaciones")
+    print("   GET  /api/notifications/estadisticas        - Estadísticas del sistema")
+    print("   PUT  /api/notifications/<id>/marcar-leida   - Marcar como leída")
+    print("   POST /api/notifications/test-email          - Enviar email de prueba")
     print("\n" + "=" * 70)
+    
+    # Inicializar sistema de notificaciones
+    print("🔔 Inicializando sistema de notificaciones...")
+    try:
+        from services.notification_service import notification_service
+        from services.alerta_service import AlertaService
+        
+        # Cargar historial
+        alertas_cargadas = AlertaService.cargar_historial_desde_bd(limite=50)
+        print(f"   ✅ {alertas_cargadas} alertas cargadas en memoria")
+        
+        # Iniciar procesamiento asíncrono
+        notification_service.iniciar_procesamiento_asincrono()
+        print("   ✅ Procesamiento asíncrono iniciado")
+        
+    except Exception as e:
+        print(f"   ⚠️  Error al inicializar notificaciones: {str(e)}")
+    
+    print("=" * 70)
     print(f"✅ Servidor corriendo en http://{Config.HOST}:{Config.PORT}")
     print(f"📊 Debug Mode: {'ON' if Config.DEBUG else 'OFF'}")
     print("=" * 70 + "\n")

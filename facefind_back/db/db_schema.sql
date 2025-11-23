@@ -191,16 +191,19 @@ CREATE TABLE public.LogAuditoria (
 
 CREATE TABLE public.Notificacion (
   id integer GENERATED ALWAYS AS IDENTITY NOT NULL,
-  type character varying NOT NULL,
-  title character varying NOT NULL,
-  message text NOT NULL,
-  severity character varying NOT NULL,
-  isRead boolean DEFAULT false,
-  timestamp timestamp without time zone NOT NULL DEFAULT now(),
-  usuario_id integer,
+  alerta_id integer NOT NULL,
+  tipo character varying(20) NOT NULL CHECK (tipo IN ('email', 'dashboard')),
+  prioridad character varying(10) NOT NULL CHECK (prioridad IN ('ALTA', 'MEDIA', 'BAJA')),
+  estado character varying(20) NOT NULL DEFAULT 'PENDIENTE' CHECK (estado IN ('PENDIENTE', 'ENVIADA', 'LEIDA', 'ERROR')),
+  destinatario character varying,
+  asunto character varying,
+  contenido text,
+  enviada_en timestamp without time zone,
+  leida_en timestamp without time zone,
   created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
   CONSTRAINT Notificacion_pkey PRIMARY KEY (id),
-  CONSTRAINT Notificacion_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES public.Usuario(id)
+  CONSTRAINT Notificacion_alerta_id_fkey FOREIGN KEY (alerta_id) REFERENCES public.Alerta(id) ON DELETE CASCADE
 );
 
 -- Indexes for performance
@@ -211,6 +214,10 @@ CREATE INDEX idx_caso_persona_id ON public.Caso(persona_id);
 CREATE INDEX idx_caso_status ON public.Caso(status);
 CREATE INDEX idx_alerta_caso_id ON public.Alerta(caso_id);
 CREATE INDEX idx_foto_referencia_caso_id ON public.FotoReferencia(caso_id);
+CREATE INDEX idx_notificacion_alerta_id ON public.Notificacion(alerta_id);
+CREATE INDEX idx_notificacion_estado ON public.Notificacion(estado);
+CREATE INDEX idx_notificacion_prioridad ON public.Notificacion(prioridad);
+CREATE INDEX idx_notificacion_created_at ON public.Notificacion(created_at DESC);
   "message" text NOT NULL,
   "severity" varchar(20) NOT NULL,
   "isRead" boolean DEFAULT false,

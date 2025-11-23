@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import NotificationCard from '../common/NotificationCard';
-import NotificationDetailModal from '../common/NotificationDetailModal';
-import NotificationFilters from '../common/NotificationFilters';
-import ExportReport from '../common/ExportReport';
-import '../../styles/admin/NotificationPanel.css';
+import NotificationCard from '../components/common/NotificationCard';
+import NotificationDetailModal from '../components/common/NotificationDetailModal';
+import NotificationFilters from '../components/common/NotificationFilters';
+import ExportReport from '../components/common/ExportReport';
+import '../styles/views/NotificationsView.css';
 
-const NotificationPanel = () => {
+const NotificationsView = () => {
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [stats, setStats] = useState(null);
@@ -205,118 +205,122 @@ const NotificationPanel = () => {
     setFilteredNotifications(filtered);
   };
 
+
+
   return (
-    <div className="admin-notification-panel">
-      {/* Header */}
-      <div className="admin-notifications-header">
-        <div className="header-left">
-          <h1>📬 Notificaciones del Sistema</h1>
-          <p className="subtitle">
-            {notifications.filter(n => !n.leida_en).length} sin leer de {notifications.length} totales
-          </p>
-        </div>
-        <div className="header-actions">
-          <ExportReport 
-            notifications={filteredNotifications} 
-            filters={currentFilters}
-          />
-          {filteredNotifications.some(n => !n.leida_en) && (
-            <button 
-              className="mark-all-btn"
-              onClick={markAllAsRead}
-            >
-              ✓ Marcar todas como leídas
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      {stats && (
-        <div className="stats-cards">
-          <div className="stat-card">
-            <div className="stat-icon">📊</div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.cola?.en_cola || 0}</div>
-              <div className="stat-label">En cola</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-content">
-              <div className="stat-value">{stats.cola?.procesadas || 0}</div>
-              <div className="stat-label">Procesadas</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">🚨</div>
-            <div className="stat-content">
-              <div className="stat-value">
-                {stats.historial_alertas?.por_prioridad?.ALTA || 0}
-              </div>
-              <div className="stat-label">Alta prioridad</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">⏰</div>
-            <div className="stat-content">
-              <div className="stat-value">
-                {stats.historial_alertas?.recientes_24h || 0}
-              </div>
-              <div className="stat-label">Últimas 24h</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filtros Avanzados */}
-      <NotificationFilters 
-        onFilterChange={handleFilterChange}
-        totalCount={filteredNotifications.length}
-        cameras={cameras}
-        cases={cases}
-      />
-
-      {/* Lista de notificaciones */}
-      <div className="notifications-list">
-        {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Cargando notificaciones...</p>
-          </div>
-        ) : filteredNotifications.length === 0 ? (
-          <div className="empty-state">
-            <span className="empty-icon">📭</span>
-            <h3>No hay notificaciones</h3>
-            <p>
-              {notifications.length === 0 
-                ? 'Cuando haya nuevas detecciones, aparecerán aquí'
-                : 'No se encontraron notificaciones con los filtros aplicados'}
+    <div className="notifications-view">
+      <div className="notifications-container">
+        {/* Header */}
+        <div className="notifications-header">
+          <div className="header-left">
+            <h1>📬 Notificaciones</h1>
+            <p className="subtitle">
+              {notifications.filter(n => !n.leida_en).length} sin leer de {notifications.length} totales
             </p>
           </div>
-        ) : (
-          <div className="notifications-grid">
-            {filteredNotifications.map((notification) => (
-              <NotificationCard
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={markAsRead}
-                onClick={() => setSelectedNotification(notification)}
-              />
-            ))}
+          <div className="header-actions">
+            <ExportReport 
+              notifications={filteredNotifications} 
+              filters={currentFilters}
+            />
+            {filteredNotifications.some(n => !n.leida_en) && (
+              <button 
+                className="mark-all-btn"
+                onClick={markAllAsRead}
+              >
+                ✓ Marcar todas como leídas
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        {stats && (
+          <div className="stats-cards">
+            <div className="stat-card">
+              <div className="stat-icon">📊</div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.cola?.en_cola || 0}</div>
+                <div className="stat-label">En cola</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">✅</div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.cola?.procesadas || 0}</div>
+                <div className="stat-label">Procesadas</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">🚨</div>
+              <div className="stat-content">
+                <div className="stat-value">
+                  {stats.historial_alertas?.por_prioridad?.ALTA || 0}
+                </div>
+                <div className="stat-label">Alta prioridad</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">⏰</div>
+              <div className="stat-content">
+                <div className="stat-value">
+                  {stats.historial_alertas?.recientes_24h || 0}
+                </div>
+                <div className="stat-label">Últimas 24h</div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Modal de detalles */}
-      {selectedNotification && (
-        <NotificationDetailModal
-          notification={selectedNotification}
-          onClose={() => setSelectedNotification(null)}
+        {/* Filtros Avanzados */}
+        <NotificationFilters 
+          onFilterChange={handleFilterChange}
+          totalCount={filteredNotifications.length}
+          cameras={cameras}
+          cases={cases}
         />
-      )}
+
+        {/* Lista de notificaciones */}
+        <div className="notifications-list">
+          {loading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Cargando notificaciones...</p>
+            </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">📭</span>
+              <h3>No hay notificaciones</h3>
+              <p>
+                {notifications.length === 0 
+                  ? 'Cuando haya nuevas detecciones, aparecerán aquí'
+                  : 'No se encontraron notificaciones con los filtros aplicados'}
+              </p>
+            </div>
+          ) : (
+            <div className="notifications-grid">
+              {filteredNotifications.map((notification) => (
+                <NotificationCard
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={markAsRead}
+                  onClick={() => setSelectedNotification(notification)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modal de detalles */}
+        {selectedNotification && (
+          <NotificationDetailModal
+            notification={selectedNotification}
+            onClose={() => setSelectedNotification(null)}
+          />
+        )}
+      </div>
     </div>
   );
 };
 
-export default NotificationPanel;
+export default NotificationsView;

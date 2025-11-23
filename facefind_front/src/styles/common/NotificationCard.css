@@ -1,0 +1,362 @@
+/* NotificationCard.css */
+
+.notification-card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border-left: 4px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.notification-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.notification-card.unread {
+  background: linear-gradient(to right, #fff, #f0f7ff);
+  border-left-color: #667eea;
+}
+
+.notification-card.unread::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Priority Colors */
+.notification-card.priority-high {
+  border-left-color: #dc3545;
+}
+
+.notification-card.priority-high.unread {
+  background: linear-gradient(to right, #fff, #fff5f5);
+}
+
+.notification-card.priority-medium {
+  border-left-color: #ffc107;
+}
+
+.notification-card.priority-medium.unread {
+  background: linear-gradient(to right, #fff, #fffbf0);
+}
+
+.notification-card.priority-low {
+  border-left-color: #17a2b8;
+}
+
+.notification-card.priority-low.unread {
+  background: linear-gradient(to right, #fff, #f0fcff);
+}
+
+/* Unread Indicator */
+.unread-indicator {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 12px;
+  height: 12px;
+  background: #667eea;
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+  box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+}
+
+@keyframes pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.priority-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.priority-icon {
+  font-size: 16px;
+}
+
+.priority-label {
+  color: #555;
+}
+
+.time-ago {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+/* Card Body */
+.card-body {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.image-preview {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.notification-card:hover .image-preview img {
+  transform: scale(1.1);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.notification-card:hover .image-overlay {
+  opacity: 1;
+}
+
+.view-icon {
+  font-size: 32px;
+  filter: brightness(0) invert(1);
+}
+
+.card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.notification-message {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+  word-break: break-word;
+}
+
+/* Info Badges */
+.info-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-icon {
+  font-size: 12px;
+}
+
+.confidence-badge {
+  background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+  color: white;
+}
+
+.confidence-badge.confidence-very-high {
+  background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+}
+
+.confidence-badge.confidence-high {
+  background: linear-gradient(135deg, #74c0fc 0%, #4dabf7 100%);
+}
+
+.confidence-badge.confidence-medium {
+  background: linear-gradient(135deg, #ffd93d 0%, #ffb03b 100%);
+  color: #333;
+}
+
+.confidence-badge.confidence-low {
+  background: linear-gradient(135deg, #ff8787 0%, #ff6b6b 100%);
+}
+
+.case-badge {
+  background: #e7f5ff;
+  color: #1864ab;
+  border: 1px solid #74c0fc;
+}
+
+.camera-badge {
+  background: #f3f0ff;
+  color: #5f3dc4;
+  border: 1px solid #b197fc;
+}
+
+.location-badge {
+  background: #fff4e6;
+  color: #d9480f;
+  border: 1px solid #ffa94d;
+}
+
+/* Card Footer */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-id {
+  font-size: 11px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.read-badge {
+  font-size: 11px;
+  color: #51cf66;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-mark-read,
+.btn-view-details {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #f8f9fa;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-mark-read:hover {
+  background: #51cf66;
+  transform: scale(1.1);
+}
+
+.btn-view-details:hover {
+  background: #667eea;
+  transform: scale(1.1);
+}
+
+/* Priority Bar */
+.priority-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .notification-card {
+    padding: 15px;
+  }
+
+  .card-body {
+    flex-direction: column;
+  }
+
+  .image-preview {
+    width: 100%;
+    height: 200px;
+  }
+
+  .notification-title {
+    font-size: 15px;
+  }
+
+  .notification-message {
+    font-size: 13px;
+  }
+
+  .info-badges {
+    gap: 6px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}

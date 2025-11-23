@@ -13,6 +13,8 @@ from .foto import Foto
 from .persona_desaparecida import PersonaDesaparecida
 from .caso import Caso
 from .alerta import Alerta
+from .notificacion import Notificacion, TipoNotificacion, EstadoNotificacion
+from .historial_alertas import HistorialAlertas
 
 # Jerarquía de Usuario
 from .usuario import UsuarioBase, UsuarioRegistrado, UsuarioAdministrador
@@ -24,6 +26,8 @@ __all__ = [
     'TipoFoto',
     'EstadoAlerta',
     'PrioridadAlerta',
+    'TipoNotificacion',
+    'EstadoNotificacion',
 
     # Clases
     'Encoding',
@@ -32,6 +36,8 @@ __all__ = [
     'PersonaDesaparecida',
     'Caso',
     'Alerta',
+    'Notificacion',
+    'HistorialAlertas',
 
     # Usuarios
     'UsuarioBase',

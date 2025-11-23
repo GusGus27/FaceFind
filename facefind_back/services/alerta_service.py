@@ -7,6 +7,7 @@ from datetime import datetime
 from models.alerta import Alerta
 from models.frame import Frame
 from models.enums import EstadoAlerta, PrioridadAlerta
+from models.historial_alertas import HistorialAlertas
 from services.supabase_client import supabase
 
 
@@ -15,6 +16,9 @@ class AlertaService:
     Servicio para crear y gestionar alertas del sistema
     Según diagrama UML
     """
+    
+    # Instancia singleton del historial de alertas
+    _historial = HistorialAlertas()
 
     @staticmethod
     def crearAlerta(
@@ -64,6 +68,13 @@ class AlertaService:
         # Guardar en base de datos
         try:
             alerta_guardada = AlertaService._guardar_en_bd(alerta)
+            
+            # Añadir al historial
+            AlertaService._historial.anadirNoti(alerta_guardada)
+            
+            # Procesar notificaciones
+            AlertaService._procesar_notificaciones(alerta_guardada)
+            
             return alerta_guardada
         except Exception as e:
             print(f"Error guardando alerta: {e}")
@@ -265,3 +276,83 @@ class AlertaService:
         except Exception as e:
             print(f"Error obteniendo estadísticas de alertas: {e}")
             return {"total": 0, "por_estado": {}, "por_prioridad": {}}
+
+    @staticmethod
+    def _procesar_notificaciones(alerta: Alerta) -> None:
+        """
+        Procesa notificaciones para una alerta
+        Envía notificaciones según prioridad
+
+        Args:
+            alerta: Alerta que generó las notificaciones
+        """
+        try:
+            from services.notification_service import notification_service
+            
+            # Obtener emails de administradores
+            admin_emails = AlertaService._obtener_emails_administradores()
+            
+            # Procesar alerta y crear notificaciones
+            notification_service.procesar_alerta(alerta, admin_emails)
+            
+        except Exception as e:
+            print(f"Error procesando notificaciones: {e}")
+
+    @staticmethod
+    def _obtener_emails_administradores() -> List[str]:
+        """
+        Obtiene los emails de todos los administradores
+
+        Returns:
+            Lista de emails
+        """
+        try:
+            response = supabase.table("Usuario")\
+                .select("email")\
+                .eq("rol", "admin")\
+                .execute()
+            
+            if response.data:
+                return [user["email"] for user in response.data if user.get("email")]
+            
+            return []
+        except Exception as e:
+            print(f"Error obteniendo emails de administradores: {e}")
+            return []
+
+    @staticmethod
+    def obtener_historial() -> HistorialAlertas:
+        """
+        Obtiene el historial de alertas
+
+        Returns:
+            Instancia de HistorialAlertas
+        """
+        return AlertaService._historial
+
+    @staticmethod
+    def cargar_historial_desde_bd(limite: int = 100) -> int:
+        """
+        Carga el historial de alertas desde la base de datos
+
+        Args:
+            limite: Número máximo de alertas a cargar
+
+        Returns:
+            Número de alertas cargadas
+        """
+        try:
+            response = supabase.table("Alerta")\
+                .select("*")\
+                .order("timestamp", desc=True)\
+                .limit(limite)\
+                .execute()
+            
+            if response.data:
+                alertas = [Alerta.from_dict(data) for data in response.data]
+                return AlertaService._historial.cargar_desde_lista(alertas)
+            
+            return 0
+        except Exception as e:
+            print(f"Error cargando historial: {e}")
+            return 0
