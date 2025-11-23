@@ -7,8 +7,11 @@ import cv2
 import numpy as np
 import base64
 import traceback
+from datetime import datetime
 
 from models.procesador_facefind import ProcesadorFaceFind
+from models.frame import Frame
+from services.alerta_service import AlertaService
 
 # Crear Blueprint
 detection_bp = Blueprint('detection', __name__)
@@ -159,10 +162,100 @@ def detect_faces():
         # Procesar frame
         results = detection_service.process_frame(frame)
         
+        # Crear alertas y notificaciones para coincidencias válidas
+        alertas_creadas = []
+        notificaciones_creadas = []
+        caso_id = data.get('caso_id')
+        camara_id = data.get('camara_id', 1)
+        
+        for face in results["faces"]:
+            # Crear notificación si similitud >= 40%, independientemente de match_found
+            if face["similarity_percentage"] >= 40.0:
+                try:
+                    # SIEMPRE crear notificación cuando similitud >= 40%
+                    from services.notification_service import NotificationService
+                    
+                    confidence_percent = int(face["similarity_percentage"])
+                    persona_nombre = face["best_match_name"]
+                    timestamp = datetime.now()
+                    
+                    # Determinar type y severity (3 opciones cada uno)
+                    # Type: detection, alert, warning
+                    if face["similarity_percentage"] >= 70:
+                        notification_type = "alert"
+                        severity = "high"
+                    elif face["similarity_percentage"] >= 55:
+                        notification_type = "warning"
+                        severity = "medium"
+                    else:
+                        notification_type = "detection"
+                        severity = "low"
+                    
+                    # Mensajes por defecto según combinación type-severity
+                    message_templates = {
+                        ("alert", "high"): f"⚠️ ALERTA: Detección de alta confianza de {persona_nombre}. Se recomienda verificación inmediata.",
+                        ("warning", "medium"): f"⚡ ADVERTENCIA: Posible detección de {persona_nombre}. Requiere revisión.",
+                        ("detection", "low"): f"👤 DETECCIÓN: Se registró una coincidencia con {persona_nombre}. Pendiente de confirmación."
+                    }
+                    
+                    message = message_templates.get((notification_type, severity), 
+                                                   f"Se detectó {persona_nombre} con {confidence_percent}% de similitud")
+                    
+                    # Crear notificación con usuario_id = 1 (admin por defecto)
+                    notificacion = NotificationService.crear_notificacion(
+                        title=persona_nombre,  # Nombre de la persona detectada
+                        message=message,
+                        severity=severity,
+                        usuario_id=1,  # Admin
+                        notification_type=notification_type
+                    )
+                    
+                    notificaciones_creadas.append({
+                        "notificacion_id": notificacion.get("id"),
+                        "face_id": face["face_id"],
+                        "similarity": face["similarity_percentage"],
+                        "persona": persona_nombre
+                    })
+                    
+                    print(f"✅ Notificación creada: {persona_nombre} ({face['similarity_percentage']:.1f}%)")
+                    
+                    # Si hay caso_id, TAMBIÉN crear alerta
+                    if caso_id:
+                        frame_obj = Frame(imagen=frame)
+                        
+                        alerta = AlertaService.crearAlerta(
+                            timestamp=timestamp,
+                            confidence=face["similarity_percentage"] / 100.0,
+                            latitud=data.get('latitud', 0.0),
+                            longitud=data.get('longitud', 0.0),
+                            camara_id=camara_id,
+                            status="PENDIENTE",
+                            caso_id=caso_id,
+                            frame=frame_obj,
+                            falso_positivo=False
+                        )
+                        
+                        alertas_creadas.append({
+                            "alerta_id": alerta.id,
+                            "face_id": face["face_id"],
+                            "similarity": face["similarity_percentage"],
+                            "persona": persona_nombre
+                        })
+                        
+                        print(f"✅ Alerta creada: ID {alerta.id} - {persona_nombre} ({face['similarity_percentage']:.1f}%)")
+                    
+                except Exception as error:
+                    print(f"❌ Error procesando rostro {face['face_id']}: {error}")
+                    traceback.print_exc()
+        
         # Limpiar resultados para JSON
         clean_results = clean_results_for_json(results)
+        clean_results["alertas_creadas"] = alertas_creadas
+        clean_results["notificaciones_creadas"] = notificaciones_creadas
+        clean_results["total_alertas"] = len(alertas_creadas)
+        clean_results["total_notificaciones"] = len(notificaciones_creadas)
         
-        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados")
+        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados, {len(notificaciones_creadas)} notificaciones creadas, {len(alertas_creadas)} alertas creadas")
         
         return jsonify({
             "success": True,

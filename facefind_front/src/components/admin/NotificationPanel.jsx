@@ -1,77 +1,94 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  getNotifications, 
+  markAsRead, 
+  markAllAsRead, 
+  deleteNotification 
+} from '../../services/notificationService';
 import '../../styles/admin/NotificationPanel.css';
 
 const NotificationPanel = () => {
   const [notifications, setNotifications] = useState([]);
   const [filterType, setFilterType] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulación de notificaciones
-    setNotifications([
-      {
-        id: 1,
-        type: 'match',
-        title: 'Posible coincidencia detectada',
-        message: 'El sistema ha detectado una posible coincidencia en el caso #89',
-        timestamp: '2025-10-05 14:30',
-        isRead: false,
-        severity: 'high'
-      },
-      {
-        id: 2,
-        type: 'system',
-        title: 'Actualización del sistema',
-        message: 'Nueva versión del algoritmo de reconocimiento disponible',
-        timestamp: '2025-10-05 12:00',
-        isRead: false,
-        severity: 'medium'
-      },
-      {
-        id: 3,
-        type: 'case',
-        title: 'Nuevo caso reportado',
-        message: 'Se ha reportado un nuevo caso de persona desaparecida',
-        timestamp: '2025-10-05 10:15',
-        isRead: true,
-        severity: 'high'
-      },
-      {
-        id: 4,
-        type: 'user',
-        title: 'Solicitud de acceso',
-        message: 'Un nuevo usuario solicita acceso al sistema',
-        timestamp: '2025-10-05 09:30',
-        isRead: true,
-        severity: 'low'
-      },
-      {
-        id: 5,
-        type: 'alert',
-        title: 'Alerta de seguridad',
-        message: 'Intento de acceso no autorizado detectado',
-        timestamp: '2025-10-04 22:45',
-        isRead: false,
-        severity: 'urgent'
-      }
-    ]);
+    loadNotifications();
+    // Auto-refresh cada 30 segundos
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  const loadNotifications = async () => {
+    try {
+      setError(null);
+      const data = await getNotifications({ limit: 50 });
+      setNotifications(data);
+    } catch (err) {
+      console.error('Error loading notifications:', err);
+      setError('Error al cargar notificaciones');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mapear tipo de notificación desde el campo 'type' o inferirlo del mensaje
+  const getNotificationType = (notification) => {
+    // Si tiene el campo type directamente, usarlo
+    if (notification.type) {
+      const typeMap = {
+        'detection': 'match',
+        'alert': 'alert',
+        'warning': 'alert'
+      };
+      return typeMap[notification.type] || 'system';
+    }
+    
+    // Fallback: inferir del contenido
+    if (notification.title.includes('coincidencia') || notification.title.includes('Coincidencia')) {
+      return 'match';
+    } else if (notification.title.includes('caso') || notification.title.includes('Caso')) {
+      return 'case';
+    } else if (notification.title.includes('sistema') || notification.title.includes('Sistema')) {
+      return 'system';
+    } else if (notification.title.includes('alerta') || notification.title.includes('Alerta')) {
+      return 'alert';
+    }
+    return 'match';  // Por defecto, es una detección
+  };
 
   const filteredNotifications = filterType === 'all'
     ? notifications
-    : notifications.filter(n => n.type === filterType);
+    : notifications.filter(n => getNotificationType(n) === filterType);
 
-  const handleMarkAsRead = (notificationId) => {
-    setNotifications(notifications.map(n =>
-      n.id === notificationId ? { ...n, isRead: true } : n
-    ));
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await markAsRead(notificationId);
+      setNotifications(notifications.map(n =>
+        n.id === notificationId ? { ...n, isRead: true } : n
+      ));
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
   };
 
-  const handleDeleteNotification = (notificationId) => {
-    setNotifications(notifications.filter(n => n.id !== notificationId));
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      await deleteNotification(notificationId);
+      setNotifications(notifications.filter(n => n.id !== notificationId));
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
   };
 
   const getNotificationIcon = (type) => {
@@ -85,11 +102,43 @@ const NotificationPanel = () => {
     }
   };
 
-  const getSeverityClass = (severity) => {
-    return `notification-item ${severity} ${!notifications.find(n => n.id)?.isRead ? 'unread' : ''}`;
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('es-ES', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  if (loading) {
+    return (
+      <div className="notification-panel">
+        <div className="notification-header">
+          <h1>Panel de Notificaciones</h1>
+          <p>Cargando notificaciones...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="notification-panel">
+        <div className="notification-header">
+          <h1>Panel de Notificaciones</h1>
+          <p className="error-message">{error}</p>
+        </div>
+        <button onClick={loadNotifications} className="btn-reload">
+          🔄 Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="notification-panel">
@@ -98,9 +147,14 @@ const NotificationPanel = () => {
           <h1>Panel de Notificaciones</h1>
           <p>Tienes {unreadCount} notificaciones sin leer</p>
         </div>
-        <button className="btn-mark-all" onClick={handleMarkAllAsRead}>
-          ✓ Marcar todas como leídas
-        </button>
+        <div className="notification-header-actions">
+          <button className="btn-refresh" onClick={loadNotifications} title="Recargar notificaciones">
+            🔄 Actualizar
+          </button>
+          <button className="btn-mark-all" onClick={handleMarkAllAsRead}>
+            ✓ Marcar todas como leídas
+          </button>
+        </div>
       </div>
 
       <div className="notification-filters">
@@ -137,39 +191,50 @@ const NotificationPanel = () => {
       </div>
 
       <div className="notifications-list">
-        {filteredNotifications.map(notification => (
-          <div
-            key={notification.id}
-            className={`notification-item ${notification.severity} ${!notification.isRead ? 'unread' : ''}`}
-          >
-            <div className="notification-icon">
-              {getNotificationIcon(notification.type)}
-            </div>
-            <div className="notification-content">
-              <h3>{notification.title}</h3>
-              <p>{notification.message}</p>
-              <span className="notification-time">{notification.timestamp}</span>
-            </div>
-            <div className="notification-actions">
-              {!notification.isRead && (
+        {filteredNotifications.map(notification => {
+          const notifType = getNotificationType(notification);
+          return (
+            <div
+              key={notification.id}
+              className={`notification-item ${notification.severity} ${!notification.isRead ? 'unread' : ''}`}
+            >
+              <div className="notification-icon">
+                {getNotificationIcon(notifType)}
+              </div>
+              <div className="notification-content">
+                <h3>{notification.title}</h3>
+                <p>{notification.message}</p>
+                <div className="notification-meta">
+                  <span className="notification-time">{formatTimestamp(notification.timestamp)}</span>
+                  <span className={`notification-badge severity-${notification.severity}`}>
+                    Severity: {notification.severity}
+                  </span>
+                  <span className={`notification-badge type-${notification.type || notifType}`}>
+                    Type: {notification.type || notifType}
+                  </span>
+                </div>
+              </div>
+              <div className="notification-actions">
+                {!notification.isRead && (
+                  <button
+                    className="btn-read"
+                    onClick={() => handleMarkAsRead(notification.id)}
+                    title="Marcar como leída"
+                  >
+                    ✓
+                  </button>
+                )}
                 <button
-                  className="btn-read"
-                  onClick={() => handleMarkAsRead(notification.id)}
-                  title="Marcar como leída"
+                  className="btn-delete-notification"
+                  onClick={() => handleDeleteNotification(notification.id)}
+                  title="Eliminar"
                 >
-                  ✓
+                  ✕
                 </button>
-              )}
-              <button
-                className="btn-delete-notification"
-                onClick={() => handleDeleteNotification(notification.id)}
-                title="Eliminar"
-              >
-                ✕
-              </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {filteredNotifications.length === 0 && (
