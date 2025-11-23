@@ -117,7 +117,6 @@ class SistemaFaceFind:
                     "traceback": error_trace if self.app.debug else None
                 }), 500
 
-    # ✅ Limpiar resultados para JSON
     def clean_results_for_json(self, results):
         def convert(obj):
             if isinstance(obj, np.generic):
@@ -129,6 +128,10 @@ class SistemaFaceFind:
         clean = {
             "timestamp": float(results["timestamp"]),
             "faces_detected": int(results["faces_detected"]),
+            "total_faces_detected": int(results.get("total_faces_detected", results["faces_detected"])),
+            "faces_processed": int(results.get("faces_processed", results["faces_detected"])),
+            "max_faces_limit": int(results.get("max_faces_limit", 3)),
+            "processing_time_ms": float(results.get("processing_time_ms", 0)),
             "faces": []
         }
 
@@ -149,6 +152,11 @@ class SistemaFaceFind:
                 "distance": float(face["distance"]),
                 "top_matches": face["all_similarities"]
             }
+            
+            # Agregar métrica de calidad si existe
+            if "quality_score" in face:
+                clean_face["quality_score"] = float(face["quality_score"])
+            
             clean["faces"].append(clean_face)
 
         return clean
