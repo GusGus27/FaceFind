@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { exportReportPDF, exportReportExcel, exportReportCSV } from '../../services/statisticsService';
+import { exportReportPDF, exportReportExcel } from '../../services/statisticsService';
 import '../../styles/admin/ExportReportModal.css';
 
 const ExportReportModal = ({ onClose, overview }) => {
@@ -24,10 +24,6 @@ const ExportReportModal = ({ onClose, overview }) => {
         case 'excel':
           blob = await exportReportExcel(reportType);
           filename = `reporte_facefind_${reportType}_${new Date().getTime()}.xlsx`;
-          break;
-        case 'csv':
-          blob = await exportReportCSV('cases');
-          filename = `datos_facefind_${new Date().getTime()}.csv`;
           break;
         default:
           throw new Error('Tipo de exportación no válido');
@@ -78,12 +74,6 @@ const ExportReportModal = ({ onClose, overview }) => {
                 onClick={() => setExportType('excel')}
               >
                 📊 Excel
-              </button>
-              <button
-                className={`type-button ${exportType === 'csv' ? 'active' : ''}`}
-                onClick={() => setExportType('csv')}
-              >
-                📋 CSV
               </button>
             </div>
           </div>
@@ -153,12 +143,6 @@ const ExportReportModal = ({ onClose, overview }) => {
             {exporting ? '⏳ Exportando...' : '📥 Exportar'}
           </button>
         </div>
-
-        {exportType !== 'csv' && (
-          <div className="modal-note">
-            <p><strong>Nota:</strong> La funcionalidad de exportación PDF/Excel estará disponible próximamente. Por ahora, los datos se pueden exportar en formato CSV.</p>
-          </div>
-        )}
       </div>
     </div>
   );

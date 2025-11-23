@@ -150,6 +150,7 @@
 .heatmap-info p {
   margin: 0;
   font-weight: 600;
+  color: white;
 }
 
 @media (max-width: 768px) {
