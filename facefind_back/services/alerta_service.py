@@ -1,6 +1,9 @@
 """
 AlertaService - Servicio para gestión de alertas
-Según diagrama UML: +crearAlerta(Date,float,String,ICamera,String,Frame):Alerta
+Según diagrama UML: +crearAlerta(Date,float,float,float,ICamera,String,Frame,boolean):Alerta
+                    +getAlertasPorFecha(Date,Date):List<Alerta>
+                    +getAlertasPorCamara(ICamera):List<Alerta>
+                    +getAlertasPorCaso(Caso):List<Alerta>
 """
 from typing import Optional, List, Dict
 from datetime import datetime
@@ -20,22 +23,30 @@ class AlertaService:
     def crearAlerta(
         timestamp: datetime,
         confidence: float,
-        ubicacion: str,
+        latitud: float,
+        longitud: float,
         camara_id: int,
+        status: str,
         caso_id: int,
-        frame: Frame
+        frame: Frame,
+        falso_positivo: bool = False
     ) -> Alerta:
         """
         Crea una nueva alerta en el sistema
-        Según UML: +crearAlerta(Date,float,String,ICamera,String,Frame):Alerta
+        Según UML: +crearAlerta(timestamp:Date, confidence:float, latitud:float, 
+                                longitud:float, camera:ICamera, status:String, 
+                                imagenCaptura:Frame, falsoPositivo:boolean):Alerta
 
         Args:
             timestamp: Fecha y hora de la detección
             confidence: Nivel de confianza/similitud (0.0 - 1.0)
-            ubicacion: Ubicación de la cámara
+            latitud: Coordenada latitud de detección
+            longitud: Coordenada longitud de detección
             camara_id: ID de la cámara (ICamera en UML)
+            status: Estado de la alerta (String en UML)
             caso_id: ID del caso asociado
-            frame: Frame capturado
+            frame: Frame capturado (imagenCaptura en UML)
+            falso_positivo: Boolean indicando si es falso positivo
 
         Returns:
             Alerta creada
@@ -48,6 +59,18 @@ class AlertaService:
         else:
             prioridad = PrioridadAlerta.BAJA
 
+        # Convertir status string a EstadoAlerta
+        estado = EstadoAlerta.from_string(status) if status else EstadoAlerta.PENDIENTE
+
+        # Obtener ubicación de la cámara
+        ubicacion = None
+        try:
+            camara_response = supabase.table("Camara").select("ubicacion").eq("id", camara_id).single().execute()
+            if camara_response.data:
+                ubicacion = camara_response.data.get("ubicacion")
+        except Exception as e:
+            print(f"⚠️ No se pudo obtener ubicación de cámara: {e}")
+
         # Crear objeto Alerta
         alerta = Alerta(
             caso_id=caso_id,
@@ -55,10 +78,13 @@ class AlertaService:
             timestamp=timestamp,
             similitud=confidence,
             prioridad=prioridad,
-            estado=EstadoAlerta.PENDIENTE,
+            estado=estado,
             ubicacion=ubicacion,
+            latitud=latitud,
+            longitud=longitud,
             imagen_captura=frame,
-            imagen_bytes=frame.to_bytes() if frame else None
+            imagen_bytes=frame.to_bytes() if frame else None,
+            falso_positivo=falso_positivo
         )
 
         # Guardar en base de datos
@@ -86,10 +112,19 @@ class AlertaService:
             "timestamp": alerta.timestamp.isoformat() if isinstance(alerta.timestamp, datetime) else alerta.timestamp,
             "similitud": alerta.similitud,
             "ubicacion": alerta.ubicacion,
+            "latitud": alerta.latitud,
+            "longitud": alerta.longitud,
             "estado": alerta.estado.to_string(),
             "prioridad": alerta.prioridad.to_string(),
-            "imagen": alerta.imagen_bytes
+            "imagen": alerta.imagen_bytes,
+            "falso_positivo": alerta.falso_positivo
         }
+
+        # Agregar horarios si existen
+        if alerta.horario_inicio:
+            data["horario_inicio"] = alerta.horario_inicio.isoformat() if isinstance(alerta.horario_inicio, datetime) else alerta.horario_inicio
+        if alerta.horario_fin:
+            data["horario_fin"] = alerta.horario_fin.isoformat() if isinstance(alerta.horario_fin, datetime) else alerta.horario_fin
 
         response = supabase.table("Alerta").insert(data).execute()
 
@@ -265,3 +300,223 @@ class AlertaService:
         except Exception as e:
             print(f"Error obteniendo estadísticas de alertas: {e}")
             return {"total": 0, "por_estado": {}, "por_prioridad": {}}
+
+    @staticmethod
+    def getAlertasPorFecha(fecha_inicio: datetime, fecha_fin: datetime) -> List[Alerta]:
+        """
+        Obtiene alertas filtradas por rango de fechas
+        Según UML: +getAlertasPorFecha(inicio:Date, fin:Date):List<Alerta>
+
+        Args:
+            fecha_inicio: Fecha de inicio del rango
+            fecha_fin: Fecha de fin del rango
+
+        Returns:
+            Lista de alertas en el rango especificado
+        """
+        try:
+            # Query con JOIN para obtener datos de la cámara (ubicación, latitud, longitud)
+            response = supabase.table("Alerta")\
+                .select("*, Camara(id, ubicacion, latitud, longitud, ip, type)")\
+                .gte("timestamp", fecha_inicio.isoformat())\
+                .lte("timestamp", fecha_fin.isoformat())\
+                .order("timestamp", desc=True)\
+                .execute()
+
+            if not response.data:
+                return []
+
+            # Enriquecer alertas con datos de cámara
+            alertas = []
+            for data in response.data:
+                # Extraer datos de cámara del JOIN
+                if "Camara" in data and data["Camara"]:
+                    camara = data["Camara"]
+                    data["latitud"] = camara.get("latitud") or data.get("latitud")
+                    data["longitud"] = camara.get("longitud") or data.get("longitud")
+                    if not data.get("ubicacion"):
+                        data["ubicacion"] = camara.get("ubicacion")
+                
+                alertas.append(Alerta.from_dict(data))
+            
+            return alertas
+        except Exception as e:
+            print(f"Error obteniendo alertas por fecha: {e}")
+            return []
+
+    @staticmethod
+    def getAlertasPorCamara(camara_id: int) -> List[Alerta]:
+        """
+        Obtiene todas las alertas de una cámara específica
+        Según UML: +getAlertasPorCamara(camara:ICamera):List<Alerta>
+
+        Args:
+            camara_id: ID de la cámara (ICamera en UML)
+
+        Returns:
+            Lista de alertas de la cámara
+        """
+        try:
+            # Query con JOIN para obtener datos de la cámara
+            response = supabase.table("Alerta")\
+                .select("*, Camara(id, ubicacion, latitud, longitud, ip, type)")\
+                .eq("camara_id", camara_id)\
+                .order("timestamp", desc=True)\
+                .execute()
+
+            if not response.data:
+                return []
+
+            # Enriquecer alertas con datos de cámara
+            alertas = []
+            for data in response.data:
+                if "Camara" in data and data["Camara"]:
+                    camara = data["Camara"]
+                    data["latitud"] = camara.get("latitud") or data.get("latitud")
+                    data["longitud"] = camara.get("longitud") or data.get("longitud")
+                    if not data.get("ubicacion"):
+                        data["ubicacion"] = camara.get("ubicacion")
+                
+                alertas.append(Alerta.from_dict(data))
+            
+            return alertas
+        except Exception as e:
+            print(f"Error obteniendo alertas de cámara: {e}")
+            return []
+
+    @staticmethod
+    def getAlertasPorCaso(caso_id: int) -> List[Alerta]:
+        """
+        Obtiene todas las alertas de un caso (implementación OOP según UML)
+        Según UML: +getAlertasPorCaso(caso:Caso):List<Alerta>
+
+        Args:
+            caso_id: ID del caso
+
+        Returns:
+            Lista de alertas del caso
+        """
+        try:
+            # Query con JOIN para obtener datos de la cámara
+            response = supabase.table("Alerta")\
+                .select("*, Camara(id, ubicacion, latitud, longitud, ip, type)")\
+                .eq("caso_id", caso_id)\
+                .order("timestamp", desc=True)\
+                .execute()
+
+            if not response.data:
+                return []
+
+            # Enriquecer alertas con datos de cámara
+            alertas = []
+            for data in response.data:
+                if "Camara" in data and data["Camara"]:
+                    camara = data["Camara"]
+                    data["latitud"] = camara.get("latitud") or data.get("latitud")
+                    data["longitud"] = camara.get("longitud") or data.get("longitud")
+                    if not data.get("ubicacion"):
+                        data["ubicacion"] = camara.get("ubicacion")
+                
+                alertas.append(Alerta.from_dict(data))
+            
+            return alertas
+        except Exception as e:
+            print(f"Error obteniendo alertas del caso: {e}")
+            return []
+
+    @staticmethod
+    def obtener_alertas_geojson(caso_id: Optional[int] = None, 
+                                 fecha_inicio: Optional[datetime] = None,
+                                 fecha_fin: Optional[datetime] = None,
+                                 camara_id: Optional[int] = None) -> Dict:
+        """
+        Obtiene alertas en formato GeoJSON para visualización en mapas
+        
+        Args:
+            caso_id: Filtro opcional por caso
+            fecha_inicio: Filtro opcional por fecha inicio
+            fecha_fin: Filtro opcional por fecha fin
+            camara_id: Filtro opcional por cámara
+            
+        Returns:
+            FeatureCollection GeoJSON con las alertas
+        """
+        try:
+            # Construir query base con JOIN
+            query = supabase.table("Alerta")\
+                .select("*, Camara(id, ubicacion, latitud, longitud, ip, type), Caso(id, status, PersonaDesaparecida(nombre_completo))")
+
+            # Aplicar filtros
+            if caso_id:
+                query = query.eq("caso_id", caso_id)
+            if camara_id:
+                query = query.eq("camara_id", camara_id)
+            if fecha_inicio:
+                query = query.gte("timestamp", fecha_inicio.isoformat())
+            if fecha_fin:
+                query = query.lte("timestamp", fecha_fin.isoformat())
+
+            response = query.order("timestamp", desc=True).execute()
+
+            if not response.data:
+                return {
+                    "type": "FeatureCollection",
+                    "features": []
+                }
+
+            # Convertir a GeoJSON
+            features = []
+            for data in response.data:
+                # Obtener coordenadas de la cámara
+                lat = data.get("latitud")
+                lon = data.get("longitud")
+                
+                if "Camara" in data and data["Camara"]:
+                    camara = data["Camara"]
+                    lat = camara.get("latitud") or lat
+                    lon = camara.get("longitud") or lon
+
+                # Solo incluir si tiene coordenadas válidas
+                if lat is not None and lon is not None:
+                    # Obtener nombre de persona desaparecida
+                    persona_nombre = "Desconocido"
+                    if "Caso" in data and data["Caso"]:
+                        caso = data["Caso"]
+                        if "PersonaDesaparecida" in caso and caso["PersonaDesaparecida"]:
+                            persona_nombre = caso["PersonaDesaparecida"].get("nombre_completo", "Desconocido")
+
+                    feature = {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [float(lon), float(lat)]  # GeoJSON usa [lon, lat]
+                        },
+                        "properties": {
+                            "id": data.get("id"),
+                            "caso_id": data.get("caso_id"),
+                            "camara_id": data.get("camara_id"),
+                            "timestamp": data.get("timestamp"),
+                            "similitud": float(data.get("similitud", 0)),
+                            "confidence": float(data.get("similitud", 0)),
+                            "estado": data.get("estado"),
+                            "prioridad": data.get("prioridad"),
+                            "ubicacion": data.get("ubicacion"),
+                            "falso_positivo": data.get("falso_positivo", False),
+                            "persona_nombre": persona_nombre
+                        }
+                    }
+                    features.append(feature)
+
+            return {
+                "type": "FeatureCollection",
+                "features": features
+            }
+
+        except Exception as e:
+            print(f"Error generando GeoJSON de alertas: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "type": "FeatureCollection",
+                "features": []
+            }
