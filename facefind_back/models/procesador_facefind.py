@@ -28,6 +28,7 @@ class ProcesadorFaceFind:
         self.supabase: Client = self._init_supabase()
         self.known_encodings = []
         self.known_names = []
+        self.known_caso_ids = []  # IDs de casos asociados a cada encoding
         
         # Thread pool para procesamiento paralelo
         if self.enable_parallel:
@@ -87,18 +88,20 @@ class ProcesadorFaceFind:
         for row in response.data:
             vector_data = row.get("vector")
             
-            # Intentar obtener el nombre de la persona desaparecida
+            # Intentar obtener el nombre de la persona desaparecida y caso_id
             nombre = None
+            caso_id = None
             try:
                 foto_ref = row.get("FotoReferencia")
                 if foto_ref and isinstance(foto_ref, dict):
+                    caso_id = foto_ref.get("caso_id")  # Obtener caso_id
                     caso = foto_ref.get("Caso")
                     if caso and isinstance(caso, dict):
                         persona = caso.get("PersonaDesaparecida")
                         if persona and isinstance(persona, dict):
                             nombre = persona.get("nombre_completo")
             except Exception as e:
-                print(f"⚠️ Error obteniendo nombre para embedding {row.get('id')}: {e}")
+                print(f"⚠️ Error obteniendo datos para embedding {row.get('id')}: {e}")
             
             # Si no se pudo obtener el nombre, usar ID como fallback
             if not nombre:
@@ -122,7 +125,8 @@ class ProcesadorFaceFind:
                 if vector is not None and len(vector) > 0:
                     self.known_encodings.append(vector)
                     self.known_names.append(nombre)
-                    print(f"  ✅ Cargado: {nombre} (ID: {row.get('id')})")
+                    self.known_caso_ids.append(caso_id)  # Guardar caso_id
+                    print(f"  ✅ Cargado: {nombre} (Caso ID: {caso_id}, Embedding ID: {row.get('id')})")
             except Exception as e:
                 print(f"⚠️ No se pudo procesar vector id={row.get('id')}: {e}")
 
@@ -376,12 +380,14 @@ class ProcesadorFaceFind:
         best_match_index = np.argmin(distances)
         best_distance = distances[best_match_index]
         best_name = self.known_names[best_match_index]
+        best_caso_id = self.known_caso_ids[best_match_index]  # Obtener caso_id del match
 
         similarities = [
             {
                 "name": self.known_names[i],
                 "similarity_percentage": round((1 - d) * 100, 2),
-                "distance": round(float(d), 4)
+                "distance": round(float(d), 4),
+                "caso_id": self.known_caso_ids[i]  # Incluir caso_id en similaridades
             }
             for i, d in enumerate(distances)
         ]
@@ -389,6 +395,7 @@ class ProcesadorFaceFind:
         return {
             "match_found": best_distance <= self.tolerance,
             "best_match_name": best_name,
+            "caso_id": best_caso_id,  # ✅ Retornar caso_id automáticamente
             "similarity_percentage": round((1 - best_distance) * 100, 2),
             "distance": round(float(best_distance), 4),
             "all_similarities": sorted(similarities, key=lambda x: x["distance"])[:3]
@@ -397,10 +404,11 @@ class ProcesadorFaceFind:
     # ======================================================
     # 🧩 Agregar nuevos rostros en memoria
     # ======================================================
-    def add_new_face(self, encoding, name):
+    def add_new_face(self, encoding, name, caso_id=None):
         self.known_encodings.append(encoding)
         self.known_names.append(name)
-        print(f"🆕 Agregado nuevo rostro: {name}")
+        self.known_caso_ids.append(caso_id)
+        print(f"🆕 Agregado nuevo rostro: {name} (Caso ID: {caso_id})")
     
     def set_max_faces(self, max_faces: int):
         """Ajusta dinámicamente el número máximo de rostros a procesar"""

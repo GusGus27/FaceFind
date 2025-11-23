@@ -49,9 +49,42 @@ const CameraManager: React.FC = () => {
         fps: 30
     });
 
+    // Estados para alertas automáticas
+    const [casosActivos, setCasosActivos] = useState<any[]>([]);
+    const [casoSeleccionado, setCasoSeleccionado] = useState<number | null>(null);
+    const [ubicacionCamara, setUbicacionCamara] = useState<string>('');
+    const [camaraId, setCamaraId] = useState<number>(1);
+
     useEffect(() => {
         loadCameras();
         loadStats();
+    }, []);
+
+    // Cargar casos activos al montar
+    useEffect(() => {
+        fetch('http://localhost:5000/casos/')
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Casos recibidos del backend:', data);
+                
+                // El backend puede retornar { data: [...], count: X } o directamente [...]
+                const casos = Array.isArray(data) ? data : (data.data || []);
+                
+                const activos = casos.filter((c: any) => c.status === 'activo');
+                console.log('Casos activos filtrados:', activos);
+                
+                setCasosActivos(activos);
+                if (activos.length > 0) {
+                    setCasoSeleccionado(activos[0].id);
+                }
+            })
+            .catch(err => {
+                console.error('Error cargando casos:', err);
+                setCasosActivos([]);
+            });
     }, []);
 
     // Sincronizar selectedDeviceId con formData.url cuando se abre el modal de edición
