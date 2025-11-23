@@ -1,0 +1,55 @@
+/* Camera Grid Styles */
+.camera-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 28px;
+    padding: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.camera-grid-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 40px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.empty-state h3 {
+    margin: 0 0 10px 0;
+    color: #666;
+    font-size: 1.3rem;
+}
+
+.empty-state p {
+    margin: 0;
+    color: #999;
+    font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .camera-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .camera-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 15px;
+    }
+}
