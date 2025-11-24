@@ -17,19 +17,6 @@ class CameraService:
 
     @staticmethod
     def create_camera(data: Dict) -> Dict:
-        """
-        Crea una nueva cámara usando OOP
-
-        Args:
-            data: Diccionario con los datos de la cámara
-
-        Returns:
-            Dict: Cámara creada en formato JSON
-
-        Raises:
-            ValueError: Si faltan campos obligatorios o datos inválidos
-            Exception: Si hay error al guardar en DB
-        """
         try:
             # Validar campos obligatorios
             if not data.get("nombre"):
@@ -125,12 +112,6 @@ class CameraService:
 
     @staticmethod
     def get_all_cameras() -> List[Dict]:
-        """
-        Obtiene todas las cámaras del sistema
-
-        Returns:
-            List[Dict]: Lista de cámaras en formato JSON
-        """
         try:
             response = supabase.table("Camara")\
                 .select("*")\
@@ -157,18 +138,6 @@ class CameraService:
 
     @staticmethod
     def get_camera_by_id(camera_id: int) -> Dict:
-        """
-        Obtiene una cámara por su ID
-
-        Args:
-            camera_id: ID de la cámara
-
-        Returns:
-            Dict: Cámara en formato JSON
-
-        Raises:
-            ValueError: Si la cámara no existe
-        """
         try:
             response = supabase.table("Camara")\
                 .select("*")\
@@ -197,19 +166,6 @@ class CameraService:
 
     @staticmethod
     def update_camera(camera_id: int, data: Dict) -> Dict:
-        """
-        Actualiza una cámara existente
-
-        Args:
-            camera_id: ID de la cámara a actualizar
-            data: Diccionario con los datos a actualizar
-
-        Returns:
-            Dict: Cámara actualizada en formato JSON
-
-        Raises:
-            ValueError: Si la cámara no existe o datos inválidos
-        """
         try:
             # Obtener cámara actual
             current_camera = CameraService.get_camera_by_id(camera_id)
