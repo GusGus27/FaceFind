@@ -1,0 +1,183 @@
+/* LocationPicker.css - Estilos para selector de ubicación en mapa */
+
+.location-picker {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.location-picker-header {
+    margin-bottom: 20px;
+}
+
+.location-picker-header h3 {
+    color: #2c3e50;
+    margin: 0 0 8px 0;
+    font-size: 1.3rem;
+}
+
+.helper-text {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Barra de búsqueda */
+.location-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn-search,
+.btn-current-location {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-search {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.btn-search:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-search:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-current-location {
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+    color: white;
+}
+
+.btn-current-location:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+/* Contenedor del mapa */
+.map-container-picker {
+    margin: 15px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Información de ubicación */
+.location-info {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.coord-display {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 10px;
+}
+
+.coord-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.coord-label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.coord-value {
+    color: #34495e;
+    font-family: 'Courier New', monospace;
+    background: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.address-display {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.address-label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.address-value {
+    color: #34495e;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .location-search {
+        flex-direction: column;
+    }
+
+    .search-input {
+        width: 100%;
+    }
+
+    .btn-search,
+    .btn-current-location {
+        width: 100%;
+    }
+
+    .coord-display {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .address-display {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+/* Estilos para Leaflet marker popup personalizado */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+}
+
+.leaflet-popup-content {
+    margin: 10px;
+    font-size: 0.9rem;
+}

@@ -72,12 +72,53 @@ class EvidenciaService:
             
             print(f"   Response upload: {response}")
             
-            # Obtener URL pública
-            imagen_url = supabase_storage.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+            # Generar URL firmada (válida por 1 año = 31536000 segundos)
+            # Esto funciona independientemente de si el bucket es público o privado
+            imagen_url = None
+            try:
+                signed_response = supabase_storage.storage.from_(BUCKET_NAME).create_signed_url(
+                    storage_path,
+                    expires_in=31536000  # 1 año en segundos
+                )
+                
+                print(f"   DEBUG - Signed response type: {type(signed_response)}")
+                print(f"   DEBUG - Signed response: {signed_response}")
+                
+                # Extraer URL del response (puede venir como dict o string)
+                if isinstance(signed_response, dict):
+                    # Intentar diferentes claves posibles
+                    imagen_url = (
+                        signed_response.get('signedURL') or 
+                        signed_response.get('signedUrl') or 
+                        signed_response.get('url') or
+                        signed_response.get('path')
+                    )
+                    print(f"   DEBUG - URL extraída de dict: {imagen_url}")
+                elif isinstance(signed_response, str):
+                    imagen_url = signed_response
+                    print(f"   DEBUG - URL es string directo: {imagen_url}")
+                
+                # Verificar que tengamos una URL válida
+                if not imagen_url or not isinstance(imagen_url, str):
+                    raise Exception(f"No se pudo extraer URL válida del response: {signed_response}")
+                    
+            except Exception as e:
+                print(f"   ⚠️  Error generando URL firmada: {e}")
+                print(f"   Intentando URL pública...")
+                # Fallback a URL pública
+                imagen_url = supabase_storage.storage.from_(BUCKET_NAME).get_public_url(storage_path)
+                print(f"   DEBUG - URL pública: {imagen_url}")
+            
+            # Validación final
+            if not isinstance(imagen_url, str):
+                print(f"   ⚠️  ADVERTENCIA: imagen_url no es string: {type(imagen_url)}")
+                print(f"   Contenido: {imagen_url}")
+                # Intentar convertir a string si es un objeto
+                imagen_url = str(imagen_url) if imagen_url else None
             
             print(f"✅ Evidencia guardada exitosamente!")
             print(f"   Path: {storage_path}")
-            print(f"   URL: {imagen_url}")
+            print(f"   URL final (tipo={type(imagen_url)}): {imagen_url}")
             return imagen_url
             
         except Exception as e:

@@ -100,7 +100,13 @@ class AlertaService:
                 camara_id=camara_id
             )
             if imagen_url:
-                print(f"✅ Evidencia guardada con URL: {imagen_url}")
+                # Validar que sea un string
+                if not isinstance(imagen_url, str):
+                    print(f"⚠️ ADVERTENCIA: imagen_url no es string, es {type(imagen_url)}")
+                    print(f"   Contenido: {imagen_url}")
+                    imagen_url = None  # Resetear si no es válida
+                else:
+                    print(f"✅ Evidencia guardada con URL (string): {imagen_url}")
             else:
                 print(f"⚠️ No se obtuvo URL de evidencia (retornó None)")
         except Exception as ev_error:
@@ -143,6 +149,12 @@ class AlertaService:
         Returns:
             Alerta con ID asignado
         """
+        # Validar que imagen_url sea string o None
+        if imagen_url is not None and not isinstance(imagen_url, str):
+            print(f"⚠️ ADVERTENCIA en _guardar_en_bd: imagen_url no es string: {type(imagen_url)}")
+            print(f"   Contenido: {imagen_url}")
+            imagen_url = None  # Resetear a None si no es válida
+        
         # Convertir imagen_bytes a base64 string si existe
         import base64
         imagen_base64 = None
@@ -160,9 +172,11 @@ class AlertaService:
             "estado": alerta.estado.to_string(),
             "prioridad": alerta.prioridad.to_string(),
             "imagen": imagen_base64,  # Base64 string o null
-            "imagen_url": imagen_url,  # ✅ URL de Storage
+            "imagen_url": imagen_url,  # ✅ URL de Storage (string o null)
             "falso_positivo": alerta.falso_positivo
         }
+        
+        print(f"   DEBUG _guardar_en_bd - imagen_url tipo: {type(imagen_url)}, valor: {imagen_url[:100] if imagen_url else None}")
 
         # Agregar horarios si existen
         if alerta.horario_inicio:
@@ -545,10 +559,20 @@ class AlertaService:
                             "estado": data.get("estado"),
                             "prioridad": data.get("prioridad"),
                             "ubicacion": data.get("ubicacion"),
+                            "latitud": float(lat),
+                            "longitud": float(lon),
                             "falso_positivo": data.get("falso_positivo", False),
-                            "persona_nombre": persona_nombre
+                            "persona_nombre": persona_nombre,
+                            "imagen_url": data.get("imagen_url")  # ✅ URL de la imagen de evidencia
                         }
                     }
+                    
+                    # Debug: verificar imagen_url
+                    if not data.get("imagen_url"):
+                        print(f"⚠️  Alerta {data.get('id')} sin imagen_url en BD")
+                    else:
+                        print(f"✅ Alerta {data.get('id')} con imagen_url: {data.get('imagen_url')[:80]}...")
+                    
                     features.append(feature)
 
             return {

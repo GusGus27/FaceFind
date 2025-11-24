@@ -365,12 +365,22 @@ def stream_camera(camera_id):
             if camera_type == "USB":
                 # Obtener el índice de la cámara desde el campo url
                 url = camera_data.get("url", "0")
+                device_index = 0  # Valor por defecto
+                
                 try:
                     # El índice está guardado como string en el campo url
-                    device_index = int(url)
-                    print(f"📹 Intentando abrir cámara USB con índice: {device_index}")
-                except ValueError:
-                    print(f"⚠️ URL no es un índice válido: {url}, usando índice 0")
+                    # Puede ser "0", "1", "2", etc. o un deviceId del navegador
+                    if url.isdigit():
+                        device_index = int(url)
+                    else:
+                        # Si no es un número, intentar extraer el índice del final
+                        # o usar el primer dispositivo disponible
+                        print(f"⚠️ URL '{url}' no es un índice numérico, usando 0")
+                        device_index = 0
+                    
+                    print(f"📹 Abriendo cámara USB con índice: {device_index} (desde url='{url}')")
+                except (ValueError, AttributeError) as e:
+                    print(f"⚠️ Error parseando URL '{url}': {e}, usando índice 0")
                     device_index = 0
                 
                 camera = cv2.VideoCapture(device_index)
@@ -413,6 +423,14 @@ def stream_camera(camera_id):
     
     try:
         camera_data = CameraService.get_camera_by_id(camera_id)
+        
+        print(f"\n{'='*60}")
+        print(f"📹 INICIANDO STREAM DE CÁMARA #{camera_id}")
+        print(f"   Nombre: {camera_data.get('nombre', 'N/A')}")
+        print(f"   Tipo: {camera_data.get('type', 'N/A')}")
+        print(f"   URL/DeviceId guardado: '{camera_data.get('url', 'N/A')}'")
+        print(f"   Ubicación: {camera_data.get('ubicacion', 'N/A')}")
+        print(f"{'='*60}\n")
         
         if not camera_data.get("activa"):
             return jsonify({

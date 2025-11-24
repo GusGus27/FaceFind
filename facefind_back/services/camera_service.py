@@ -82,9 +82,13 @@ class CameraService:
                 ip=data["ip"],
                 url=data.get("url"),
                 resolution=data.get("resolution"),
-                fps=data.get("fps")
+                fps=data.get("fps"),
+                latitud=data.get("latitud"),
+                longitud=data.get("longitud")
             )
 
+            print(f"📹 Creando cámara tipo {data['type']} con URL/DeviceId: '{data.get('url')}'")
+            
             # Guardar en Supabase
             camara_dict = camara.to_dict()
             

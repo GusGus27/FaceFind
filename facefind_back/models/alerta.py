@@ -26,6 +26,7 @@ class Alerta:
                  longitud: Optional[float] = None,
                  imagen_captura: Optional[Frame] = None,
                  imagen_bytes: Optional[bytes] = None,
+                 imagen_url: Optional[str] = None,
                  falso_positivo: bool = False,
                  horario_inicio: Optional[datetime] = None,
                  horario_fin: Optional[datetime] = None,
@@ -46,6 +47,7 @@ class Alerta:
             longitud: Coordenada longitud de la cámara (según UML)
             imagen_captura: Frame capturado (imagenCaptura en UML)
             imagen_bytes: Imagen en bytes (para BD)
+            imagen_url: URL de la imagen en Supabase Storage
             falso_positivo: Boolean indicando si es falso positivo (según UML)
             horario_inicio: Horario inicio del período de alerta (según UML)
             horario_fin: Horario fin del período de alerta (según UML)
@@ -65,6 +67,7 @@ class Alerta:
         self._prioridad = prioridad
         self._imagen_captura = imagen_captura  # imagenCaptura en UML (Frame)
         self._imagen_bytes = imagen_bytes
+        self._imagen_url = imagen_url  # URL en Storage
         self._falso_positivo = falso_positivo  # falsoPositivo en UML
         self._horario_inicio = horario_inicio  # horarioinicio en UML
         self._horario_fin = horario_fin  # horariofin en UML
@@ -148,6 +151,11 @@ class Alerta:
         return self._imagen_bytes
 
     @property
+    def imagen_url(self) -> Optional[str]:
+        """URL de la imagen en Supabase Storage"""
+        return self._imagen_url
+
+    @property
     def created_at(self) -> datetime:
         return self._created_at
 
@@ -209,6 +217,7 @@ class Alerta:
             "longitud": self._longitud,
             "estado": self._estado.to_string(),
             "prioridad": self._prioridad.to_string(),
+            "imagen_url": self._imagen_url,  # URL de Storage
             "falso_positivo": self._falso_positivo,
             "horario_inicio": self._horario_inicio.isoformat() if self._horario_inicio and isinstance(self._horario_inicio, datetime) else self._horario_inicio,
             "horario_fin": self._horario_fin.isoformat() if self._horario_fin and isinstance(self._horario_fin, datetime) else self._horario_fin,
@@ -258,6 +267,7 @@ class Alerta:
             longitud=data.get("longitud"),
             imagen_captura=imagen_captura,
             imagen_bytes=data.get("imagen"),
+            imagen_url=data.get("imagen_url"),  # ✅ Leer URL de Storage
             falso_positivo=data.get("falso_positivo", False),
             horario_inicio=data.get("horario_inicio"),
             horario_fin=data.get("horario_fin"),

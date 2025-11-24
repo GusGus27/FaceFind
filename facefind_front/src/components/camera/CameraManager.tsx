@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CameraGrid from './CameraGrid';
+import LocationPicker from './LocationPicker';
 import '../../styles/camera/CameraManager.css';
 import { 
     getAllCameras, 
@@ -21,6 +22,8 @@ interface Camera {
     resolution?: string;
     fps?: number;
     ip?: string;
+    latitud?: number;
+    longitud?: number;
     created_at?: string;
     updated_at?: string;
 }
@@ -46,7 +49,9 @@ const CameraManager: React.FC = () => {
         activa: true,
         url: '',
         resolution: '1920x1080',
-        fps: 30
+        fps: 30,
+        latitud: -12.046374, // Plaza Mayor de Lima por defecto
+        longitud: -77.042793
     });
 
     // Estados para alertas automáticas
@@ -104,12 +109,12 @@ const CameraManager: React.FC = () => {
             } else {
                 setCameras([]);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error cargando cámaras:', error);
             // No mostrar alerta si es la primera carga, solo establecer cámaras vacías
             setCameras([]);
             // Solo mostrar error si no es un problema de conexión inicial
-            if (error.message && !error.message.includes('conectar al servidor')) {
+            if (error instanceof Error && error.message && !error.message.includes('conectar al servidor')) {
                 console.warn('⚠️ No se pudieron cargar las cámaras. Iniciando con lista vacía.');
             }
         } finally {
@@ -218,7 +223,9 @@ const CameraManager: React.FC = () => {
                 activa: true,
                 url: '',
                 resolution: '1920x1080',
-                fps: 30
+                fps: 30,
+                latitud: -12.046374,
+                longitud: -77.042793
             });
             setSelectedDeviceId('');
         }
@@ -235,8 +242,21 @@ const CameraManager: React.FC = () => {
             activa: true,
             url: '',
             resolution: '1920x1080',
-            fps: 30
+            fps: 30,
+            latitud: -12.046374,
+            longitud: -77.042793
         });
+    };
+
+    // Handler para cambios de ubicación desde el mapa
+    const handleLocationChange = (lat: number, lng: number, address?: string) => {
+        setFormData(prev => ({
+            ...prev,
+            latitud: lat,
+            longitud: lng,
+            // Opcionalmente actualizar ubicación con la dirección
+            ...(address && !prev.ubicacion ? { ubicacion: address } : {})
+        }));
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -303,7 +323,12 @@ const CameraManager: React.FC = () => {
         };
 
         try {
-            console.log('📤 Enviando datos:', dataToSend);
+            console.log('📤 Enviando datos de cámara:');
+            console.log('   Tipo:', dataToSend.type);
+            console.log('   Nombre:', dataToSend.nombre);
+            console.log('   URL/DeviceId:', dataToSend.url);
+            console.log('   Ubicación:', dataToSend.ubicacion);
+            console.log('   SelectedDeviceId:', selectedDeviceId);
             
             if (editingCamera && editingCamera.id) {
                 // Actualizar cámara existente
@@ -382,7 +407,7 @@ const CameraManager: React.FC = () => {
                 if (usbCameras.length === 0) {
                     alert('No se detectaron cámaras USB en el sistema');
                 } else {
-                    alert(`Se detectaron ${usbCameras.length} cámara(s) USB:\n${usbCameras.map(c => c.name).join('\n')}`);
+                    alert(`Se detectaron ${usbCameras.length} cámara(s) USB:\n${usbCameras.map((c: any) => c.name).join('\n')}`);
                 }
             }
         } catch (error: any) {
@@ -483,6 +508,13 @@ const CameraManager: React.FC = () => {
                                     required
                                 />
                             </div>
+
+                            {/* Selector de ubicación en mapa */}
+                            <LocationPicker
+                                latitude={formData.latitud || -12.046374}
+                                longitude={formData.longitud || -77.042793}
+                                onLocationChange={handleLocationChange}
+                            />
 
                             {formData.type === 'USB' && (
                                 <div className="form-group">

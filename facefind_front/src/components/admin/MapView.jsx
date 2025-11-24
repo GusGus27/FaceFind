@@ -11,8 +11,11 @@
  */
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import alertaService from '../../services/alertaService';
 import { getAllCasos } from '../../services/casoService';
 import { getFotosByCaso } from '../../services/fotoService';
@@ -361,40 +364,48 @@ const MapView = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Marcadores de alertas */}
-          {geojsonData && geojsonData.features && geojsonData.features.map((feature, index) => {
-            const coords = feature.geometry.coordinates;
-            const props = feature.properties;
-            
-            return (
-              <Marker
-                key={index}
-                position={[coords[1], coords[0]]} // Leaflet usa [lat, lon]
-                icon={getIconoSegunEstadoYPrioridad(props.estado, props.prioridad)}
-              >
-                <Popup>
-                  <div className="marker-popup">
-                    <h4>Alerta #{props.id}</h4>
-                    <p><strong>Persona:</strong> {props.persona_nombre}</p>
-                    <p><strong>Fecha:</strong> {formatFecha(props.timestamp)}</p>
-                    <p><strong>Ubicación:</strong> {props.ubicacion || 'No especificado'}</p>
-                    <p><strong>Similitud:</strong> {(props.confidence * 100).toFixed(2)}%</p>
-                    <p><strong>Estado:</strong> <span className={`estado-${props.estado.toLowerCase()}`}>{props.estado}</span></p>
-                    <p><strong>Prioridad:</strong> <span className={`prioridad-${props.prioridad.toLowerCase()}`}>{props.prioridad}</span></p>
-                    
-                    <div className="popup-actions">
-                      <button
-                        onClick={() => handleOpenReviewModal(props)}
-                        className="btn-review"
-                      >
-                        🔍 Revisar Detalle
-                      </button>
+          {/* Marcadores de alertas agrupados con clustering */}
+          <MarkerClusterGroup
+            chunkedLoading
+            showCoverageOnHover={false}
+            maxClusterRadius={50}
+            spiderfyOnMaxZoom={true}
+            disableClusteringAtZoom={18}
+          >
+            {geojsonData && geojsonData.features && geojsonData.features.map((feature, index) => {
+              const coords = feature.geometry.coordinates;
+              const props = feature.properties;
+              
+              return (
+                <Marker
+                  key={index}
+                  position={[coords[1], coords[0]]} // Leaflet usa [lat, lon]
+                  icon={getIconoSegunEstadoYPrioridad(props.estado, props.prioridad)}
+                >
+                  <Popup>
+                    <div className="marker-popup">
+                      <h4>Alerta #{props.id}</h4>
+                      <p><strong>Persona:</strong> {props.persona_nombre}</p>
+                      <p><strong>Fecha:</strong> {formatFecha(props.timestamp)}</p>
+                      <p><strong>Ubicación:</strong> {props.ubicacion || 'No especificado'}</p>
+                      <p><strong>Similitud:</strong> {(props.confidence * 100).toFixed(2)}%</p>
+                      <p><strong>Estado:</strong> <span className={`estado-${props.estado.toLowerCase()}`}>{props.estado}</span></p>
+                      <p><strong>Prioridad:</strong> <span className={`prioridad-${props.prioridad.toLowerCase()}`}>{props.prioridad}</span></p>
+                      
+                      <div className="popup-actions">
+                        <button
+                          onClick={() => handleOpenReviewModal(props)}
+                          className="btn-review"
+                        >
+                          🔍 Revisar Detalle
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MarkerClusterGroup>
 
           {/* Línea temporal (Polyline) */}
           {filters.mostrarTimeline && timelineCoordinates.length > 1 && (
@@ -508,19 +519,26 @@ const MapView = () => {
                     <h4>Imagen de Detección</h4>
                     <p className="panel-subtitle">{formatFecha(selectedAlerta.timestamp)}</p>
                     <div className="detection-image-wrapper">
-                      {selectedAlerta.imagen ? (
+                      {selectedAlerta.imagen_url ? (
                         <img 
-                          src={`data:image/jpeg;base64,${selectedAlerta.imagen}`}
+                          src={selectedAlerta.imagen_url}
                           alt="Captura del avistamiento"
                           className="detection-image"
+                          onError={(e) => {
+                            console.error('Error cargando imagen:', selectedAlerta.imagen_url);
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className="detection-image-placeholder">
-                          <div className="placeholder-icon">📷</div>
-                          <p>Imagen de avistamiento</p>
-                          <small>Pendiente de carga</small>
-                        </div>
-                      )}
+                      ) : null}
+                      <div 
+                        className="detection-image-placeholder"
+                        style={{ display: selectedAlerta.imagen_url ? 'none' : 'flex' }}
+                      >
+                        <div className="placeholder-icon">📷</div>
+                        <p>Imagen de avistamiento</p>
+                        <small>{selectedAlerta.imagen_url ? 'Error al cargar imagen' : 'Sin imagen disponible'}</small>
+                      </div>
                     </div>
                   </div>
                 </div>

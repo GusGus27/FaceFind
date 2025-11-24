@@ -12,6 +12,7 @@ from datetime import datetime
 from models.procesador_facefind import ProcesadorFaceFind
 from models.frame import Frame
 from services.alerta_service import AlertaService
+from services.camera_service import CameraService
 
 # Crear Blueprint
 detection_bp = Blueprint('detection', __name__)
@@ -167,10 +168,29 @@ def detect_faces():
         camara_id = data.get('camara_id', 1)  # ID de la cámara
         ubicacion = data.get('ubicacion', 'Ubicación desconocida')
         
+        # 📍 OBTENER COORDENADAS DE LA CÁMARA desde la BD
+        camara_lat = None
+        camara_lng = None
+        try:
+            camara = CameraService.get_camera_by_id(camara_id)
+            if camara:
+                camara_lat = camara.get('latitud')
+                camara_lng = camara.get('longitud')
+                print(f"📍 Coordenadas de cámara #{camara_id}: lat={camara_lat}, lng={camara_lng}")
+            else:
+                print(f"⚠️  No se encontró cámara con ID {camara_id}")
+        except Exception as e:
+            print(f"⚠️  Error obteniendo coordenadas de cámara: {e}")
+        
+        # Usar coordenadas de la cámara, o las enviadas en el request (fallback), o 0.0
+        latitud = camara_lat if camara_lat is not None else data.get('latitud', 0.0)
+        longitud = camara_lng if camara_lng is not None else data.get('longitud', 0.0)
+        
         print(f"\n{'='*60}")
         print(f"📊 DETECCIÓN: {results['faces_detected']} rostro(s) detectado(s)")
         print(f"📷 Cámara ID: {camara_id}")
         print(f"📍 Ubicación: {ubicacion}")
+        print(f"📍 Coordenadas: lat={latitud}, lng={longitud}")
         print(f"{'='*60}\n")
         
         if results['faces_detected'] > 0:
@@ -191,12 +211,12 @@ def detect_faces():
                     
                     try:
                         print(f"   🚨 Creando alerta con evidencia...")
-                        # ✅ CREAR ALERTA CON EVIDENCIA
+                        # ✅ CREAR ALERTA CON EVIDENCIA Y COORDENADAS DE LA CÁMARA
                         alerta = AlertaService.crearAlerta(
                             timestamp=datetime.now(),
                             confidence=face['similarity_percentage'] / 100.0,  # Convertir a 0-1
-                            latitud=data.get('latitud', 0.0),
-                            longitud=data.get('longitud', 0.0),
+                            latitud=latitud,  # Coordenadas de la cámara
+                            longitud=longitud,  # Coordenadas de la cámara
                             camara_id=camara_id,
                             status='PENDIENTE',
                             caso_id=caso_id,  # ✅ Usa caso_id del match
