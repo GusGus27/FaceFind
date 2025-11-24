@@ -3,7 +3,7 @@ EvidenciaService - Servicio SIMPLE para gestión de evidencias de detección
 Guarda imágenes en Supabase Storage y retorna URLs
 """
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import cv2
 from models.frame import Frame
 from services.supabase_client import supabase
@@ -167,7 +167,7 @@ class EvidenciaService:
         try:
             from config import Config
             dias_retencion = getattr(Config, 'EVIDENCIAS_RETENCION_DIAS', 60)
-            fecha_limite = datetime.now() - timedelta(days=dias_retencion)
+            fecha_limite = datetime.now(timezone.utc) - timedelta(days=dias_retencion)
             
             bucket = supabase_storage.storage.from_(BUCKET_NAME)
             archivos_eliminados = 0
@@ -185,11 +185,11 @@ class EvidenciaService:
                         # Eliminar archivo
                         bucket.remove([archivo['name']])
                         archivos_eliminados += 1
-                        print(f"🗑️  Eliminado: {archivo['name']}")
+                        print(f"Eliminado: {archivo['name']}")
             
-            print(f"✅ Limpieza completada: {archivos_eliminados} archivos eliminados")
+            print(f"Limpieza completada: {archivos_eliminados} archivos eliminados")
             return archivos_eliminados
             
         except Exception as e:
-            print(f"❌ Error en limpieza: {e}")
+            print(f"Error en limpieza: {e}")
             return 0
