@@ -88,21 +88,7 @@ const DetectionMetricsCard = ({ metrics }) => {
           </div>
         </div>
 
-        <div className="metric-row">
-          <div className="metric-label">
-            <span className="metric-icon">📊</span>
-            <span>Precisión General</span>
-          </div>
-          <div className="metric-progress">
-            <div className="progress-bar">
-              <div 
-                className={`progress-fill ${accuracyColor}`}
-                style={{ width: `${metrics.accuracy || 0}%` }}
-              />
-            </div>
-            <span className="metric-percentage">{metrics.accuracy || 0}%</span>
-          </div>
-        </div>
+        
       </div>
     </div>
   );

@@ -57,28 +57,7 @@ const PerformanceMetrics = ({ data }) => {
           </p>
         </div>
 
-        <div className="metric-card">
-          <div className="metric-header">
-            <span className="metric-icon">⏱️</span>
-            <h4>Tiempo Promedio de Resolución</h4>
-          </div>
-          <div className="metric-value-large">
-            {data.avg_resolution_time_days || 0} días
-          </div>
-          <div className="metric-details">
-            <div className="detail-row">
-              <span className="detail-label">⚡ Más rápido:</span>
-              <span className="detail-value">{data.fastest_resolution_days || 0} días</span>
-            </div>
-            <div className="detail-row">
-              <span className="detail-label">🐌 Más lento:</span>
-              <span className="detail-value">{data.slowest_resolution_days || 0} días</span>
-            </div>
-          </div>
-          <p className="metric-description">
-            Tiempo desde el registro hasta la resolución
-          </p>
-        </div>
+        
 
         <div className="metric-card">
           <div className="metric-header">

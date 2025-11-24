@@ -40,6 +40,43 @@ class StatisticsService:
             # Calcular tasa de resolución
             resolution_rate = (resolved_cases / total_cases * 100) if total_cases > 0 else 0
             
+            # Preparar distribución de estados como lista para frontend
+            status_distribution = []
+            for status, count in cases_by_status.items():
+                percentage = (count / total_cases * 100) if total_cases > 0 else 0
+                status_distribution.append({
+                    "status": status,
+                    "count": count,
+                    "percentage": round(percentage, 1)
+                })
+            
+            # Preparar demografía
+            age_groups = StatisticsRepository.get_cases_by_age_group()
+            total_age = sum(age_groups.values())
+            age_distribution = []
+            for group, count in age_groups.items():
+                percentage = (count / total_age * 100) if total_age > 0 else 0
+                age_distribution.append({
+                    "age_group": group,
+                    "count": count,
+                    "percentage": round(percentage, 1)
+                })
+            
+            # Preparar métricas de detección con total_detections
+            detection_metrics = {
+                "total_detections": detection_stats.get("total_detections", 0),
+                "successful_matches": detection_stats.get("true_positives", 0),
+                "false_positives": detection_stats.get("false_positives", 0),
+                "accuracy_rate": 0.0,
+                "avg_detection_time": 0.0  # Placeholder
+            }
+            
+            # Calcular accuracy
+            total_det = detection_metrics["total_detections"]
+            if total_det > 0:
+                accuracy = (detection_metrics["successful_matches"] / total_det * 100)
+                detection_metrics["accuracy_rate"] = round(accuracy, 2)
+            
             return {
                 "summary": {
                     "total_cases": total_cases,
@@ -48,12 +85,17 @@ class StatisticsService:
                     "pending_cases": pending_cases,
                     "resolution_rate": round(resolution_rate, 1),
                     "total_users": user_stats["total_users"],
-                    "active_users": user_stats["active_users"]
+                    "active_users": user_stats["active_users"],
+                    "total_detections": detection_metrics["total_detections"]
                 },
+                "status_distribution": status_distribution,
+                "demographics": {
+                    "age_distribution": age_distribution
+                },
+                "detection_metrics": detection_metrics,
                 "cases_by_status": cases_by_status,
                 "cases_by_priority": cases_by_priority,
                 "resolution_stats": resolution_stats,
-                "detection_stats": detection_stats,
                 "user_stats": user_stats,
                 "generated_at": datetime.now().isoformat()
             }
@@ -118,24 +160,17 @@ class StatisticsService:
         try:
             detection_stats = StatisticsRepository.get_detection_stats()
             
-            # Calcular métricas adicionales
-            total_detections = detection_stats["total_detections"]
-            true_positives = detection_stats["true_positives"]
-            false_positives = detection_stats["false_positives"]
-            
-            # Calcular tasas
-            detection_rate = (true_positives / total_detections * 100) if total_detections > 0 else 0
-            false_positive_rate = (false_positives / total_detections * 100) if total_detections > 0 else 0
-            accuracy = ((true_positives) / (true_positives + false_positives) * 100) if (true_positives + false_positives) > 0 else 0
-            
+            # Ya vienen calculadas desde el repositorio
             return {
-                "total_detections": total_detections,
-                "true_positives": true_positives,
-                "false_positives": false_positives,
-                "detection_rate": round(detection_rate, 2),
-                "false_positive_rate": round(false_positive_rate, 2),
-                "accuracy": round(accuracy, 2),
-                "status": "operational" if total_detections > 0 else "no_data"
+                "total_detections": detection_stats["total_detections"],
+                "true_positives": detection_stats["true_positives"],
+                "false_positives": detection_stats["false_positives"],
+                "pending": detection_stats["pending"],
+                "reviewed": detection_stats["reviewed"],
+                "detection_rate": detection_stats["detection_rate"],
+                "false_positive_rate": detection_stats["false_positive_rate"],
+                "precision": detection_stats["precision"],
+                "status": "operational" if detection_stats["total_detections"] > 0 else "no_data"
             }
             
         except Exception as e:
@@ -203,34 +238,20 @@ class StatisticsService:
     def get_camera_statistics() -> List[Dict]:
         """
         Obtiene estadísticas por cámara
-        (Placeholder para implementación futura con sistema de cámaras)
+        Datos reales del sistema de cámaras y alertas
         
         Returns:
             Lista de estadísticas por cámara
         """
         try:
-            # TODO: Implementar cuando el sistema de cámaras esté completo
-            # Por ahora retorna datos de ejemplo
-            return [
-                {
-                    "camera_id": "cam_001",
-                    "camera_name": "Cámara Principal - Entrada",
-                    "detections": 0,
-                    "true_positives": 0,
-                    "false_positives": 0,
-                    "status": "inactive",
-                    "uptime": 0.0
-                },
-                {
-                    "camera_id": "cam_002",
-                    "camera_name": "Cámara Secundaria - Patio",
-                    "detections": 0,
-                    "true_positives": 0,
-                    "false_positives": 0,
-                    "status": "inactive",
-                    "uptime": 0.0
-                }
-            ]
+            # Obtener estadísticas reales desde el repositorio
+            camera_stats = StatisticsRepository.get_camera_statistics()
+            
+            # Si no hay cámaras, retornar lista vacía (el frontend maneja esto)
+            if not camera_stats:
+                return []
+            
+            return camera_stats
             
         except Exception as e:
             print(f"Error in StatisticsService.get_camera_statistics: {str(e)}")

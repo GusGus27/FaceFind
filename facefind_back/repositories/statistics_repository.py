@@ -168,21 +168,67 @@ class StatisticsRepository:
     @staticmethod
     def get_detection_stats() -> Dict:
         """
-        Obtiene estadísticas de detección facial
-        (Por ahora retorna datos de ejemplo, requiere implementación futura)
+        Obtiene estadísticas de detección facial desde tabla Alerta
         
         Returns:
             Dict con estadísticas de detección
         """
         try:
-            # TODO: Implementar con tabla de Alertas cuando esté disponible
-            # Por ahora retornamos estructura base
+            # Obtener todas las alertas
+            response = supabase.table("Alerta")\
+                .select("*")\
+                .execute()
+            
+            if not response.data:
+                return {
+                    "total_detections": 0,
+                    "true_positives": 0,
+                    "false_positives": 0,
+                    "pending": 0,
+                    "reviewed": 0,
+                    "detection_rate": 0.0,
+                    "false_positive_rate": 0.0,
+                    "precision": 0.0
+                }
+            
+            # Contar por estado
+            total_detections = len(response.data)
+            true_positives = 0
+            false_positives = 0
+            pending = 0
+            
+            for alerta in response.data:
+                estado = alerta.get("estado", "").upper()
+                # Verdadero positivo: Alerta REVISADA (confirmada como detección válida)
+                if estado == "REVISADA":
+                    true_positives += 1
+                # Falso positivo: Alerta marcada como FALSO_POSITIVO
+                elif estado == "FALSO_POSITIVO":
+                    false_positives += 1
+                # Pendiente: Sin revisar aún
+                elif estado == "PENDIENTE":
+                    pending += 1
+            
+            # Calcular tasas
+            # Tasa de detección = verdaderos positivos / total de alertas revisadas (TP + FP)
+            reviewed = true_positives + false_positives
+            detection_rate = (true_positives / reviewed * 100) if reviewed > 0 else 0.0
+            
+            # Tasa de falsos positivos = falsos positivos / total de alertas revisadas
+            false_positive_rate = (false_positives / reviewed * 100) if reviewed > 0 else 0.0
+            
+            # Precisión general = verdaderos positivos / total detecciones
+            precision = (true_positives / total_detections * 100) if total_detections > 0 else 0.0
+            
             return {
-                "total_detections": 0,
-                "true_positives": 0,
-                "false_positives": 0,
-                "detection_rate": 0.0,
-                "false_positive_rate": 0.0
+                "total_detections": total_detections,
+                "true_positives": true_positives,
+                "false_positives": false_positives,
+                "pending": pending,
+                "reviewed": reviewed,
+                "detection_rate": round(detection_rate, 2),
+                "false_positive_rate": round(false_positive_rate, 2),
+                "precision": round(precision, 2)
             }
             
         except Exception as e:
@@ -191,8 +237,11 @@ class StatisticsRepository:
                 "total_detections": 0,
                 "true_positives": 0,
                 "false_positives": 0,
+                "pending": 0,
+                "reviewed": 0,
                 "detection_rate": 0.0,
-                "false_positive_rate": 0.0
+                "false_positive_rate": 0.0,
+                "precision": 0.0
             }
     
     @staticmethod
@@ -386,4 +435,78 @@ class StatisticsRepository:
             
         except Exception as e:
             print(f"Error in get_monthly_trends: {str(e)}")
+            return []
+    
+    @staticmethod
+    def get_camera_statistics() -> List[Dict]:
+        """
+        Obtiene estadísticas de detección por cámara
+        Incluye datos reales de la tabla Camara y Alerta
+        
+        Returns:
+            Lista de dicts con estadísticas por cámara
+        """
+        try:
+            # Obtener todas las cámaras
+            cameras_response = supabase.table("Camara")\
+                .select("*")\
+                .execute()
+            
+            if not cameras_response.data:
+                return []
+            
+            camera_stats = []
+            
+            for camera in cameras_response.data:
+                camera_id = camera.get("id")
+                
+                # Obtener alertas de esta cámara
+                alertas_response = supabase.table("Alerta")\
+                    .select("*")\
+                    .eq("camara_id", camera_id)\
+                    .execute()
+                
+                total_detections = len(alertas_response.data) if alertas_response.data else 0
+                
+                # Contar alertas confirmadas (REVISADA) vs falsas alarmas (FALSO_POSITIVO)
+                true_positives = 0
+                false_positives = 0
+                pending = 0
+                
+                if alertas_response.data:
+                    for alerta in alertas_response.data:
+                        estado = alerta.get("estado", "").upper()
+                        if estado == "REVISADA":
+                            true_positives += 1
+                        elif estado == "FALSO_POSITIVO":
+                            false_positives += 1
+                        elif estado == "PENDIENTE":
+                            pending += 1
+                
+                # Determinar estado de la cámara
+                status = "active" if camera.get("activa", False) else "inactive"
+                
+                # Calcular uptime (por ahora 100% si está activa, 0% si está inactiva)
+                uptime = 100.0 if camera.get("activa", False) else 0.0
+                
+                # Generar nombre de cámara amigable
+                camera_name = f"{camera.get('ubicacion', 'Sin ubicación')} ({camera.get('type', 'USB')})"
+                
+                camera_stats.append({
+                    "camera_id": camera_id,
+                    "camera_name": camera_name,
+                    "detections": total_detections,
+                    "true_positives": true_positives,
+                    "false_positives": false_positives,
+                    "status": status,
+                    "uptime": uptime,
+                    "ubicacion": camera.get("ubicacion", "Desconocido"),
+                    "tipo": camera.get("type", "USB"),
+                    "ip": camera.get("ip", "N/A")
+                })
+            
+            return camera_stats
+            
+        except Exception as e:
+            print(f"Error in get_camera_statistics: {str(e)}")
             return []

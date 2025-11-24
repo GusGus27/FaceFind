@@ -43,7 +43,6 @@ const CameraStatsTable = ({ cameras }) => {
               <th>Verdaderos Positivos</th>
               <th>Falsos Positivos</th>
               <th>Precisión</th>
-              <th>Tiempo Activo</th>
             </tr>
           </thead>
           <tbody>
@@ -78,11 +77,7 @@ const CameraStatsTable = ({ cameras }) => {
                       <span>{accuracy}%</span>
                     </div>
                   </td>
-                  <td className="cell-uptime">
-                    <span className={`uptime-badge ${uptimeColor}`}>
-                      {(camera.uptime || 0).toFixed(1)}%
-                    </span>
-                  </td>
+                  
                 </tr>
               );
             })}
