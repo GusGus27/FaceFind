@@ -7,8 +7,12 @@ import cv2
 import numpy as np
 import base64
 import traceback
+from datetime import datetime
 
 from models.procesador_facefind import ProcesadorFaceFind
+from models.frame import Frame
+from services.alerta_service import AlertaService
+from services.camera_service import CameraService
 
 # Crear Blueprint
 detection_bp = Blueprint('detection', __name__)
@@ -159,10 +163,94 @@ def detect_faces():
         # Procesar frame
         results = detection_service.process_frame(frame)
         
+        # 🚨 CREAR ALERTAS AUTOMÁTICAMENTE si hay matches
+        alertas_creadas = []
+        camara_id = data.get('camara_id', 1)  # ID de la cámara
+        ubicacion = data.get('ubicacion', 'Ubicación desconocida')
+        
+        # 📍 OBTENER COORDENADAS DE LA CÁMARA desde la BD
+        camara_lat = None
+        camara_lng = None
+        try:
+            camara = CameraService.get_camera_by_id(camara_id)
+            if camara:
+                camara_lat = camara.get('latitud')
+                camara_lng = camara.get('longitud')
+                print(f"📍 Coordenadas de cámara #{camara_id}: lat={camara_lat}, lng={camara_lng}")
+            else:
+                print(f"⚠️  No se encontró cámara con ID {camara_id}")
+        except Exception as e:
+            print(f"⚠️  Error obteniendo coordenadas de cámara: {e}")
+        
+        # Usar coordenadas de la cámara, o las enviadas en el request (fallback), o 0.0
+        latitud = camara_lat if camara_lat is not None else data.get('latitud', 0.0)
+        longitud = camara_lng if camara_lng is not None else data.get('longitud', 0.0)
+        
+        print(f"\n{'='*60}")
+        print(f"📊 DETECCIÓN: {results['faces_detected']} rostro(s) detectado(s)")
+        print(f"📷 Cámara ID: {camara_id}")
+        print(f"📍 Ubicación: {ubicacion}")
+        print(f"📍 Coordenadas: lat={latitud}, lng={longitud}")
+        print(f"{'='*60}\n")
+        
+        if results['faces_detected'] > 0:
+            # Crear Frame object una vez
+            frame_obj = Frame(frame, datetime.now(), camara_id)
+            print(f"✅ Frame object creado")
+            
+            # Por cada rostro detectado con match
+            for face in results['faces']:
+                print(f"\n👤 Procesando rostro #{face['face_id']}")
+                print(f"   Match found: {face['match_found']}")
+                print(f"   Best match: {face['best_match_name']}")
+                print(f"   Similitud: {face['similarity_percentage']}%")
+                
+                if face['match_found'] and face.get('caso_id'):
+                    caso_id = face['caso_id']  # ✅ Caso ID automático del match
+                    print(f"   🔍 Caso ID (automático): {caso_id}")
+                    
+                    try:
+                        print(f"   🚨 Creando alerta con evidencia...")
+                        # ✅ CREAR ALERTA CON EVIDENCIA Y COORDENADAS DE LA CÁMARA
+                        alerta = AlertaService.crearAlerta(
+                            timestamp=datetime.now(),
+                            confidence=face['similarity_percentage'] / 100.0,  # Convertir a 0-1
+                            latitud=latitud,  # Coordenadas de la cámara
+                            longitud=longitud,  # Coordenadas de la cámara
+                            camara_id=camara_id,
+                            status='PENDIENTE',
+                            caso_id=caso_id,  # ✅ Usa caso_id del match
+                            frame=frame_obj,
+                            falso_positivo=False
+                        )
+                        
+                        alertas_creadas.append({
+                            "alerta_id": alerta.id,
+                            "caso_id": caso_id,
+                            "persona": face['best_match_name'],
+                            "similitud": face['similarity_percentage'],
+                            "imagen_url": alerta._imagen_url if hasattr(alerta, '_imagen_url') else None
+                        })
+                        
+                        print(f"   ✅ Alerta #{alerta.id} creada exitosamente")
+                        print(f"   📸 URL evidencia: {alerta._imagen_url if hasattr(alerta, '_imagen_url') else 'NO DISPONIBLE'}")
+                        
+                    except Exception as alert_error:
+                        print(f"   ❌ Error creando alerta: {alert_error}")
+                        import traceback
+                        traceback.print_exc()
+                elif face['match_found'] and not face.get('caso_id'):
+                    print(f"   ⚠️  Match encontrado pero sin caso_id asociado en BD")
+                else:
+                    print(f"   ⏭️  Saltando (sin match o similitud baja)")
+        
         # Limpiar resultados para JSON
         clean_results = clean_results_for_json(results)
         
-        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados")
+        # Agregar info de alertas creadas
+        clean_results['alertas_creadas'] = alertas_creadas
+        
+        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados, {len(alertas_creadas)} alertas creadas")
         
         return jsonify({
             "success": True,

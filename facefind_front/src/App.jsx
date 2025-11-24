@@ -18,6 +18,7 @@ import AboutPage from './views/AboutPage';
 import StatisticsPage from './views/StatisticsPage';
 import ContactPage from './views/ContactPage';
 import MapView from './components/admin/MapView';
+import AlertScheduleConfig from './views/AlertScheduleConfig';
 import './App.css';
 
 function App() {
@@ -69,6 +70,11 @@ function App() {
       <Route path="/admin/mapa" element={
         <ProtectedRoute>
           <MapView />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/horarios-alertas" element={
+        <ProtectedRoute>
+          <AlertScheduleConfig />
         </ProtectedRoute>
       } />
     </Routes>

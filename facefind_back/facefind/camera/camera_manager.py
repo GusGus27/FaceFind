@@ -3,13 +3,15 @@ from .camera_factory import FactoryUSBCamera, FactoryIPCamera, ICameraFactory
 from .camera_interface import ICamera
 
 class CameraManager:
-    def __init__(self, camera_type: str = "USB"):
-        self.factory: ICameraFactory = self._get_factory(camera_type)
+    def __init__(self, camera_type: str = "USB", device_id: int = 0):
+        self.camera_type = camera_type
+        self.device_id = device_id
+        self.factory: ICameraFactory = self._get_factory(camera_type, device_id)
         self.active_camera: Optional[ICamera] = None
 
-    def _get_factory(self, camera_type: str) -> ICameraFactory:
+    def _get_factory(self, camera_type: str, device_id: int = 0) -> ICameraFactory:
         if camera_type.upper() == "USB":
-            return FactoryUSBCamera()
+            return FactoryUSBCamera(device_id)
         elif camera_type.upper() == "IP":
             return FactoryIPCamera()
         else:

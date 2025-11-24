@@ -22,6 +22,8 @@ class Camara:
                  url: Optional[str] = None,
                  resolution: Optional[str] = None,
                  fps: Optional[int] = None,
+                 latitud: Optional[float] = None,
+                 longitud: Optional[float] = None,
                  created_at: Optional[datetime] = None,
                  updated_at: Optional[datetime] = None):
         """
@@ -37,6 +39,8 @@ class Camara:
             url: URL de conexión (para cámaras IP)
             resolution: Resolución de la cámara (ej: "1920x1080")
             fps: Frames por segundo
+            latitud: Latitud de la ubicación de la cámara
+            longitud: Longitud de la ubicación de la cámara
             created_at: Fecha de creación
             updated_at: Fecha de última actualización
         """
@@ -49,6 +53,8 @@ class Camara:
         self._url = url
         self._resolution = resolution
         self._fps = fps
+        self._latitud = latitud
+        self._longitud = longitud
         self._created_at = created_at or datetime.now()
         self._updated_at = updated_at or datetime.now()
 
@@ -88,6 +94,14 @@ class Camara:
     @property
     def fps(self) -> Optional[int]:
         return self._fps
+
+    @property
+    def latitud(self) -> Optional[float]:
+        return self._latitud
+
+    @property
+    def longitud(self) -> Optional[float]:
+        return self._longitud
 
     @property
     def created_at(self) -> datetime:
@@ -137,6 +151,20 @@ class Camara:
         self._fps = value
         self._updated_at = datetime.now()
 
+    @latitud.setter
+    def latitud(self, value: Optional[float]):
+        if value is not None and (value < -90 or value > 90):
+            raise ValueError("Latitud debe estar entre -90 y 90")
+        self._latitud = value
+        self._updated_at = datetime.now()
+
+    @longitud.setter
+    def longitud(self, value: Optional[float]):
+        if value is not None and (value < -180 or value > 180):
+            raise ValueError("Longitud debe estar entre -180 y 180")
+        self._longitud = value
+        self._updated_at = datetime.now()
+
     # Métodos según UML
     def activar(self) -> None:
         """Activa la cámara"""
@@ -181,6 +209,8 @@ class Camara:
             "url": self._url,
             "resolution": self._resolution,
             "fps": self._fps,
+            "latitud": self._latitud,
+            "longitud": self._longitud,
             "created_at": self._created_at.isoformat() if self._created_at else None,
             "updated_at": self._updated_at.isoformat() if self._updated_at else None
         }
@@ -226,6 +256,8 @@ class Camara:
             url=data.get("url"),
             resolution=data.get("resolution"),
             fps=data.get("fps"),
+            latitud=data.get("latitud"),
+            longitud=data.get("longitud"),
             created_at=parse_timestamp(data.get("created_at")),
             updated_at=parse_timestamp(data.get("updated_at"))
         )

@@ -25,8 +25,15 @@ class Config:
     ENCODINGS_FILE = os.getenv("ENCODINGS_FILE", "encodings.pickle")
     FACE_TOLERANCE = float(os.getenv("FACE_TOLERANCE", "0.6"))
     
+    # Evidencias
+    EVIDENCIAS_RETENCION_DIAS = int(os.getenv('EVIDENCIAS_RETENCION_DIAS', 60))
+    
     # CORS
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+    
+    # SendGrid Email
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+    SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@facefind.com')
     
     @staticmethod
     def validate():

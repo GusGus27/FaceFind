@@ -1,0 +1,195 @@
+/* DayScheduleEditor.css */
+.day-schedule-editor {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.day-schedule-editor:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  background: #f7fafc;
+  transition: background 0.2s;
+}
+
+.day-header:hover {
+  background: #edf2f7;
+}
+
+.day-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.day-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.day-name {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 1rem;
+  min-width: 100px;
+}
+
+.day-preview {
+  color: #718096;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.expand-icon {
+  color: #a0aec0;
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.expand-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.day-content {
+  padding: 1.25rem;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  animation: expandContent 0.2s ease;
+}
+
+@keyframes expandContent {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+.slots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.time-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.slot-icon {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.time-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: monospace;
+  min-width: 100px;
+  transition: all 0.2s;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.time-separator {
+  color: #718096;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.btn-remove-slot {
+  background: #fed7d7;
+  color: #c53030;
+  border: 1px solid #fc8181;
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.btn-remove-slot:hover {
+  background: #fc8181;
+  color: white;
+  transform: scale(1.05);
+}
+
+.btn-add-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  color: #667eea;
+  border: 2px dashed #cbd5e0;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-slot:hover {
+  border-color: #667eea;
+  background: #edf2f7;
+  transform: translateY(-1px);
+}
+
+.disabled-message {
+  text-align: center;
+  color: #a0aec0;
+  font-style: italic;
+  padding: 2rem;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .time-slot {
+    flex-wrap: wrap;
+  }
+
+  .time-input {
+    min-width: 80px;
+  }
+
+  .day-name {
+    min-width: 80px;
+  }
+
+  .day-preview {
+    font-size: 0.75rem;
+  }
+}

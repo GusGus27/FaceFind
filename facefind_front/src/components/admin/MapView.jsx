@@ -9,12 +9,18 @@
  * - Línea temporal de movimientos
  * - Información en hover/click
  */
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import { Download } from 'lucide-react';
 import alertaService from '../../services/alertaService';
 import { getAllCasos } from '../../services/casoService';
+import { getFotosByCaso } from '../../services/fotoService';
+import ExportModal from './ExportModal';
 import './MapView.css';
 
 // Fix para iconos de Leaflet
@@ -95,6 +101,10 @@ const MapView = () => {
   // Modal de revisión
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedAlerta, setSelectedAlerta] = useState(null);
+  const [fotosReferencia, setFotosReferencia] = useState([]);
+  
+  // Modal de exportación
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Filtros
   const [filters, setFilters] = useState({
@@ -181,13 +191,25 @@ const MapView = () => {
 
   const handleMarcarRevisada = async (alertaId) => {
     try {
-      await alertaService.marcarRevisada(alertaId);
-      alert('Alerta marcada como revisada');
+      const result = await alertaService.marcarRevisada(alertaId);
+      
+      // Mensaje de éxito con información del email
+      let mensaje = '✅ Alerta marcada como revisada';
+      
+      if (result.email_notificacion) {
+        if (result.email_notificacion.success) {
+          mensaje += `\n\n📧 Notificación enviada a: ${result.email_notificacion.nombre_destinatario} (${result.email_notificacion.destinatario})`;
+        } else {
+          mensaje += `\n\n⚠️ ${result.email_notificacion.error}`;
+        }
+      }
+      
+      alert(mensaje);
       setShowReviewModal(false);
       fetchAlertas(); // Recargar
     } catch (error) {
       console.error('Error marcando alerta:', error);
-      alert('Error al marcar alerta');
+      alert('❌ Error al marcar alerta');
     }
   };
 
@@ -203,14 +225,24 @@ const MapView = () => {
     }
   };
 
-  const handleOpenReviewModal = (alerta) => {
+  const handleOpenReviewModal = async (alerta) => {
     setSelectedAlerta(alerta);
     setShowReviewModal(true);
+    
+    // Cargar fotos de referencia del caso
+    try {
+      const fotos = await getFotosByCaso(alerta.caso_id);
+      setFotosReferencia(fotos);
+    } catch (error) {
+      console.error('Error cargando fotos de referencia:', error);
+      setFotosReferencia([]);
+    }
   };
 
   const handleCloseReviewModal = () => {
     setShowReviewModal(false);
     setSelectedAlerta(null);
+    setFotosReferencia([]);
   };
 
   const getIconoSegunEstadoYPrioridad = (estado, prioridad) => {
@@ -243,8 +275,18 @@ const MapView = () => {
   return (
     <div className="map-view-container">
       <div className="map-header">
-        <h2>🗺️ Mapa de Detecciones</h2>
-        <p>Visualiza las alertas y patrones de movimiento en el mapa interactivo</p>
+        <div>
+          <h2>🗺️ Mapa de Detecciones</h2>
+          <p>Visualiza las alertas y patrones de movimiento en el mapa interactivo</p>
+        </div>
+        <button 
+          className="export-report-btn"
+          onClick={() => setShowExportModal(true)}
+          title="Exportar reportes"
+        >
+          <Download size={20} />
+          <span>Exportar Reporte</span>
+        </button>
       </div>
 
       {/* Filtros */}
@@ -349,40 +391,48 @@ const MapView = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {/* Marcadores de alertas */}
-          {geojsonData && geojsonData.features && geojsonData.features.map((feature, index) => {
-            const coords = feature.geometry.coordinates;
-            const props = feature.properties;
-            
-            return (
-              <Marker
-                key={index}
-                position={[coords[1], coords[0]]} // Leaflet usa [lat, lon]
-                icon={getIconoSegunEstadoYPrioridad(props.estado, props.prioridad)}
-              >
-                <Popup>
-                  <div className="marker-popup">
-                    <h4>Alerta #{props.id}</h4>
-                    <p><strong>Persona:</strong> {props.persona_nombre}</p>
-                    <p><strong>Fecha:</strong> {formatFecha(props.timestamp)}</p>
-                    <p><strong>Ubicación:</strong> {props.ubicacion || 'No especificado'}</p>
-                    <p><strong>Similitud:</strong> {(props.confidence * 100).toFixed(2)}%</p>
-                    <p><strong>Estado:</strong> <span className={`estado-${props.estado.toLowerCase()}`}>{props.estado}</span></p>
-                    <p><strong>Prioridad:</strong> <span className={`prioridad-${props.prioridad.toLowerCase()}`}>{props.prioridad}</span></p>
-                    
-                    <div className="popup-actions">
-                      <button
-                        onClick={() => handleOpenReviewModal(props)}
-                        className="btn-review"
-                      >
-                        🔍 Revisar Detalle
-                      </button>
+          {/* Marcadores de alertas agrupados con clustering */}
+          <MarkerClusterGroup
+            chunkedLoading
+            showCoverageOnHover={false}
+            maxClusterRadius={50}
+            spiderfyOnMaxZoom={true}
+            disableClusteringAtZoom={18}
+          >
+            {geojsonData && geojsonData.features && geojsonData.features.map((feature, index) => {
+              const coords = feature.geometry.coordinates;
+              const props = feature.properties;
+              
+              return (
+                <Marker
+                  key={index}
+                  position={[coords[1], coords[0]]} // Leaflet usa [lat, lon]
+                  icon={getIconoSegunEstadoYPrioridad(props.estado, props.prioridad)}
+                >
+                  <Popup>
+                    <div className="marker-popup">
+                      <h4>Alerta #{props.id}</h4>
+                      <p><strong>Persona:</strong> {props.persona_nombre}</p>
+                      <p><strong>Fecha:</strong> {formatFecha(props.timestamp)}</p>
+                      <p><strong>Ubicación:</strong> {props.ubicacion || 'No especificado'}</p>
+                      <p><strong>Similitud:</strong> {(props.confidence * 100).toFixed(2)}%</p>
+                      <p><strong>Estado:</strong> <span className={`estado-${props.estado.toLowerCase()}`}>{props.estado}</span></p>
+                      <p><strong>Prioridad:</strong> <span className={`prioridad-${props.prioridad.toLowerCase()}`}>{props.prioridad}</span></p>
+                      
+                      <div className="popup-actions">
+                        <button
+                          onClick={() => handleOpenReviewModal(props)}
+                          className="btn-review"
+                        >
+                          🔍 Revisar Detalle
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MarkerClusterGroup>
 
           {/* Línea temporal (Polyline) */}
           {filters.mostrarTimeline && timelineCoordinates.length > 1 && (
@@ -443,79 +493,132 @@ const MapView = () => {
             </div>
 
             <div className="review-modal-body">
-              {/* Sección de imagen */}
-              <div className="review-image-section">
-                <h3>Imagen de Detección</h3>
-                <div className="review-image-placeholder">
-                  <p>📷</p>
-                  <p>Imagen de avistamiento</p>
-                  <small>(Pendiente de implementación)</small>
+              {/* Porcentaje de detección destacado */}
+              <div className="detection-percentage-banner">
+                <div className="percentage-circle">
+                  <span className="percentage-value">{(selectedAlerta.confidence * 100).toFixed(1)}%</span>
+                </div>
+                <div className="percentage-info">
+                  <h3>Nivel de Similitud</h3>
+                  <p className={`confidence-level ${
+                    selectedAlerta.confidence >= 0.85 ? 'high' : 
+                    selectedAlerta.confidence >= 0.70 ? 'medium' : 'low'
+                  }`}>
+                    {selectedAlerta.confidence >= 0.85 ? '🟢 Alta Confianza' : 
+                     selectedAlerta.confidence >= 0.70 ? '🟡 Confianza Media' : '🟠 Confianza Baja'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Comparación de imágenes */}
+              <div className="review-comparison-section">
+                <h3>📸 Comparación Visual</h3>
+                <div className="images-comparison-grid">
+                  {/* Fotos de referencia del caso */}
+                  <div className="reference-images-panel">
+                    <h4>Fotos de Referencia (Caso #{selectedAlerta.caso_id})</h4>
+                    <p className="panel-subtitle">{selectedAlerta.persona_nombre}</p>
+                    <div className="reference-images-container">
+                      {fotosReferencia.length > 0 ? (
+                        fotosReferencia.map((foto, index) => (
+                          <div key={foto.id || index} className="reference-image-wrapper">
+                            <img 
+                              src={foto.url || foto.ruta_archivo} 
+                              alt={`Foto ${index + 1}`}
+                              className="reference-image"
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/200x200?text=Imagen+no+disponible';
+                              }}
+                            />
+                            <span className="image-label">Foto {index + 1}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-images-placeholder">
+                          <p>📷 No hay fotos de referencia disponibles</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Imagen de detección/captura */}
+                  <div className="detection-image-panel">
+                    <h4>Imagen de Detección</h4>
+                    <p className="panel-subtitle">{formatFecha(selectedAlerta.timestamp)}</p>
+                    <div className="detection-image-wrapper">
+                      {selectedAlerta.imagen_url ? (
+                        <img 
+                          src={selectedAlerta.imagen_url}
+                          alt="Captura del avistamiento"
+                          className="detection-image"
+                          onError={(e) => {
+                            console.error('Error cargando imagen:', selectedAlerta.imagen_url);
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="detection-image-placeholder"
+                        style={{ display: selectedAlerta.imagen_url ? 'none' : 'flex' }}
+                      >
+                        <div className="placeholder-icon">📷</div>
+                        <p>Imagen de avistamiento</p>
+                        <small>{selectedAlerta.imagen_url ? 'Error al cargar imagen' : 'Sin imagen disponible'}</small>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Sección de detalles */}
               <div className="review-details-section">
-                <h3>Detalles de la Detección</h3>
+                <h3>📋 Detalles de la Detección</h3>
                 
-                <div className="review-detail-row">
-                  <span className="detail-label">Persona Buscada:</span>
-                  <span className="detail-value">{selectedAlerta.persona_nombre}</span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Fecha y Hora:</span>
-                  <span className="detail-value">{formatFecha(selectedAlerta.timestamp)}</span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Ubicación:</span>
-                  <span className="detail-value">{selectedAlerta.ubicacion || 'No especificado'}</span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Coordenadas:</span>
-                  <span className="detail-value">
-                    Lat: {selectedAlerta.latitud?.toFixed(6)}, Lon: {selectedAlerta.longitud?.toFixed(6)}
-                  </span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Nivel de Similitud:</span>
-                  <span className="detail-value similarity-badge">
-                    {(selectedAlerta.confidence * 100).toFixed(2)}%
-                  </span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Estado Actual:</span>
-                  <span className={`detail-value estado-badge estado-${selectedAlerta.estado.toLowerCase()}`}>
-                    {selectedAlerta.estado}
-                  </span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Prioridad:</span>
-                  <span className={`detail-value prioridad-badge prioridad-${selectedAlerta.prioridad.toLowerCase()}`}>
-                    {selectedAlerta.prioridad}
-                  </span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Caso ID:</span>
-                  <span className="detail-value">#{selectedAlerta.caso_id}</span>
-                </div>
-
-                <div className="review-detail-row">
-                  <span className="detail-label">Cámara ID:</span>
-                  <span className="detail-value">#{selectedAlerta.camara_id}</span>
-                </div>
-
-                {selectedAlerta.falso_positivo && (
+                <div className="details-grid">
                   <div className="review-detail-row">
-                    <span className="detail-label">⚠️ Nota:</span>
-                    <span className="detail-value warning-text">Marcada como falso positivo</span>
+                    <span className="detail-label">📍 Ubicación:</span>
+                    <span className="detail-value">{selectedAlerta.ubicacion || 'No especificado'}</span>
                   </div>
-                )}
+
+                  <div className="review-detail-row">
+                    <span className="detail-label">🗺️ Coordenadas:</span>
+                    <span className="detail-value">
+                      Lat: {selectedAlerta.latitud?.toFixed(6)}, Lon: {selectedAlerta.longitud?.toFixed(6)}
+                    </span>
+                  </div>
+
+                  <div className="review-detail-row">
+                    <span className="detail-label">📅 Fecha y Hora:</span>
+                    <span className="detail-value">{formatFecha(selectedAlerta.timestamp)}</span>
+                  </div>
+
+                  <div className="review-detail-row">
+                    <span className="detail-label">📊 Estado Actual:</span>
+                    <span className={`detail-value estado-badge estado-${selectedAlerta.estado.toLowerCase()}`}>
+                      {selectedAlerta.estado}
+                    </span>
+                  </div>
+
+                  <div className="review-detail-row">
+                    <span className="detail-label">⚡ Prioridad:</span>
+                    <span className={`detail-value prioridad-badge prioridad-${selectedAlerta.prioridad.toLowerCase()}`}>
+                      {selectedAlerta.prioridad}
+                    </span>
+                  </div>
+
+                  <div className="review-detail-row">
+                    <span className="detail-label">🎥 Cámara ID:</span>
+                    <span className="detail-value">#{selectedAlerta.camara_id}</span>
+                  </div>
+
+                  {selectedAlerta.falso_positivo && (
+                    <div className="review-detail-row warning-row">
+                      <span className="detail-label">⚠️ Advertencia:</span>
+                      <span className="detail-value warning-text">Marcada como falso positivo</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -547,6 +650,12 @@ const MapView = () => {
           </div>
         </div>
       )}
+      
+      {/* Modal de Exportación */}
+      <ExportModal 
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
     </div>
   );
 };

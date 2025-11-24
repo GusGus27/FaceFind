@@ -15,22 +15,25 @@ from api.caso_routes import caso_bp
 from api.encodings_routes import encodings_bp
 from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
+from api.statistics_routes import statistics_bp
 from api.alerta_routes import alerta_bp
+from api.notification_routes import notification_bp
 from api.camera_routes import camera_bp
+from api.report_routes import report_bp
 
 
 # Inicializar aplicación Flask
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configurar CORS - Más permisivo para desarrollo
+# Configurar CORS - Configuración para desarrollo con credenciales
 CORS(app, 
      resources={r"/*": {
-         "origins": "*",  # Permitir todos los orígenes en desarrollo
+         "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],  # Orígenes específicos para credentials
          "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
          "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"],
          "expose_headers": ["Content-Type"],
-         "supports_credentials": False,  # Cambiar a False cuando origins es *
+         "supports_credentials": True,  # Habilitar credenciales
          "max_age": 3600
      }})
 
@@ -39,7 +42,10 @@ CORS(app,
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({"status": "ok"})
-        response.headers.add("Access-Control-Allow-Origin", "*")
+        origin = request.headers.get("Origin")
+        if origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+            response.headers.add("Access-Control-Allow-Credentials", "true")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
         response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
         return response
@@ -51,8 +57,11 @@ app.register_blueprint(caso_bp, url_prefix="/casos")
 app.register_blueprint(encodings_bp, url_prefix="/encodings")
 app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
+app.register_blueprint(statistics_bp, url_prefix="/statistics")
 app.register_blueprint(alerta_bp, url_prefix="/alertas")
+app.register_blueprint(notification_bp, url_prefix="/notifications")
 app.register_blueprint(camera_bp, url_prefix="/cameras")
+app.register_blueprint(report_bp, url_prefix="/reports")
 
 
 # ============================================================================
@@ -73,8 +82,11 @@ def index():
             "encodings": "/encodings",
             "detection": "/detection",
             "fotos": "/fotos",
+            "statistics": "/statistics",
             "alertas": "/alertas",
-            "cameras": "/cameras"
+            "notifications": "/notifications",
+            "cameras": "/cameras",
+            "reports": "/reports"
         }
     })
 

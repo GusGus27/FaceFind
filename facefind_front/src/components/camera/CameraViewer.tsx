@@ -23,13 +23,22 @@ interface CameraSettings {
     resolution: string;
     fps: number;
     url?: string;
+    deviceId?: string;
 }
 
 interface CameraViewerProps {
     cameraSettings: CameraSettings;
+    casoId?: number;  // ID del caso activo (para crear alertas)
+    cameraId?: number;  // ID de la cámara en BD
+    ubicacion?: string;  // Ubicación de la cámara
 }
 
-const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
+const CameraViewer: React.FC<CameraViewerProps> = ({ 
+    cameraSettings, 
+    casoId, 
+    cameraId = 1, 
+    ubicacion = 'Ubicación no especificada' 
+}) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const imgRef = useRef<HTMLImageElement | null>(null); // Para streams MJPEG
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -38,6 +47,17 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
     const mjpegConnectionRef = useRef<string | null>(null); // Para rastrear conexión MJPEG activa
 
     const [isConnected, setIsConnected] = useState<boolean>(false);
+    
+    // Log de configuración
+    React.useEffect(() => {
+        console.log('\n' + '='.repeat(60));
+        console.log('📸 CONFIGURACIÓN DE CAMERAVIEWER');
+        console.log('='.repeat(60));
+        console.log('📷 Cámara ID:', cameraId);
+        console.log('📍 Ubicación:', ubicacion);
+        console.log('✅ El Caso ID se detecta AUTOMÁTICAMENTE cuando hay match');
+        console.log('='.repeat(60) + '\n');
+    }, [cameraId, ubicacion]);
     const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
     const [recognizedName, setRecognizedName] = useState<string>("Desconocido");
     const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -130,17 +150,31 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
                     console.log('🔗 Intentando conectar a cámara USB...');
                     setUseMjpeg(false);
                     
-                    const stream = await navigator.mediaDevices.getUserMedia({
+                    // Configurar constraints para el dispositivo específico
+                    const constraints: MediaStreamConstraints = {
                         video: { 
                             width: { ideal: videoWidth },
                             height: { ideal: videoHeight },
                             frameRate: { ideal: cameraSettings.fps }
-                        },
-                    });
+                        }
+                    };
+                    
+                    // Si se especificó un deviceId, agregarlo a las constraints
+                    if (cameraSettings.deviceId) {
+                        (constraints.video as MediaTrackConstraints).deviceId = { 
+                            exact: cameraSettings.deviceId 
+                        };
+                        console.log('📹 Usando cámara específica:', cameraSettings.deviceId);
+                    }
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
                         setIsConnected(true);
-                        console.log('✅ Cámara USB conectada exitosamente');
+                        
+                        // Obtener el label del dispositivo activo
+                        const videoTrack = stream.getVideoTracks()[0];
+                        console.log('✅ Cámara USB conectada exitosamente:', videoTrack.label);
                     }
                 } else {
                     console.error('❌ Tipo de cámara no válido:', cameraSettings.type);
@@ -273,11 +307,24 @@ const CameraViewer: React.FC<CameraViewerProps> = ({ cameraSettings }) => {
             
             console.log('📤 Enviando frame al backend...');
 
-            // Usar el servicio de detección
-            const result = await detectFaces(imageData);
+            // Usar el servicio de detección con parámetros adicionales
+            // El caso_id se obtiene automáticamente del match en el backend
+            const result = await detectFaces(imageData, {
+                cameraId: cameraId,
+                ubicacion: ubicacion
+            });
 
             if (result.success && result.data.faces.length > 0) {
                 const faces: FaceResult[] = result.data.faces;
+                
+                // Mostrar alertas creadas (si hay)
+                if (result.data.alertas_creadas && result.data.alertas_creadas.length > 0) {
+                    console.log('🚨 ALERTAS CREADAS:', result.data.alertas_creadas);
+                    result.data.alertas_creadas.forEach((alerta: any) => {
+                        console.log(`   Alerta #${alerta.alerta_id} - ${alerta.persona} (${alerta.similitud}%)`);
+                        console.log(`   Evidencia: ${alerta.imagen_url}`);
+                    });
+                }
 
                 // Actualiza estado de resultados
                 setRecognitionResult({ faces });
