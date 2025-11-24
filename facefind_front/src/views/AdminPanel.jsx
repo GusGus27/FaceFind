@@ -123,6 +123,13 @@ const AdminPanel = () => {
             Mapa de Detecciones
           </button>
           <button
+            className="admin-nav-item"
+            onClick={() => navigate('/admin/horarios-alertas')}
+          >
+            <span className="icon">⏰</span>
+            Horarios de Alertas
+          </button>
+          <button
             className={`admin-nav-item ${activeSection === 'cases' ? 'active' : ''}`}
             onClick={() => setActiveSection('cases')}
           >
