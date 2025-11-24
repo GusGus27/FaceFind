@@ -3,7 +3,7 @@ import '../../styles/camera/CameraCard.css';
 import { detectFaces } from '../../services/detectionService';
 
 interface Camera {
-    id: number;
+    id?: number;
     nombre: string;
     type: 'USB' | 'IP';
     ubicacion: string;
@@ -11,6 +11,11 @@ interface Camera {
     url?: string;
     resolution?: string;
     fps?: number;
+    ip?: string;
+    latitud?: number;
+    longitud?: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 interface CameraCardProps {
@@ -46,13 +51,15 @@ const CameraCard: React.FC<CameraCardProps> = ({ camera, onEdit, onDelete, onTog
     };
 
     const handleDelete = () => {
-        if (window.confirm(`¿Estás seguro de eliminar la cámara "${camera.nombre}"?`)) {
+        if (camera.id && window.confirm(`¿Estás seguro de eliminar la cámara "${camera.nombre}"?`)) {
             onDelete(camera.id);
         }
     };
 
     const handleToggleStatus = () => {
-        onToggleStatus(camera.id);
+        if (camera.id) {
+            onToggleStatus(camera.id);
+        }
     };
 
     // Limpiar intervalo al desmontar
@@ -94,9 +101,13 @@ const CameraCard: React.FC<CameraCardProps> = ({ camera, onEdit, onDelete, onTog
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
 
             console.log('📤 Enviando imagen al servicio de detección...');
+            console.log(`📷 Cámara ID: ${camera.id}, Ubicación: ${camera.ubicacion}`);
 
-            // Usar el servicio de detección
-            const result = await detectFaces(imageData);
+            // Usar el servicio de detección CON EL ID CORRECTO DE LA CÁMARA
+            const result = await detectFaces(imageData, {
+                cameraId: camera.id,
+                ubicacion: camera.ubicacion
+            });
 
             if (result.success && result.data) {
                 const faces = result.data.faces || [];

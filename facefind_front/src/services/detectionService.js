@@ -8,18 +8,37 @@ const API_URL = 'http://localhost:5000';
 /**
  * Detecta rostros en una imagen
  * @param {string} imageBase64 - Imagen en formato base64
+ * @param {object} options - Opciones adicionales (casoId, cameraId, ubicacion)
  * @returns {Promise} - Resultado con rostros detectados
  */
-export const detectFaces = async (imageBase64) => {
+export const detectFaces = async (imageBase64, options = {}) => {
     try {
         console.log('🔍 Enviando imagen para detección de rostros...');
+        console.log('📋 Opciones:', {
+            cameraId: options.cameraId,
+            ubicacion: options.ubicacion
+        });
+        
+        // Preparar request body
+        const requestBody = { 
+            image: imageBase64,
+            camara_id: options.cameraId || 1,
+            ubicacion: options.ubicacion || 'Ubicación no especificada'
+        };
+        
+        console.log('✅ El Caso ID se detecta automáticamente en el backend cuando hay match');
+        console.log('📤 Request body (sin imagen):', {
+            camara_id: requestBody.camara_id,
+            ubicacion: requestBody.ubicacion,
+            image_length: imageBase64.length
+        });
         
         const response = await fetch(`${API_URL}/detection/detect-faces`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ image: imageBase64 }),
+            body: JSON.stringify(requestBody),
         });
 
         const data = await response.json();

@@ -12,6 +12,7 @@ from models.frame import Frame
 from models.enums import EstadoAlerta, PrioridadAlerta
 from services.supabase_client import supabase
 from services.notification_service import NotificationService
+from services.evidencia_service import EvidenciaService
 
 
 class AlertaService:
@@ -88,9 +89,35 @@ class AlertaService:
             falso_positivo=falso_positivo
         )
 
-        # Guardar en base de datos
+        # Guardar evidencia en Storage primero
+        print(f"\n📸 Intentando guardar evidencia para alerta...")
+        print(f"   Frame: {frame}, Caso: {caso_id}, Cámara: {camara_id}")
+        imagen_url = None
         try:
-            alerta_guardada = AlertaService._guardar_en_bd(alerta)
+            imagen_url = EvidenciaService.guardar_evidencia(
+                frame=frame,
+                caso_id=caso_id,
+                camara_id=camara_id
+            )
+            if imagen_url:
+                # Validar que sea un string
+                if not isinstance(imagen_url, str):
+                    print(f"⚠️ ADVERTENCIA: imagen_url no es string, es {type(imagen_url)}")
+                    print(f"   Contenido: {imagen_url}")
+                    imagen_url = None  # Resetear si no es válida
+                else:
+                    print(f"✅ Evidencia guardada con URL (string): {imagen_url}")
+            else:
+                print(f"⚠️ No se obtuvo URL de evidencia (retornó None)")
+        except Exception as ev_error:
+            print(f"⚠️ Excepción guardando evidencia: {ev_error}")
+            import traceback
+            traceback.print_exc()
+        
+        # Guardar en base de datos (con o sin imagen_url)
+        try:
+            alerta._imagen_url = imagen_url  # Agregar URL al objeto
+            alerta_guardada = AlertaService._guardar_en_bd(alerta, imagen_url)
             
             # Crear notificación si es alta prioridad (según criterios de aceptación)
             if prioridad in [PrioridadAlerta.ALTA, PrioridadAlerta.MEDIA]:
@@ -111,16 +138,29 @@ class AlertaService:
             raise
 
     @staticmethod
-    def _guardar_en_bd(alerta: Alerta) -> Alerta:
+    def _guardar_en_bd(alerta: Alerta, imagen_url: Optional[str] = None) -> Alerta:
         """
         Guarda la alerta en la base de datos
 
         Args:
             alerta: Objeto Alerta a guardar
+            imagen_url: URL de la imagen en Storage (opcional)
 
         Returns:
             Alerta con ID asignado
         """
+        # Validar que imagen_url sea string o None
+        if imagen_url is not None and not isinstance(imagen_url, str):
+            print(f"⚠️ ADVERTENCIA en _guardar_en_bd: imagen_url no es string: {type(imagen_url)}")
+            print(f"   Contenido: {imagen_url}")
+            imagen_url = None  # Resetear a None si no es válida
+        
+        # Convertir imagen_bytes a base64 string si existe
+        import base64
+        imagen_base64 = None
+        if alerta.imagen_bytes:
+            imagen_base64 = base64.b64encode(alerta.imagen_bytes).decode('utf-8')
+        
         data = {
             "caso_id": alerta.caso_id,
             "camara_id": alerta.camara_id,
@@ -131,9 +171,12 @@ class AlertaService:
             "longitud": alerta.longitud,
             "estado": alerta.estado.to_string(),
             "prioridad": alerta.prioridad.to_string(),
-            "imagen": alerta.imagen_bytes,
+            "imagen": imagen_base64,  # Base64 string o null
+            "imagen_url": imagen_url,  # ✅ URL de Storage (string o null)
             "falso_positivo": alerta.falso_positivo
         }
+        
+        print(f"   DEBUG _guardar_en_bd - imagen_url tipo: {type(imagen_url)}, valor: {imagen_url[:100] if imagen_url else None}")
 
         # Agregar horarios si existen
         if alerta.horario_inicio:
@@ -516,10 +559,20 @@ class AlertaService:
                             "estado": data.get("estado"),
                             "prioridad": data.get("prioridad"),
                             "ubicacion": data.get("ubicacion"),
+                            "latitud": float(lat),
+                            "longitud": float(lon),
                             "falso_positivo": data.get("falso_positivo", False),
-                            "persona_nombre": persona_nombre
+                            "persona_nombre": persona_nombre,
+                            "imagen_url": data.get("imagen_url")  # ✅ URL de la imagen de evidencia
                         }
                     }
+                    
+                    # Debug: verificar imagen_url
+                    if not data.get("imagen_url"):
+                        print(f"⚠️  Alerta {data.get('id')} sin imagen_url en BD")
+                    else:
+                        print(f"✅ Alerta {data.get('id')} con imagen_url: {data.get('imagen_url')[:80]}...")
+                    
                     features.append(feature)
 
             return {

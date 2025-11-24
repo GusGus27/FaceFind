@@ -3,7 +3,7 @@ import CameraCard from './CameraCard';
 import '../../styles/camera/CameraGrid.css';
 
 interface Camera {
-    id: number;
+    id?: number;
     nombre: string;
     type: 'USB' | 'IP';
     ubicacion: string;
@@ -11,6 +11,11 @@ interface Camera {
     url?: string;
     resolution?: string;
     fps?: number;
+    ip?: string;
+    latitud?: number;
+    longitud?: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 interface CameraGridProps {

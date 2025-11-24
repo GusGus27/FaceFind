@@ -2,22 +2,27 @@ import cv2
 from .camera_interface import ICamera
 
 class USBCamera(ICamera):
-    def __init__(self):
+    def __init__(self, device_id: int = 0):
         self.stream = None
         self.is_connected = False
-        self.device_id = 0
+        self.device_id = device_id
+        print(f"📹 USBCamera inicializada con device_id: {device_id}")
 
     def connect(self) -> bool:
         try:
+            print(f"🔌 Conectando a cámara USB con índice {self.device_id}...")
             self.stream = cv2.VideoCapture(self.device_id)
-            if not self.stream.isOpened():
-                self.device_id = 1  # Try second camera
-                self.stream = cv2.VideoCapture(self.device_id)
             
             self.is_connected = self.stream.isOpened()
+            
+            if self.is_connected:
+                print(f"✅ Conectado exitosamente a cámara USB {self.device_id}")
+            else:
+                print(f"❌ No se pudo abrir cámara USB con índice {self.device_id}")
+            
             return self.is_connected
         except Exception as e:
-            print(f"Error connecting to USB camera: {e}")
+            print(f"❌ Error connecting to USB camera: {e}")
             return False
 
     def get_frame(self):

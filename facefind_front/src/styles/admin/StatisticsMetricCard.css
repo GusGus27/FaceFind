@@ -1,0 +1,108 @@
+/* Statistics Metric Card Styles */
+
+.statistics-metric-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: white;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.statistics-metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
+}
+
+.statistics-metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: var(--card-color);
+}
+
+.statistics-metric-card.blue {
+  --card-color: #3b82f6;
+  --card-color-light: #60a5fa;
+}
+
+.statistics-metric-card.orange {
+  --card-color: #f59e0b;
+  --card-color-light: #fbbf24;
+}
+
+.statistics-metric-card.green {
+  --card-color: #10b981;
+  --card-color-light: #34d399;
+}
+
+.statistics-metric-card.yellow {
+  --card-color: #eab308;
+  --card-color-light: #facc15;
+}
+
+.statistics-metric-card.purple {
+  --card-color: #8b5cf6;
+  --card-color-light: #a78bfa;
+}
+
+.statistics-metric-card.cyan {
+  --card-color: #06b6d4;
+  --card-color-light: #22d3ee;
+}
+
+.metric-icon {
+  font-size: 3rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-title {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.5rem 0;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+  line-height: 1;
+}
+
+.metric-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .statistics-metric-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .metric-icon {
+    font-size: 2.5rem;
+  }
+  
+  .metric-value {
+    font-size: 1.75rem;
+  }
+}

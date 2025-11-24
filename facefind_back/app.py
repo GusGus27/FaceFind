@@ -15,6 +15,7 @@ from api.caso_routes import caso_bp
 from api.encodings_routes import encodings_bp
 from api.foto_routes import foto_bp
 from api.detection_routes import detection_bp
+from api.statistics_routes import statistics_bp
 from api.alerta_routes import alerta_bp
 from api.notification_routes import notification_bp
 from api.camera_routes import camera_bp
@@ -55,6 +56,7 @@ app.register_blueprint(caso_bp, url_prefix="/casos")
 app.register_blueprint(encodings_bp, url_prefix="/encodings")
 app.register_blueprint(foto_bp, url_prefix="/fotos")
 app.register_blueprint(detection_bp, url_prefix="/detection")
+app.register_blueprint(statistics_bp, url_prefix="/statistics")
 app.register_blueprint(alerta_bp, url_prefix="/alertas")
 app.register_blueprint(notification_bp, url_prefix="/notifications")
 app.register_blueprint(camera_bp, url_prefix="/cameras")
@@ -78,6 +80,7 @@ def index():
             "encodings": "/encodings",
             "detection": "/detection",
             "fotos": "/fotos",
+            "statistics": "/statistics",
             "alertas": "/alertas",
             "notifications": "/notifications",
             "cameras": "/cameras"

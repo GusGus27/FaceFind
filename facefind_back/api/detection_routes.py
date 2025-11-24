@@ -12,6 +12,7 @@ from datetime import datetime
 from models.procesador_facefind import ProcesadorFaceFind
 from models.frame import Frame
 from services.alerta_service import AlertaService
+from services.camera_service import CameraService
 
 # Crear Blueprint
 detection_bp = Blueprint('detection', __name__)
@@ -162,100 +163,94 @@ def detect_faces():
         # Procesar frame
         results = detection_service.process_frame(frame)
         
-        # Crear alertas y notificaciones para coincidencias válidas
+        # 🚨 CREAR ALERTAS AUTOMÁTICAMENTE si hay matches
         alertas_creadas = []
-        notificaciones_creadas = []
-        caso_id = data.get('caso_id')
-        camara_id = data.get('camara_id', 1)
+        camara_id = data.get('camara_id', 1)  # ID de la cámara
+        ubicacion = data.get('ubicacion', 'Ubicación desconocida')
         
-        for face in results["faces"]:
-            # Crear notificación si similitud >= 40%, independientemente de match_found
-            if face["similarity_percentage"] >= 40.0:
-                try:
-                    # SIEMPRE crear notificación cuando similitud >= 40%
-                    from services.notification_service import NotificationService
+        # 📍 OBTENER COORDENADAS DE LA CÁMARA desde la BD
+        camara_lat = None
+        camara_lng = None
+        try:
+            camara = CameraService.get_camera_by_id(camara_id)
+            if camara:
+                camara_lat = camara.get('latitud')
+                camara_lng = camara.get('longitud')
+                print(f"📍 Coordenadas de cámara #{camara_id}: lat={camara_lat}, lng={camara_lng}")
+            else:
+                print(f"⚠️  No se encontró cámara con ID {camara_id}")
+        except Exception as e:
+            print(f"⚠️  Error obteniendo coordenadas de cámara: {e}")
+        
+        # Usar coordenadas de la cámara, o las enviadas en el request (fallback), o 0.0
+        latitud = camara_lat if camara_lat is not None else data.get('latitud', 0.0)
+        longitud = camara_lng if camara_lng is not None else data.get('longitud', 0.0)
+        
+        print(f"\n{'='*60}")
+        print(f"📊 DETECCIÓN: {results['faces_detected']} rostro(s) detectado(s)")
+        print(f"📷 Cámara ID: {camara_id}")
+        print(f"📍 Ubicación: {ubicacion}")
+        print(f"📍 Coordenadas: lat={latitud}, lng={longitud}")
+        print(f"{'='*60}\n")
+        
+        if results['faces_detected'] > 0:
+            # Crear Frame object una vez
+            frame_obj = Frame(frame, datetime.now(), camara_id)
+            print(f"✅ Frame object creado")
+            
+            # Por cada rostro detectado con match
+            for face in results['faces']:
+                print(f"\n👤 Procesando rostro #{face['face_id']}")
+                print(f"   Match found: {face['match_found']}")
+                print(f"   Best match: {face['best_match_name']}")
+                print(f"   Similitud: {face['similarity_percentage']}%")
+                
+                if face['match_found'] and face.get('caso_id'):
+                    caso_id = face['caso_id']  # ✅ Caso ID automático del match
+                    print(f"   🔍 Caso ID (automático): {caso_id}")
                     
-                    confidence_percent = int(face["similarity_percentage"])
-                    persona_nombre = face["best_match_name"]
-                    timestamp = datetime.now()
-                    
-                    # Determinar type y severity (3 opciones cada uno)
-                    # Type: detection, alert, warning
-                    if face["similarity_percentage"] >= 70:
-                        notification_type = "alert"
-                        severity = "high"
-                    elif face["similarity_percentage"] >= 55:
-                        notification_type = "warning"
-                        severity = "medium"
-                    else:
-                        notification_type = "detection"
-                        severity = "low"
-                    
-                    # Mensajes por defecto según combinación type-severity
-                    message_templates = {
-                        ("alert", "high"): f"⚠️ ALERTA: Detección de alta confianza de {persona_nombre}. Se recomienda verificación inmediata.",
-                        ("warning", "medium"): f"⚡ ADVERTENCIA: Posible detección de {persona_nombre}. Requiere revisión.",
-                        ("detection", "low"): f"👤 DETECCIÓN: Se registró una coincidencia con {persona_nombre}. Pendiente de confirmación."
-                    }
-                    
-                    message = message_templates.get((notification_type, severity), 
-                                                   f"Se detectó {persona_nombre} con {confidence_percent}% de similitud")
-                    
-                    # Crear notificación con usuario_id = 1 (admin por defecto)
-                    notificacion = NotificationService.crear_notificacion(
-                        title=persona_nombre,  # Nombre de la persona detectada
-                        message=message,
-                        severity=severity,
-                        usuario_id=1,  # Admin
-                        notification_type=notification_type
-                    )
-                    
-                    notificaciones_creadas.append({
-                        "notificacion_id": notificacion.get("id"),
-                        "face_id": face["face_id"],
-                        "similarity": face["similarity_percentage"],
-                        "persona": persona_nombre
-                    })
-                    
-                    print(f"✅ Notificación creada: {persona_nombre} ({face['similarity_percentage']:.1f}%)")
-                    
-                    # Si hay caso_id, TAMBIÉN crear alerta
-                    if caso_id:
-                        frame_obj = Frame(imagen=frame)
-                        
+                    try:
+                        print(f"   🚨 Creando alerta con evidencia...")
+                        # ✅ CREAR ALERTA CON EVIDENCIA Y COORDENADAS DE LA CÁMARA
                         alerta = AlertaService.crearAlerta(
-                            timestamp=timestamp,
-                            confidence=face["similarity_percentage"] / 100.0,
-                            latitud=data.get('latitud', 0.0),
-                            longitud=data.get('longitud', 0.0),
+                            timestamp=datetime.now(),
+                            confidence=face['similarity_percentage'] / 100.0,  # Convertir a 0-1
+                            latitud=latitud,  # Coordenadas de la cámara
+                            longitud=longitud,  # Coordenadas de la cámara
                             camara_id=camara_id,
-                            status="PENDIENTE",
-                            caso_id=caso_id,
+                            status='PENDIENTE',
+                            caso_id=caso_id,  # ✅ Usa caso_id del match
                             frame=frame_obj,
                             falso_positivo=False
                         )
                         
                         alertas_creadas.append({
                             "alerta_id": alerta.id,
-                            "face_id": face["face_id"],
-                            "similarity": face["similarity_percentage"],
-                            "persona": persona_nombre
+                            "caso_id": caso_id,
+                            "persona": face['best_match_name'],
+                            "similitud": face['similarity_percentage'],
+                            "imagen_url": alerta._imagen_url if hasattr(alerta, '_imagen_url') else None
                         })
                         
-                        print(f"✅ Alerta creada: ID {alerta.id} - {persona_nombre} ({face['similarity_percentage']:.1f}%)")
-                    
-                except Exception as error:
-                    print(f"❌ Error procesando rostro {face['face_id']}: {error}")
-                    traceback.print_exc()
+                        print(f"   ✅ Alerta #{alerta.id} creada exitosamente")
+                        print(f"   📸 URL evidencia: {alerta._imagen_url if hasattr(alerta, '_imagen_url') else 'NO DISPONIBLE'}")
+                        
+                    except Exception as alert_error:
+                        print(f"   ❌ Error creando alerta: {alert_error}")
+                        import traceback
+                        traceback.print_exc()
+                elif face['match_found'] and not face.get('caso_id'):
+                    print(f"   ⚠️  Match encontrado pero sin caso_id asociado en BD")
+                else:
+                    print(f"   ⏭️  Saltando (sin match o similitud baja)")
         
         # Limpiar resultados para JSON
         clean_results = clean_results_for_json(results)
-        clean_results["alertas_creadas"] = alertas_creadas
-        clean_results["notificaciones_creadas"] = notificaciones_creadas
-        clean_results["total_alertas"] = len(alertas_creadas)
-        clean_results["total_notificaciones"] = len(notificaciones_creadas)
         
-        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados, {len(notificaciones_creadas)} notificaciones creadas, {len(alertas_creadas)} alertas creadas")
+        # Agregar info de alertas creadas
+        clean_results['alertas_creadas'] = alertas_creadas
+        
+        print(f"✅ Procesamiento exitoso: {clean_results['faces_detected']} rostros detectados, {len(alertas_creadas)} alertas creadas")
         
         return jsonify({
             "success": True,

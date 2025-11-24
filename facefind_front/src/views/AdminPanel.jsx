@@ -7,6 +7,7 @@ import CaseManagement from '../components/admin/CaseManagement';
 import NotificationPanel from '../components/admin/NotificationPanel';
 import ActivityLogs from '../components/admin/ActivityLogs';
 import SearchCases from '../components/admin/SearchCases'; 
+import StatisticsDashboard from '../components/admin/StatisticsDashboard';
 import MapView from '../components/admin/MapView';
 import CameraManager from '../components/camera/CameraManager';
 import { getUnreadCount } from '../services/notificationService';
@@ -62,6 +63,8 @@ const AdminPanel = () => {
          return <SearchCases />;
       case 'camera':
         return <CameraManager />;
+      case 'statistics':
+        return <StatisticsDashboard />;
       case 'map':
         return <MapView />;
       default:
@@ -90,6 +93,13 @@ const AdminPanel = () => {
           >
             <span className="icon">📊</span>
             Dashboard
+          </button>
+          <button
+            className={`admin-nav-item ${activeSection === 'statistics' ? 'active' : ''}`}
+            onClick={() => setActiveSection('statistics')}
+          >
+            <span className="icon">📈</span>
+            Estadísticas Avanzadas
           </button>
           <button
             className={`admin-nav-item ${activeSection === 'users' ? 'active' : ''}`}

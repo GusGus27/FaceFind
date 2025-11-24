@@ -294,3 +294,58 @@
         font-size: 1.2rem;
     }
 }
+
+/* Estilos para selector de cámaras USB */
+.loading-devices {
+    padding: 20px;
+    text-align: center;
+    background: #f5f5f5;
+    border-radius: 8px;
+    color: #666;
+}
+
+.no-devices {
+    padding: 20px;
+    text-align: center;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+}
+
+.no-devices p {
+    margin: 0 0 12px 0;
+    color: #856404;
+}
+
+.btn-refresh-devices {
+    padding: 8px 16px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: inline-block;
+}
+
+.btn-refresh-devices:hover {
+    background-color: #1976D2;
+}
+
+.form-group select#usbDevice {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background-color: white;
+    cursor: pointer;
+}
+
+.form-group select#usbDevice:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
