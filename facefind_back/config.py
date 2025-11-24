@@ -28,6 +28,10 @@ class Config:
     # CORS
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
     
+    # SendGrid Email
+    SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+    SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'noreply@facefind.com')
+    
     @staticmethod
     def validate():
         """Valida que las variables críticas estén configuradas"""

@@ -9,3 +9,4 @@ opencv-python
 numpy
 face-recognition
 requests
+sendgrid

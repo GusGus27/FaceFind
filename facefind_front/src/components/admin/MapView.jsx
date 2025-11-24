@@ -183,13 +183,25 @@ const MapView = () => {
 
   const handleMarcarRevisada = async (alertaId) => {
     try {
-      await alertaService.marcarRevisada(alertaId);
-      alert('Alerta marcada como revisada');
+      const result = await alertaService.marcarRevisada(alertaId);
+      
+      // Mensaje de éxito con información del email
+      let mensaje = '✅ Alerta marcada como revisada';
+      
+      if (result.email_notificacion) {
+        if (result.email_notificacion.success) {
+          mensaje += `\n\n📧 Notificación enviada a: ${result.email_notificacion.nombre_destinatario} (${result.email_notificacion.destinatario})`;
+        } else {
+          mensaje += `\n\n⚠️ ${result.email_notificacion.error}`;
+        }
+      }
+      
+      alert(mensaje);
       setShowReviewModal(false);
       fetchAlertas(); // Recargar
     } catch (error) {
       console.error('Error marcando alerta:', error);
-      alert('Error al marcar alerta');
+      alert('❌ Error al marcar alerta');
     }
   };
 

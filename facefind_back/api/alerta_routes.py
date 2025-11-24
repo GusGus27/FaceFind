@@ -5,6 +5,7 @@ Según diagrama UML - AlertaService
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from services.alerta_service import AlertaService
+from services.email_service import EmailService
 from models.enums import EstadoAlerta
 import traceback
 
@@ -236,8 +237,22 @@ def actualizar_estado(alerta_id):
 
 @alerta_bp.route('/<int:alerta_id>/revisar', methods=['POST'])
 def marcar_revisada(alerta_id):
-    """Marca una alerta como revisada"""
+    """
+    Marca una alerta como revisada y envía notificación por email al usuario del caso
+    """
     try:
+        # Obtener información de la alerta antes de marcarla
+        alerta = AlertaService.obtener_alerta_por_id(alerta_id)
+        
+        if not alerta:
+            return jsonify({
+                "success": False,
+                "error": "Alerta no encontrada"
+            }), 404
+        
+        caso_id = alerta.caso_id
+        
+        # Marcar como revisada
         success = AlertaService.marcar_como_revisada(alerta_id)
 
         if not success:
@@ -246,13 +261,35 @@ def marcar_revisada(alerta_id):
                 "error": "No se pudo marcar como revisada"
             }), 500
 
+        # Obtener email del usuario que creó el caso
+        usuario_email = EmailService.obtener_email_usuario_caso(caso_id)
+        
+        email_result = None
+        if usuario_email:
+            # Enviar notificación por email
+            email_result = EmailService.enviar_notificacion_deteccion_confirmada(
+                alerta_id=alerta_id,
+                caso_id=caso_id,
+                usuario_email=usuario_email
+            )
+            
+            if not email_result.get("success"):
+                print(f"⚠️ {email_result.get('error')}")
+        else:
+            print(f"⚠️ Cuenta no encontrada para el caso #{caso_id}")
+
         return jsonify({
             "success": True,
-            "message": "Alerta marcada como revisada"
+            "message": "Alerta marcada como revisada",
+            "email_notificacion": email_result if email_result else {
+                "success": False,
+                "error": f"Cuenta no encontrada para el caso #{caso_id}"
+            }
         }), 200
 
     except Exception as e:
         print(f"❌ Error marcando como revisada: {str(e)}")
+        traceback.print_exc()
         return jsonify({
             "success": False,
             "error": str(e)
