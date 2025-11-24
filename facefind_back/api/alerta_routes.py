@@ -238,7 +238,7 @@ def actualizar_estado(alerta_id):
 @alerta_bp.route('/<int:alerta_id>/revisar', methods=['POST'])
 def marcar_revisada(alerta_id):
     """
-    Marca una alerta como revisada y envía notificación por email al usuario del caso
+    Marca una alerta como revisada, actualiza el caso a resuelto y envía notificación por email
     """
     try:
         # Obtener información de la alerta antes de marcarla
@@ -261,6 +261,15 @@ def marcar_revisada(alerta_id):
                 "error": "No se pudo marcar como revisada"
             }), 500
 
+        # Actualizar el estado del caso a "resuelto"
+        from services.caso_service import CasoService
+        try:
+            CasoService.update_caso_status(caso_id, "resuelto")
+            print(f"✅ Caso #{caso_id} marcado como resuelto")
+        except Exception as caso_error:
+            print(f"⚠️ Error actualizando estado del caso: {caso_error}")
+            # Continuar con el proceso aunque falle la actualización del caso
+
         # Obtener email del usuario que creó el caso
         usuario_email = EmailService.obtener_email_usuario_caso(caso_id)
         
@@ -280,7 +289,7 @@ def marcar_revisada(alerta_id):
 
         return jsonify({
             "success": True,
-            "message": "Alerta marcada como revisada",
+            "message": "Alerta marcada como revisada y caso actualizado a resuelto",
             "email_notificacion": email_result if email_result else {
                 "success": False,
                 "error": f"Cuenta no encontrada para el caso #{caso_id}"

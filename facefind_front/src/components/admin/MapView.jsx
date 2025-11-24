@@ -16,9 +16,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import { Download } from 'lucide-react';
 import alertaService from '../../services/alertaService';
 import { getAllCasos } from '../../services/casoService';
 import { getFotosByCaso } from '../../services/fotoService';
+import ExportModal from './ExportModal';
 import './MapView.css';
 
 // Fix para iconos de Leaflet
@@ -100,6 +102,9 @@ const MapView = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedAlerta, setSelectedAlerta] = useState(null);
   const [fotosReferencia, setFotosReferencia] = useState([]);
+  
+  // Modal de exportación
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Filtros
   const [filters, setFilters] = useState({
@@ -270,8 +275,18 @@ const MapView = () => {
   return (
     <div className="map-view-container">
       <div className="map-header">
-        <h2>🗺️ Mapa de Detecciones</h2>
-        <p>Visualiza las alertas y patrones de movimiento en el mapa interactivo</p>
+        <div>
+          <h2>🗺️ Mapa de Detecciones</h2>
+          <p>Visualiza las alertas y patrones de movimiento en el mapa interactivo</p>
+        </div>
+        <button 
+          className="export-report-btn"
+          onClick={() => setShowExportModal(true)}
+          title="Exportar reportes"
+        >
+          <Download size={20} />
+          <span>Exportar Reporte</span>
+        </button>
       </div>
 
       {/* Filtros */}
@@ -635,6 +650,12 @@ const MapView = () => {
           </div>
         </div>
       )}
+      
+      {/* Modal de Exportación */}
+      <ExportModal 
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
     </div>
   );
 };

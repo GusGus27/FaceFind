@@ -19,6 +19,7 @@ from api.statistics_routes import statistics_bp
 from api.alerta_routes import alerta_bp
 from api.notification_routes import notification_bp
 from api.camera_routes import camera_bp
+from api.report_routes import report_bp
 
 
 # Inicializar aplicación Flask
@@ -60,6 +61,7 @@ app.register_blueprint(statistics_bp, url_prefix="/statistics")
 app.register_blueprint(alerta_bp, url_prefix="/alertas")
 app.register_blueprint(notification_bp, url_prefix="/notifications")
 app.register_blueprint(camera_bp, url_prefix="/cameras")
+app.register_blueprint(report_bp, url_prefix="/reports")
 
 
 # ============================================================================
@@ -83,7 +85,8 @@ def index():
             "statistics": "/statistics",
             "alertas": "/alertas",
             "notifications": "/notifications",
-            "cameras": "/cameras"
+            "cameras": "/cameras",
+            "reports": "/reports"
         }
     })
 

@@ -8,7 +8,14 @@
 
 .map-header {
   margin-bottom: 20px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.map-header > div {
+  flex: 1;
 }
 
 .map-header h2 {
@@ -20,6 +27,33 @@
 .map-header p {
   color: #7f8c8d;
   font-size: 1.1rem;
+}
+
+/* Botón de exportación */
+.export-report-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+}
+
+.export-report-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.export-report-btn:active {
+  transform: translateY(0);
 }
 
 /* Filtros */
