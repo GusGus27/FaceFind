@@ -119,18 +119,28 @@ class AlertaService:
             alerta._imagen_url = imagen_url  # Agregar URL al objeto
             alerta_guardada = AlertaService._guardar_en_bd(alerta, imagen_url)
             
+            print(f"\n📢 Verificando si crear notificación...")
+            print(f"   Prioridad: {prioridad} ({type(prioridad)})")
+            print(f"   ¿Es ALTA o MEDIA?: {prioridad in [PrioridadAlerta.ALTA, PrioridadAlerta.MEDIA]}")
+            
             # Crear notificación si es alta prioridad (según criterios de aceptación)
             if prioridad in [PrioridadAlerta.ALTA, PrioridadAlerta.MEDIA]:
+                print(f"✅ Creando notificación para alerta ID={alerta_guardada.id}")
                 try:
-                    NotificationService.crear_notificacion_coincidencia(
+                    notificacion = NotificationService.crear_notificacion_coincidencia(
                         caso_id=caso_id,
                         alerta_id=alerta_guardada.id,
                         confidence=confidence,
                         ubicacion=ubicacion or "Ubicación desconocida",
                         timestamp=timestamp
                     )
+                    print(f"✅ Notificación creada exitosamente: {notificacion.get('id') if notificacion else 'Sin ID'}")
                 except Exception as notif_error:
                     print(f"⚠️ Error creando notificación: {notif_error}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print(f"ℹ️  No se crea notificación (prioridad {prioridad.to_string()})")
             
             return alerta_guardada
         except Exception as e:

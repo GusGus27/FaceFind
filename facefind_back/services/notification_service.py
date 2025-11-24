@@ -35,12 +35,20 @@ class NotificationService:
             Diccionario con la notificación creada
         """
         try:
+            print(f"\n📬 Creando notificación:")
+            print(f"   Title: {title}")
+            print(f"   Message: {message}")
+            print(f"   Severity: {severity}")
+            print(f"   Type: {notification_type}")
+            
             # Validar severity
-            if severity not in ['low', 'medium', 'high']:
+            if severity not in ['low', 'medium', 'high', 'urgent']:
+                print(f"   ⚠️  Severity '{severity}' no válido, usando 'medium'")
                 severity = 'medium'
             
             # Validar type
             if notification_type not in ['detection', 'alert', 'warning']:
+                print(f"   ⚠️  Type '{notification_type}' no válido, usando 'detection'")
                 notification_type = 'detection'
             
             data = {
@@ -49,21 +57,31 @@ class NotificationService:
                 "severity": severity,
                 "type": notification_type,
                 "isRead": False,
-                "timestamp": datetime.now().isoformat(),
-                "usuario_id": usuario_id or 1  # Admin por defecto
+                "timestamp": datetime.now().isoformat()
             }
+            
+            # Agregar usuario_id solo si se proporciona
+            if usuario_id:
+                data["usuario_id"] = usuario_id
+            
+            print(f"   Data a insertar: {data}")
 
             response = supabase.table("Notificacion").insert(data).execute()
 
             if not response.data:
-                raise Exception("Error creando notificación")
+                raise Exception("Error creando notificación - response.data vacío")
 
-            print(f"✅ Notificación creada: {title}")
+            print(f"✅ Notificación creada exitosamente: {title}")
+            print(f"   ID: {response.data[0].get('id')}")
             return response.data[0]
 
         except Exception as e:
             print(f"❌ Error creando notificación: {e}")
-            raise
+            print(f"   Tipo de error: {type(e).__name__}")
+            import traceback
+            print(f"   Traceback: {traceback.format_exc()}")
+            # No lanzar excepción para no interrumpir el flujo de alertas
+            return {}
 
     @staticmethod
     def crear_notificacion_coincidencia(
