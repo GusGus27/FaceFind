@@ -10,9 +10,7 @@ from datetime import datetime, timedelta
 class StatisticsRepository:
     """
     Repository para consultas de estadísticas del sistema
-    Sigue el patrón Repository usado en el proyecto
     """
-    
     @staticmethod
     def get_cases_by_status() -> Dict:
         """
