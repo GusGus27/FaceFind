@@ -9,7 +9,6 @@
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-000000?style=flat&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <p align="center">
   <strong>🎯 Solución tecnológica que utiliza inteligencia artificial y visión por computadora para ayudar en la búsqueda y localización de personas desaparecidas mediante reconocimiento facial en tiempo real.</strong>
@@ -584,12 +583,6 @@ refactor: refactorización
 test: añadir tests
 chore: mantenimiento
 ```
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
 
 ---
 
